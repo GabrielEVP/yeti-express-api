@@ -57,16 +57,6 @@ class User extends Authenticatable
         return $this->hasMany(Courier::class);
     }
 
-    public function priceTypes(): HasMany
-    {
-        return $this->hasMany(PriceType::class);
-    }
-
-    public function paymentTypes(): HasMany
-    {
-        return $this->hasMany(PaymentType::class);
-    }
-
     public function boxes(): HasMany
     {
         return $this->hasMany(Box::class);

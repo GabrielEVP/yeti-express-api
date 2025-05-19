@@ -28,8 +28,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::resource('clients', ClientController::class);
     Route::resource('couriers', CourierController::class);
-    Route::resource('price-types', PriceTypeController::class);
-    Route::resource('payment-types', PaymentTypeController::class);
+    Route::resource('type-prices', PriceTypeController::class);
+    Route::resource('type-payments', PaymentTypeController::class);
     Route::resource('boxes', BoxController::class);
     Route::resource('deliveries', DeliveryController::class);
     Route::resource('employers', EmployerController::class);

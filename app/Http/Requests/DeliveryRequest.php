@@ -27,14 +27,12 @@ class DeliveryRequest extends FormRequest
             'status' => ['required', 'in:pending,in_transit,delivered,cancelled'],
             'notes' => ['nullable', 'string'],
 
-            // Items
             'items' => ['required', 'array', 'min:1'],
             'items.*.description' => ['required', 'string'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.total' => ['required', 'numeric', 'min:0'],
 
-            // Recipients
             'recipients' => ['required', 'array', 'min:1'],
             'recipients.*.full_name' => ['required', 'string'],
             'recipients.*.phone' => ['required', 'string', 'max:20'],

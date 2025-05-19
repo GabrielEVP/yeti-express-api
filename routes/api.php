@@ -26,7 +26,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::put('/user/update', [AuthController::class, 'update']);
 
-    Route::get('/dashboard', fn() => Inertia::render('Dashboard'))->name('dashboard');
     Route::resource('clients', ClientController::class);
     Route::resource('couriers', CourierController::class);
     Route::resource('price-types', PriceTypeController::class);

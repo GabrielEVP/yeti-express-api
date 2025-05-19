@@ -27,7 +27,7 @@ class ClientController extends Controller
             return response()->json(['error' => 'Invalid order value'], 400);
         }
 
-        $query = Client::with(['addresses', 'phones', 'emails', 'bankAccounts']);
+        $query = Client::with(['addresses', 'phones', 'emails']);
 
         if (!empty($search)) {
             $query->where('legal_name', 'LIKE', "%{$search}%");
@@ -67,12 +67,7 @@ class ClientController extends Controller
             $client->emails()->create($email);
         }
 
-        $bankAccounts = $request->input('bank_accounts', []);
-        foreach ($bankAccounts as $bankAccount) {
-            $client->bankAccounts()->create($bankAccount);
-        }
-
-        return response()->json($client->load(['addresses', 'phones', 'emails', 'bankAccounts']), 200);
+        return response()->json($client->load(['addresses', 'phones', 'emails']), 200);
     }
 
     public function show(string $id): JsonResponse
@@ -84,7 +79,6 @@ class ClientController extends Controller
             'addresses',
             'phones',
             'emails',
-            'bankAccounts',
         ])->findOrFail($id);
 
         return response()->json($client, 200);
@@ -111,12 +105,7 @@ class ClientController extends Controller
             $client->emails()->create($email);
         }
 
-        $client->bankAccounts()->delete();
-        foreach ($request->input('bank_accounts', []) as $bankAccount) {
-            $client->bankAccounts()->create($bankAccount);
-        }
-
-        return response()->json($client->load(['addresses', 'phones', 'emails', 'bankAccounts']), 200);
+        return response()->json($client->load(['addresses', 'phones', 'emails']), 200);
     }
 
     public function destroy(string $id): JsonResponse
@@ -125,7 +114,6 @@ class ClientController extends Controller
         $client->addresses()->delete();
         $client->phones()->delete();
         $client->emails()->delete();
-        $client->bankAccounts()->delete();
         $client->delete();
 
         return response()->json(["message" => "Client With Id: {$id} Has Been Deleted"], 200);
@@ -133,7 +121,7 @@ class ClientController extends Controller
 
     public function search(string $query): JsonResponse
     {
-        $clients = Client::with(['addresses', 'phones', 'emails', 'bankAccounts'])
+        $clients = Client::with(['addresses', 'phones', 'emails'])
             ->where('legal_name', 'LIKE', "%{$query}%")
             ->get();
 

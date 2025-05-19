@@ -15,7 +15,6 @@ class ClientAddress extends Model
         'state',
         'municipality',
         'postal_code',
-        'country',
         'client_id',
         'user_id'
     ];

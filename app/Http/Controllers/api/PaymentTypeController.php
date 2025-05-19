@@ -1,68 +1,58 @@
 <?php
 
-namespace App\Http\Controllers\web;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PaymentTypeRequest;
 use App\Models\PaymentType;
-use Inertia\Inertia;
-use Inertia\Response;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class PaymentTypeController extends Controller
 {
-    public function index(): Response
+    public function index(): JsonResponse
     {
-        $paymentTypes = auth()->user()->paymentTypes()->get();
+        $paymentTypes = Auth::user()->paymentTypes()->get();
 
-        return Inertia::render('PaymentType/Index', ['paymentTypes' => $paymentTypes]);
+        return response()->json($paymentTypes, 200);
     }
 
-    public function create(): Response
-    {
-        return Inertia::render('PaymentType/Form', ['paymentType' => null, 'mode' => 'create']);
-    }
-
-    public function store(PaymentTypeRequest $request)
-    {
-        auth()->user()->paymentTypes()->create($request->validated());
-
-        return redirect()->route('payment-types.index')->with('success', 'Tipo de pago creado correctamente.');
-    }
-
-    public function show(PaymentType $paymentType): Response
+    public function show(PaymentType $paymentType): JsonResponse
     {
         $this->authorizeOwner($paymentType);
 
-        return Inertia::render('PaymentType/Show', ['paymentType' => $paymentType]);
+        return response()->json($paymentType, 200);
     }
 
-    public function edit(PaymentType $paymentType): Response
+    public function store(PaymentTypeRequest $request): JsonResponse
     {
-        $this->authorizeOwner($paymentType);
+        $paymentType = Auth::user()->paymentTypes()->create($request->validated());
 
-        return Inertia::render('PaymentType/Form', ['paymentType' => $paymentType, 'mode' => 'edit']);
+        return response()->json($paymentType, 201);
     }
 
-    public function update(PaymentTypeRequest $request, PaymentType $paymentType)
+    public function update(PaymentTypeRequest $request, PaymentType $paymentType): JsonResponse
     {
         $this->authorizeOwner($paymentType);
 
         $paymentType->update($request->validated());
 
-        return redirect()->route('payment-types.index')->with('success', 'Tipo de pago actualizado correctamente.');
+        return response()->json($paymentType, 200);
     }
 
-    public function destroy(PaymentType $paymentType)
+    public function destroy(PaymentType $paymentType): JsonResponse
     {
         $this->authorizeOwner($paymentType);
 
         $paymentType->delete();
 
-        return redirect()->route('payment-types.index')->with('success', 'Tipo de pago eliminado correctamente.');
+        return response()->json([
+            'message' => "Payment type with ID {$paymentType->id} has been deleted"
+        ], 200);
     }
 
     private function authorizeOwner(PaymentType $paymentType): void
     {
-        abort_if($paymentType->user_id !== auth()->id(), 403, 'No tienes permiso para acceder a este tipo de pago.');
+        abort_if($paymentType->user_id !== Auth::id(), 403, 'No tienes permiso para acceder a este tipo de pago.');
     }
 }

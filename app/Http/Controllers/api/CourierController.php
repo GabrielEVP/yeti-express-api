@@ -1,68 +1,58 @@
 <?php
 
-namespace App\Http\Controllers\web;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CourierRequest;
 use App\Models\Courier;
-use Inertia\Inertia;
-use Inertia\Response;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class CourierController extends Controller
 {
-    public function index(): Response
+    public function index(): JsonResponse
     {
-        $couriers = auth()->user()->couriers()->get();
+        $couriers = Auth::user()->couriers()->get();
 
-        return Inertia::render('Courier/Index', ['couriers' => $couriers]);
+        return response()->json($couriers, 200);
     }
 
-    public function show(Courier $courier): Response
-    {
-        $this->authorizeOwner($courier);
-
-        return Inertia::render('Courier/Show', ['courier' => $courier]);
-    }
-
-    public function create(): Response
-    {
-        return Inertia::render('Courier/Form', ['courier' => null, 'mode' => 'create']);
-    }
-
-    public function store(CourierRequest $request)
-    {
-        auth()->user()->couriers()->create($request->validated());
-
-        return redirect()->route('couriers.index')->with('success', 'Mensajero creado correctamente.');
-    }
-
-    public function edit(Courier $courier): Response
+    public function show(Courier $courier): JsonResponse
     {
         $this->authorizeOwner($courier);
 
-        return Inertia::render('Courier/Form', ['courier' => $courier, 'mode' => 'edit']);
+        return response()->json($courier, 200);
     }
 
-    public function update(CourierRequest $request, Courier $courier)
+    public function store(CourierRequest $request): JsonResponse
+    {
+        $courier = Auth::user()->couriers()->create($request->validated());
+
+        return response()->json($courier, 201);
+    }
+
+    public function update(CourierRequest $request, Courier $courier): JsonResponse
     {
         $this->authorizeOwner($courier);
 
         $courier->update($request->validated());
 
-        return redirect()->route('couriers.index')->with('success', 'Mensajero actualizado correctamente.');
+        return response()->json($courier, 200);
     }
 
-    public function destroy(Courier $courier)
+    public function destroy(Courier $courier): JsonResponse
     {
         $this->authorizeOwner($courier);
 
         $courier->delete();
 
-        return redirect()->route('couriers.index')->with('success', 'Mensajero eliminado correctamente.');
+        return response()->json([
+            'message' => "Courier with ID {$courier->id} has been deleted"
+        ], 200);
     }
 
     private function authorizeOwner(Courier $courier): void
     {
-        abort_if($courier->user_id !== auth()->id(), 403, 'No tienes permiso para acceder a este mensajero.');
+        abort_if($courier->user_id !== Auth::id(), 403, 'No tienes permiso para acceder a este mensajero.');
     }
 }

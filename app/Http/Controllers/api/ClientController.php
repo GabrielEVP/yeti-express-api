@@ -1,71 +1,100 @@
 <?php
 
-namespace App\Http\Controllers\web;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ClientRequest;
 use App\Models\Client;
-use Inertia\Inertia;
+use App\Models\ClientEvent;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ClientController extends Controller
 {
-    public function index()
+    public function index(Request $request): JsonResponse
     {
-        $clients = auth()->user()->clients()->with(['addresses', 'phones', 'emails', 'deliveries'])->get();
-        return Inertia::render('Client/Index', ['clients' => $clients]);
+        $search = $request->query('search', '');
+        $sort = $request->query('sort')['column'] ?? 'legal_name';
+        $order = strtolower($request->query('sort')['order'] ?? 'asc');
+
+        $validColumns = ['id', 'registration_number', 'legal_name', 'type', 'country', 'tax_rate'];
+
+        if (!in_array($sort, $validColumns)) {
+            return response()->json(['error' => 'Invalid sortBy column'], 400);
+        }
+
+        if (!in_array($order, ['asc', 'desc'])) {
+            return response()->json(['error' => 'Invalid order value'], 400);
+        }
+
+        $query = Client::with(['addresses', 'phones', 'emails', 'bankAccounts']);
+
+        if (!empty($search)) {
+            $query->where('legal_name', 'LIKE', "%{$search}%");
+        }
+
+        if ($request->has('select')) {
+            foreach ($request->query('select') as $filter) {
+                if (!empty($filter['option']) && !empty($filter['value']) && in_array($filter['option'], $validColumns)) {
+                    $query->where($filter['option'], $filter['value']);
+                }
+            }
+        }
+
+        $query->orderBy($sort, $order);
+        $clients = $query->get();
+
+        return response()->json($clients, 200);
     }
 
-    public function show(Client $client)
-    {
-        $this->authorizeClient($client);
-
-        $client->load(['addresses', 'phones', 'emails']);
-        return Inertia::render('Client/Show', ['client' => $client]);
-    }
-
-    public function create()
-    {
-        return Inertia::render('Client/Form', [
-            'client' => null,
-            'mode' => 'create',
-        ]);
-    }
 
     public function store(ClientRequest $request)
     {
-        $client = auth()->user()->clients()->create($request->validated());
+        $client = Client::create($request->all());
 
-        foreach ($request->input('addresses', []) as $address) {
+        $addresses = $request->input('addresses', []);
+        foreach ($addresses as $address) {
             $client->addresses()->create($address);
         }
 
-        foreach ($request->input('phones', []) as $phone) {
+        $phones = $request->input('phones', []);
+        foreach ($phones as $phone) {
             $client->phones()->create($phone);
         }
 
-        foreach ($request->input('emails', []) as $email) {
+        $emails = $request->input('emails', []);
+        foreach ($emails as $email) {
             $client->emails()->create($email);
         }
 
-        return redirect()->route('clients.index')->with('success', 'Cliente creado correctamente.');
+        $bankAccounts = $request->input('bank_accounts', []);
+        foreach ($bankAccounts as $bankAccount) {
+            $client->bankAccounts()->create($bankAccount);
+        }
+
+        return response()->json($client->load(['addresses', 'phones', 'emails', 'bankAccounts']), 200);
     }
 
-    public function edit(Client $client)
+    public function show(string $id): JsonResponse
     {
-        $this->authorizeClient($client);
+        $client = Client::with([
+            'events' => function ($query) {
+                $query->latest()->limit(5);
+            },
+            'addresses',
+            'phones',
+            'emails',
+            'bankAccounts',
+        ])->findOrFail($id);
 
-        $client->load(['addresses', 'phones', 'emails', 'bankAccounts']);
-        return Inertia::render('Client/Form', [
-            'client' => $client,
-            'mode' => 'edit',
-        ]);
+        return response()->json($client, 200);
     }
 
-    public function update(ClientRequest $request, Client $client)
+    public function update(ClientRequest $request, string $id)
     {
-        $this->authorizeClient($client);
 
-        $client->update($request->validated());
+        $client = Client::findOrFail($id);
+        $client->update($request->all());
 
         $client->addresses()->delete();
         foreach ($request->input('addresses', []) as $address) {
@@ -87,25 +116,27 @@ class ClientController extends Controller
             $client->bankAccounts()->create($bankAccount);
         }
 
-        return redirect()->route('clients.index')->with('success', 'Cliente actualizado correctamente.');
+        return response()->json($client->load(['addresses', 'phones', 'emails', 'bankAccounts']), 200);
     }
 
-    public function destroy(Client $client)
+    public function destroy(string $id): JsonResponse
     {
-        $this->authorizeClient($client);
-
+        $client = Client::findOrFail($id);
         $client->addresses()->delete();
         $client->phones()->delete();
         $client->emails()->delete();
+        $client->bankAccounts()->delete();
         $client->delete();
 
-        return redirect()->route('clients.index')->with('success', 'Cliente eliminado correctamente.');
+        return response()->json(["message" => "Client With Id: {$id} Has Been Deleted"], 200);
     }
 
-    private function authorizeClient(Client $client): void
+    public function search(string $query): JsonResponse
     {
-        if ($client->user_id !== auth()->id()) {
-            abort(403, 'No tienes permiso para acceder a este cliente.');
-        }
+        $clients = Client::with(['addresses', 'phones', 'emails', 'bankAccounts'])
+            ->where('legal_name', 'LIKE', "%{$query}%")
+            ->get();
+
+        return response()->json($clients, 200);
     }
 }

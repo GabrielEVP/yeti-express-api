@@ -1,68 +1,58 @@
 <?php
 
-namespace App\Http\Controllers\web;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PriceTypeRequest;
 use App\Models\PriceType;
-use Inertia\Inertia;
-use Inertia\Response;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class PriceTypeController extends Controller
 {
-    public function index(): Response
+    public function index(): JsonResponse
     {
-        $priceTypes = auth()->user()->priceTypes()->get();
+        $priceTypes = Auth::user()->priceTypes()->get();
 
-        return Inertia::render('PriceType/Index', ['priceTypes' => $priceTypes]);
+        return response()->json($priceTypes, 200);
     }
 
-    public function create(): Response
-    {
-        return Inertia::render('PriceType/Form', ['priceType' => null, 'mode' => 'create']);
-    }
-
-    public function store(PriceTypeRequest $request)
-    {
-        auth()->user()->priceTypes()->create($request->validated());
-
-        return redirect()->route('price-types.index')->with('success', 'Tipo de precio creado correctamente.');
-    }
-
-    public function show(PriceType $priceType): Response
+    public function show(PriceType $priceType): JsonResponse
     {
         $this->authorizeOwner($priceType);
 
-        return Inertia::render('PriceType/Show', ['priceType' => $priceType]);
+        return response()->json($priceType, 200);
     }
 
-    public function edit(PriceType $priceType): Response
+    public function store(PriceTypeRequest $request): JsonResponse
     {
-        $this->authorizeOwner($priceType);
+        $priceType = Auth::user()->priceTypes()->create($request->validated());
 
-        return Inertia::render('PriceType/Form', ['priceType' => $priceType, 'mode' => 'edit']);
+        return response()->json($priceType, 201);
     }
 
-    public function update(PriceTypeRequest $request, PriceType $priceType)
+    public function update(PriceTypeRequest $request, PriceType $priceType): JsonResponse
     {
         $this->authorizeOwner($priceType);
 
         $priceType->update($request->validated());
 
-        return redirect()->route('price-types.index')->with('success', 'Tipo de precio actualizado correctamente.');
+        return response()->json($priceType, 200);
     }
 
-    public function destroy(PriceType $priceType)
+    public function destroy(PriceType $priceType): JsonResponse
     {
         $this->authorizeOwner($priceType);
 
         $priceType->delete();
 
-        return redirect()->route('price-types.index')->with('success', 'Tipo de precio eliminado correctamente.');
+        return response()->json([
+            'message' => "Price type with ID {$priceType->id} has been deleted"
+        ], 200);
     }
 
     private function authorizeOwner(PriceType $priceType): void
     {
-        abort_if($priceType->user_id !== auth()->id(), 403, 'No tienes permiso para acceder a este tipo de precio.');
+        abort_if($priceType->user_id !== Auth::id(), 403, 'No tienes permiso para acceder a este tipo de precio.');
     }
 }

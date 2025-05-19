@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\web;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DeliveryRequest;
 use App\Models\Delivery;
-use Inertia\Inertia;
-use Inertia\Response;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class DeliveryController extends Controller
 {
@@ -22,70 +22,69 @@ class DeliveryController extends Controller
         'recipients'
     ];
 
-    public function index(): Response
+    public function index(): JsonResponse
     {
-        $deliveries = auth()->user()->deliveries()->with($this->relations)->get();
+        $deliveries = Auth::user()
+            ->deliveries()
+            ->with($this->relations)
+            ->get();
 
-        return Inertia::render('Delivery/Index', ['deliveries' => $deliveries]);
+        return response()->json($deliveries, 200);
     }
 
-    public function create(): Response
+    public function store(DeliveryRequest $request): JsonResponse
     {
-        return Inertia::render('Delivery/Form', ['delivery' => null, 'mode' => 'create']);
-    }
+        $data = $request->safe()->except(['items', 'recipients']);
 
-    public function store(DeliveryRequest $request)
-    {
-        $delivery = auth()->user()->deliveries()->create($request->safe()->except(['items', 'recipients']));
+        $delivery = Auth::user()
+            ->deliveries()
+            ->create($data);
 
         $this->syncRelated($delivery, 'items', $request->input('items', []));
         $this->syncRelated($delivery, 'recipients', $request->input('recipients', []));
 
-        return redirect()->route('deliveries.index')->with('success', 'Entrega creada correctamente.');
+        return response()->json(
+            $delivery->load($this->relations),
+            201
+        );
     }
 
-    public function show(Delivery $delivery): Response
+    public function show(Delivery $delivery): JsonResponse
     {
         $this->authorizeOwner($delivery);
 
-        $delivery->load($this->relations);
-
-        return Inertia::render('Delivery/Show', ['delivery' => $delivery]);
+        return response()->json($delivery->load($this->relations), 200);
     }
 
-    public function edit(Delivery $delivery): Response
-    {
-        $this->authorizeOwner($delivery);
-
-        $delivery->load($this->relations);
-
-        return Inertia::render('Delivery/Form', ['delivery' => $delivery, 'mode' => 'edit']);
-    }
-
-    public function update(DeliveryRequest $request, Delivery $delivery)
+    public function update(DeliveryRequest $request, Delivery $delivery): JsonResponse
     {
         $this->authorizeOwner($delivery);
 
         $delivery->update($request->safe()->except(['items', 'recipients']));
 
         if ($request->has('items')) {
-            $this->syncRelated($delivery, 'items', $request->items);
+            $this->syncRelated($delivery, 'items', $request->input('items', []));
         }
 
         if ($request->has('recipients')) {
-            $this->syncRelated($delivery, 'recipients', $request->recipients);
+            $this->syncRelated($delivery, 'recipients', $request->input('recipients', []));
         }
 
-        return redirect()->route('deliveries.index')->with('success', 'Entrega actualizada correctamente.');
+        return response()->json(
+            $delivery->load($this->relations),
+            200
+        );
     }
 
-    public function destroy(Delivery $delivery)
+    public function destroy(Delivery $delivery): JsonResponse
     {
         $this->authorizeOwner($delivery);
 
         $delivery->delete();
 
-        return redirect()->route('deliveries.index')->with('success', 'Entrega eliminada correctamente.');
+        return response()->json([
+            'message' => "Delivery with ID {$delivery->id} has been deleted"
+        ], 200);
     }
 
     private function syncRelated(Delivery $delivery, string $relation, array $items): void
@@ -100,7 +99,7 @@ class DeliveryController extends Controller
             } else {
                 $delivery->$relation()->create([
                     ...$item,
-                    'user_id' => auth()->id(),
+                    'user_id' => Auth::id(),
                 ]);
             }
         }
@@ -108,6 +107,6 @@ class DeliveryController extends Controller
 
     private function authorizeOwner(Delivery $delivery): void
     {
-        abort_if($delivery->user_id !== auth()->id(), 403, 'No tienes permiso para acceder a esta entrega.');
+        abort_if($delivery->user_id !== Auth::id(), 403, 'No tienes permiso para acceder a esta entrega.');
     }
 }

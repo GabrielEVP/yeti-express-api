@@ -18,7 +18,7 @@ class DeliveryController extends Controller
         'courier',
         'openBox',
         'closeBox',
-        'items',
+        'lines',
         'recipients'
     ];
 
@@ -34,13 +34,14 @@ class DeliveryController extends Controller
 
     public function store(DeliveryRequest $request): JsonResponse
     {
-        $data = $request->safe()->except(['items', 'recipients']);
+        $data = $request->safe()->except(['lines', 'recipients']);
 
+        $data['user_id'] = Auth::id();
         $delivery = Auth::user()
             ->deliveries()
             ->create($data);
 
-        $this->syncRelated($delivery, 'items', $request->input('items', []));
+        $this->syncRelated($delivery, 'lines', $request->input('lines', []));
         $this->syncRelated($delivery, 'recipients', $request->input('recipients', []));
 
         return response()->json(
@@ -60,10 +61,13 @@ class DeliveryController extends Controller
     {
         $this->authorizeOwner($delivery);
 
-        $delivery->update($request->safe()->except(['items', 'recipients']));
+        $data = $request->safe()->except(['lines', 'recipients']);
+        $data['user_id'] = Auth::id();
 
-        if ($request->has('items')) {
-            $this->syncRelated($delivery, 'items', $request->input('items', []));
+        $delivery->update($data);
+
+        if ($request->has('lines')) {
+            $this->syncRelated($delivery, 'lines', $request->input('lines', []));
         }
 
         if ($request->has('recipients')) {
@@ -79,7 +83,6 @@ class DeliveryController extends Controller
     public function destroy(Delivery $delivery): JsonResponse
     {
         $this->authorizeOwner($delivery);
-
         $delivery->delete();
 
         return response()->json([
@@ -87,13 +90,13 @@ class DeliveryController extends Controller
         ], 200);
     }
 
-    private function syncRelated(Delivery $delivery, string $relation, array $items): void
+    private function syncRelated(Delivery $delivery, string $relation, array $lines): void
     {
-        $ids = collect($items)->pluck('id')->filter();
+        $ids = collect($lines)->pluck('id')->filter();
 
         $delivery->$relation()->whereNotIn('id', $ids)->delete();
 
-        foreach ($items as $item) {
+        foreach ($lines as $item) {
             if (isset($item['id'])) {
                 $delivery->$relation()->where('id', $item['id'])->update($item);
             } else {

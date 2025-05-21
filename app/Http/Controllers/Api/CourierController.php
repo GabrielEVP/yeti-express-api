@@ -13,21 +13,21 @@ class CourierController extends Controller
     public function index(): JsonResponse
     {
         $couriers = Auth::user()->couriers()->get();
-
         return response()->json($couriers, 200);
     }
 
     public function show(Courier $courier): JsonResponse
     {
         $this->authorizeOwner($courier);
-
         return response()->json($courier, 200);
     }
 
     public function store(CourierRequest $request): JsonResponse
     {
-        $courier = Auth::user()->couriers()->create($request->validated());
+        $data = $request->all();
+        $data['user_id'] = Auth::id();
 
+        $courier = Auth::user()->couriers()->create($data);
         return response()->json($courier, 201);
     }
 
@@ -35,17 +35,17 @@ class CourierController extends Controller
     {
         $this->authorizeOwner($courier);
 
-        $courier->update($request->validated());
+        $data = $request->all();
+        $data['user_id'] = Auth::id();
 
+        $courier->update($data);
         return response()->json($courier, 200);
     }
 
     public function destroy(Courier $courier): JsonResponse
     {
         $this->authorizeOwner($courier);
-
         $courier->delete();
-
         return response()->json([
             'message' => "Courier with ID {$courier->id} has been deleted"
         ], 200);

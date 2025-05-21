@@ -37,21 +37,6 @@ class User extends Authenticatable
         return $this->hasMany(Client::class);
     }
 
-    public function clientAddresses(): HasMany
-    {
-        return $this->hasMany(ClientAddress::class);
-    }
-
-    public function clientPhones(): HasMany
-    {
-        return $this->hasMany(ClientPhone::class);
-    }
-
-    public function clientEmails(): HasMany
-    {
-        return $this->hasMany(ClientEmail::class);
-    }
-
     public function couriers(): HasMany
     {
         return $this->hasMany(Courier::class);
@@ -65,16 +50,6 @@ class User extends Authenticatable
     public function deliveries(): HasMany
     {
         return $this->hasMany(Delivery::class);
-    }
-
-    public function deliveryItems(): HasMany
-    {
-        return $this->hasMany(DeliveryItem::class);
-    }
-
-    public function deliveryRecipients(): HasMany
-    {
-        return $this->hasMany(DeliveryRecipient::class);
     }
 
     public function employers(): HasMany

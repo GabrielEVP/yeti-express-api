@@ -92,6 +92,17 @@ class DeliveryController extends Controller
         ], 200);
     }
 
+    public function latestByClient(string $clientId): JsonResponse
+    {
+        $delivery = Delivery::with(['lines', 'receipt'])
+            ->where('client_id', $clientId)
+            ->orderBy('date', 'desc')
+            ->take(5)
+            ->get();
+
+        return response()->json($delivery, 200);
+    }
+
     private function syncRelatedLines(Delivery $delivery, array $lines): void
     {
         $ids = collect($lines)->pluck('id')->filter();

@@ -13,13 +13,11 @@ class DeliveryController extends Controller
     private array $relations = [
         'client',
         'clientAddress',
-        'paymentType',
-        'priceType',
         'courier',
         'openBox',
         'closeBox',
         'lines',
-        'recipients'
+        'receipt'
     ];
 
     public function index(): JsonResponse
@@ -34,15 +32,19 @@ class DeliveryController extends Controller
 
     public function store(DeliveryRequest $request): JsonResponse
     {
-        $data = $request->safe()->except(['lines', 'recipients']);
-
+        $data = $request->safe()->except(['lines', 'receipt']);
         $data['user_id'] = Auth::id();
+
+        $lastNumber = Delivery::max('id') ?? 0;
+        $nextNumber = $lastNumber + 1;
+        $data['number'] = 'DEV-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+
         $delivery = Auth::user()
             ->deliveries()
             ->create($data);
 
-        $this->syncRelated($delivery, 'lines', $request->input('lines', []));
-        $this->syncRelated($delivery, 'recipients', $request->input('recipients', []));
+        $this->syncRelatedLines($delivery, $request->input('lines', []));
+        $this->syncRelatedReceipt($delivery, $request->input('receipt'));
 
         return response()->json(
             $delivery->load($this->relations),
@@ -61,17 +63,17 @@ class DeliveryController extends Controller
     {
         $this->authorizeOwner($delivery);
 
-        $data = $request->safe()->except(['lines', 'recipients']);
+        $data = $request->safe()->except(['lines', 'receipt']);
         $data['user_id'] = Auth::id();
 
         $delivery->update($data);
 
         if ($request->has('lines')) {
-            $this->syncRelated($delivery, 'lines', $request->input('lines', []));
+            $this->syncRelatedLines($delivery, $request->input('lines', []));
         }
 
-        if ($request->has('recipients')) {
-            $this->syncRelated($delivery, 'recipients', $request->input('recipients', []));
+        if ($request->has('receipt')) {
+            $this->syncRelatedReceipt($delivery, $request->input('receipt'));
         }
 
         return response()->json(
@@ -90,21 +92,43 @@ class DeliveryController extends Controller
         ], 200);
     }
 
-    private function syncRelated(Delivery $delivery, string $relation, array $lines): void
+    private function syncRelatedLines(Delivery $delivery, array $lines): void
     {
         $ids = collect($lines)->pluck('id')->filter();
 
-        $delivery->$relation()->whereNotIn('id', $ids)->delete();
+        $delivery->lines()->whereNotIn('id', $ids)->delete();
 
         foreach ($lines as $item) {
             if (isset($item['id'])) {
-                $delivery->$relation()->where('id', $item['id'])->update($item);
+                $delivery->lines()->where('id', $item['id'])->update($item);
             } else {
-                $delivery->$relation()->create([
+                $delivery->lines()->create([
                     ...$item,
                     'user_id' => Auth::id(),
                 ]);
             }
+        }
+    }
+
+    private function syncRelatedReceipt(Delivery $delivery, ?array $receipt): void
+    {
+        if ($receipt === null) {
+            $delivery->receipt()->delete();
+            return;
+        }
+
+        if ($delivery->receipt) {
+            $delivery->receipt()->update([
+                ...$receipt,
+                'delivery_id' => $delivery->id,
+                'user_id' => Auth::id(),
+            ]);
+        } else {
+            $delivery->receipt()->create([
+                ...$receipt,
+                'delivery_id' => $delivery->id,
+                'user_id' => Auth::id(),
+            ]);
         }
     }
 

@@ -5,15 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class DeliveryRecipient extends Model
+class DeliveryReceipt extends Model
 {
     use HasFactory;
+    protected $table = 'delivery_receipt';
 
     protected $fillable = [
         'full_name',
         'phone',
         'address',
-        'phone',
+        'state',
         'city',
         'municipality',
         'postal_code',

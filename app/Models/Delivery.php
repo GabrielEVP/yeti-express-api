@@ -70,8 +70,8 @@ class Delivery extends Model
         return $this->hasMany(DeliveryLine::class);
     }
 
-    public function recipients()
+    public function receipt()
     {
-        return $this->hasMany(DeliveryRecipient::class);
+        return $this->hasOne(DeliveryReceipt::class);
     }
 }

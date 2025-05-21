@@ -15,9 +15,9 @@ class EmployerRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'email', 'max:100', 'unique:employers,email'],
+            'email' => ['required', 'email', 'max:100', 'unique:employees,email'],
             'password' => ['required', 'string', 'min:8'],
-            'role' => ['required', 'in:admin,manager,courier,viewer'],
+            'role' => ['required', 'in:admin,basic'],
             'active' => ['boolean']
         ];
     }

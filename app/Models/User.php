@@ -52,7 +52,7 @@ class User extends Authenticatable
         return $this->hasMany(Delivery::class);
     }
 
-    public function employers(): HasMany
+    public function employees(): HasMany
     {
         return $this->hasMany(Employer::class);
     }

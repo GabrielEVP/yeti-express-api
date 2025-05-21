@@ -15,8 +15,8 @@ return new class extends Migration {
             $table->string('legal_name', 100);
             $table->string('registration_number', 50);
             $table->text('notes')->nullable();
+            $table->timestamps();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->timestamp('created_at')->useCurrent();
         });
 
         Schema::create('client_events', function (Blueprint $table) {

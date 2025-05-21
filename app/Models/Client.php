@@ -16,12 +16,6 @@ class Client extends Model
         'user_id'
     ];
 
-    public $timestamps = true;
-
-    protected $casts = [
-        'created_at' => 'datetime',
-    ];
-
     public function user()
     {
         return $this->belongsTo(User::class);

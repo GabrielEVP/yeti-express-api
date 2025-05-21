@@ -20,6 +20,7 @@ return new class extends Migration {
             $table->decimal('total', 10, 2);
             $table->decimal('comision', 10, 2);
             $table->text('notes')->nullable();
+            $table->timestamps();
             $table->foreignId('client_id')->constrained('clients')->onDelete('cascade');
             $table->foreignId('client_address_id')->constrained('client_addresses')->onDelete('cascade');
             $table->foreignId('courier_id')->constrained('couriers')->onDelete('cascade');

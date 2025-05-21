@@ -18,7 +18,7 @@ return new class extends Migration {
             $table->enum('role', ['admin', 'basic']);
             $table->boolean('active')->default(true);
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->timestamp('created_at')->useCurrent();
+            $table->timestamps();
         });
     }
 
@@ -27,6 +27,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('employers');
+        Schema::dropIfExists('employees');
     }
 };

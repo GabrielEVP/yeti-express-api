@@ -17,6 +17,8 @@ return new class extends Migration {
             $table->string('phone', 20);
             $table->decimal('commission', 5, 2);
             $table->boolean('active')->default(true);
+            $table->timestamps();
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
         });
     }
 

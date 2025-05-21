@@ -13,8 +13,8 @@ class EmployerController extends Controller
 {
     public function index(): JsonResponse
     {
-        $employers = Auth::user()->employers()->get();
-        return response()->json($employers, 200);
+        $employees = Auth::user()->employees()->get();
+        return response()->json($employees, 200);
     }
 
     public function show(Employer $employer): JsonResponse
@@ -29,7 +29,7 @@ class EmployerController extends Controller
         $data['user_id'] = Auth::id();
         $data['password'] = Hash::make($request->password);
 
-        $employer = Auth::user()->employers()->create($data);
+        $employer = Auth::user()->employees()->create($data);
         return response()->json($employer, 201);
     }
 

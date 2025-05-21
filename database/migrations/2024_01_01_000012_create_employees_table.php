@@ -10,11 +10,15 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('price_types', function (Blueprint $table) {
+        Schema::create('employees', function (Blueprint $table) {
             $table->id();
-            $table->string('description', 100);
-            $table->decimal('multiplier', 5, 2);
+            $table->string('name', 100);
+            $table->string('email', 100);
+            $table->string('password', 255);
+            $table->enum('role', ['admin', 'basic']);
+            $table->boolean('active')->default(true);
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->timestamp('created_at')->useCurrent();
         });
     }
 
@@ -23,6 +27,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('price_types');
+        Schema::dropIfExists('employers');
     }
 };

@@ -7,10 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ClientEvent extends Model
 {
     protected $fillable = [
-        'client_id',
         'event',
         'reference_table',
         'reference_id',
+        'client_id',
     ];
 
     public function client(): BelongsTo

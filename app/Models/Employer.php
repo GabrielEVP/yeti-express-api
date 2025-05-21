@@ -11,12 +11,12 @@ class Employer extends Model
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        'user_id',
         'name',
         'email',
         'password',
         'role',
-        'active'
+        'active',
+        'user_id',
     ];
 
     public $timestamps = false;

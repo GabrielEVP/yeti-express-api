@@ -12,14 +12,14 @@ return new class extends Migration {
     {
         Schema::create('delivery_recipients', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('delivery_id')->constrained('deliveries')->onDelete('cascade');
             $table->string('full_name');
             $table->string('phone');
-            $table->string('id_number');
-            $table->string('relationship');
-            $table->dateTime('received_at');
-            $table->string('signature_url');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->string('address', 200);
+            $table->string('state', 100);
+            $table->string('city', 100);
+            $table->string('municipality', 100);
+            $table->string('postal_code', 20);
+            $table->foreignId('delivery_id')->constrained('deliveries')->onDelete('cascade');
         });
     }
 

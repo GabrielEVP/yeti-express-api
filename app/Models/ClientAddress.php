@@ -16,7 +16,6 @@ class ClientAddress extends Model
         'municipality',
         'postal_code',
         'client_id',
-        'user_id'
     ];
 
     public $timestamps = false;
@@ -24,11 +23,6 @@ class ClientAddress extends Model
     public function client()
     {
         return $this->belongsTo(Client::class);
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
     }
 
     public function deliveries()

@@ -14,9 +14,8 @@ return new class extends Migration {
             $table->id();
             $table->string('name', 50);
             $table->string('phone', 20);
-            $table->enum('type', ['mobile', 'landline', 'fax']);
+            $table->enum('type', ['work', 'personal']);
             $table->foreignId('client_id')->constrained('clients')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
         });
     }
 

@@ -15,10 +15,8 @@ return new class extends Migration {
             $table->string('first_name', 50);
             $table->string('last_name', 50);
             $table->string('phone', 20);
-            $table->string('email', 100);
             $table->decimal('commission', 5, 2);
             $table->boolean('active')->default(true);
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
         });
     }
 

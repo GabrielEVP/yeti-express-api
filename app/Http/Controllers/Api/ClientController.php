@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\ClientRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\ClientEvent;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use App\Http\Requests\ClientRequest;
 
 class ClientController extends Controller
 {
@@ -47,10 +48,12 @@ class ClientController extends Controller
         return response()->json($clients, 200);
     }
 
-
     public function store(ClientRequest $request)
     {
-        $client = Client::create($request->all());
+        $data = $request->all();
+        $data['user_id'] = Auth::id();
+
+        $client = Client::create($data);
 
         $addresses = $request->input('addresses', []);
         foreach ($addresses as $address) {
@@ -72,23 +75,18 @@ class ClientController extends Controller
 
     public function show(string $id): JsonResponse
     {
-        $client = Client::with([
-            'events' => function ($query) {
-                $query->latest()->limit(5);
-            },
-            'addresses',
-            'phones',
-            'emails',
-        ])->findOrFail($id);
-
+        $client = Client::with(['events', 'addresses', 'phones', 'emails'])->findOrFail($id);
         return response()->json($client, 200);
     }
 
     public function update(ClientRequest $request, string $id)
     {
 
+        $data = $request->all();
+        $data['user_id'] = Auth::id();
+
         $client = Client::findOrFail($id);
-        $client->update($request->all());
+        $client->update($data);
 
         $client->addresses()->delete();
         foreach ($request->input('addresses', []) as $address) {
@@ -104,6 +102,13 @@ class ClientController extends Controller
         foreach ($request->input('emails', []) as $email) {
             $client->emails()->create($email);
         }
+
+        ClientEvent::create([
+            'event' => "update_client",
+            'reference_table' => null,
+            'reference_id' => null,
+            'client_id' => $client->id,
+        ]);
 
         return response()->json($client->load(['addresses', 'phones', 'emails']), 200);
     }

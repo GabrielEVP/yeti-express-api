@@ -14,8 +14,8 @@ class ClientRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'registration_number' => 'required|string|max:255',
             'legal_name' => 'required|string|max:255',
+            'registration_number' => 'required|string|max:255',
             'notes' => 'nullable|string',
             'user_id' => 'nullable|exists:users,id',
             'phones' => 'array',

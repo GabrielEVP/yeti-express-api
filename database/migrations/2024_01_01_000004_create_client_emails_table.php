@@ -13,9 +13,8 @@ return new class extends Migration {
         Schema::create('client_emails', function (Blueprint $table) {
             $table->id();
             $table->string('email', 100);
-            $table->enum('type', ['personal', 'work', 'other']);
+            $table->enum('type', ['work', 'personal']);
             $table->foreignId('client_id')->constrained('clients')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
         });
     }
 

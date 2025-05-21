@@ -10,14 +10,13 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('delivery_items', function (Blueprint $table) {
+        Schema::create('delivery_lines', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('delivery_id')->constrained('deliveries')->onDelete('cascade');
             $table->string('description');
             $table->integer('quantity');
             $table->decimal('unit_price', 10, 2);
             $table->decimal('total', 10, 2);
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('delivery_id')->constrained('deliveries')->onDelete('cascade');
         });
     }
 

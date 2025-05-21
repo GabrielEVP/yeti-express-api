@@ -12,10 +12,8 @@ return new class extends Migration {
     {
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
-            $table->string('registration_number', 50);
             $table->string('legal_name', 100);
-            $table->enum('type', ['individual', 'company']);
-            $table->string('currency', 3)->default('EUR');
+            $table->string('registration_number', 50);
             $table->text('notes')->nullable();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->timestamp('created_at')->useCurrent();

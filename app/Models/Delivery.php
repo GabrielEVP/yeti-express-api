@@ -10,22 +10,23 @@ class Delivery extends Model
     use HasFactory;
 
     protected $fillable = [
+        'number',
+        'date',
+        'status',
+        'currency',
+        'payment_type',
+        'total',
+        'comision',
+        'notes',
         'client_id',
         'client_address_id',
-        'payment_id',
-        'prices_id',
         'courier_id',
-        'delivery_date',
-        'total_amount',
-        'comision',
         'open_box_id',
         'close_box_id',
-        'status',
-        'notes',
-        'user_id'
+        'user_id',
     ];
 
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $casts = [
         'delivery_date' => 'datetime',
@@ -49,16 +50,6 @@ class Delivery extends Model
         return $this->belongsTo(ClientAddress::class);
     }
 
-    public function paymentType()
-    {
-        return $this->belongsTo(PaymentType::class, 'payment_id');
-    }
-
-    public function priceType()
-    {
-        return $this->belongsTo(PriceType::class, 'prices_id');
-    }
-
     public function courier()
     {
         return $this->belongsTo(Courier::class);
@@ -74,9 +65,9 @@ class Delivery extends Model
         return $this->belongsTo(Box::class, 'close_box_id');
     }
 
-    public function items()
+    public function lines()
     {
-        return $this->hasMany(DeliveryItem::class);
+        return $this->hasMany(DeliveryLine::class);
     }
 
     public function recipients()

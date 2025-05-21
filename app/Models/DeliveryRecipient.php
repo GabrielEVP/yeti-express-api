@@ -10,14 +10,14 @@ class DeliveryRecipient extends Model
     use HasFactory;
 
     protected $fillable = [
-        'delivery_id',
         'full_name',
         'phone',
-        'id_number',
-        'relationship',
-        'received_at',
-        'signature_url',
-        'user_id'
+        'address',
+        'phone',
+        'city',
+        'municipality',
+        'postal_code',
+        'delevery_id',
     ];
 
     public $timestamps = false;
@@ -29,10 +29,5 @@ class DeliveryRecipient extends Model
     public function delivery()
     {
         return $this->belongsTo(Delivery::class);
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
     }
 }

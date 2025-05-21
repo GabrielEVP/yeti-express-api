@@ -10,14 +10,13 @@ class Client extends Model
     use HasFactory;
 
     protected $fillable = [
-        'registration_number',
         'legal_name',
-        'currency',
+        'registration_number',
         'notes',
         'user_id'
     ];
 
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $casts = [
         'created_at' => 'datetime',

@@ -17,7 +17,6 @@ class CourierRequest extends FormRequest
             'first_name' => ['required', 'string', 'max:50'],
             'last_name' => ['required', 'string', 'max:50'],
             'phone' => ['required', 'string', 'max:20'],
-            'email' => ['required', 'email', 'max:100'],
             'commission' => ['required', 'numeric', 'between:0,100'],
             'active' => ['boolean']
         ];

@@ -14,7 +14,6 @@ class ClientPhone extends Model
         'phone',
         'type',
         'client_id',
-        'user_id'
     ];
 
     public $timestamps = false;
@@ -26,10 +25,5 @@ class ClientPhone extends Model
     public function client()
     {
         return $this->belongsTo(Client::class);
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
     }
 }

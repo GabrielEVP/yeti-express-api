@@ -13,13 +13,12 @@ class Courier extends Model
         'first_name',
         'last_name',
         'phone',
-        'email',
         'commission',
         'active',
         'user_id'
     ];
 
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $casts = [
         'commission' => 'decimal:2',

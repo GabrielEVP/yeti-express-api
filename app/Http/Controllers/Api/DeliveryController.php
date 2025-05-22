@@ -115,7 +115,6 @@ class DeliveryController extends Controller
             } else {
                 $delivery->lines()->create([
                     ...$item,
-                    'user_id' => Auth::id(),
                 ]);
             }
         }
@@ -132,13 +131,11 @@ class DeliveryController extends Controller
             $delivery->receipt()->update([
                 ...$receipt,
                 'delivery_id' => $delivery->id,
-                'user_id' => Auth::id(),
             ]);
         } else {
             $delivery->receipt()->create([
                 ...$receipt,
                 'delivery_id' => $delivery->id,
-                'user_id' => Auth::id(),
             ]);
         }
     }

@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('deliveries', function (Blueprint $table) {
             $table->id();
             $table->string('number', 100);
-            $table->dateTime('date');
+            $table->date('date');
             $table->enum('status', ['pending', 'in_transit', 'delivered', 'cancelled']);
             $table->enum('currency', ['USD', 'BOV', 'OTH']);
             $table->enum('payment_type', ['partial', 'full']);

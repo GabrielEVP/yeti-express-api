@@ -20,6 +20,15 @@ return new class extends Migration {
             $table->timestamps();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
         });
+
+        Schema::create('courier_events', function (Blueprint $table) {
+            $table->id();
+            $table->string('event');
+            $table->string('reference_table')->nullable();
+            $table->unsignedBigInteger('reference_id')->nullable();
+            $table->timestamps();
+            $table->foreignId('courier_id')->constrained()->onDelete('cascade');
+        });
     }
 
     /**

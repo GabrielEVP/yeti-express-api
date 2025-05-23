@@ -4,7 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DeliveryRequest;
+use App\Http\Requests\DeliveryStatusRequest;
+use App\Http\Requests\DeliveryCourierPaymentRequest;
+use App\Http\Requests\DeliveryClientPaymentRequest;
+
 use App\Models\Delivery;
+use App\Models\DeliveryEvent;
+use App\Models\ClientEvent;
+use App\Models\CourierEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -46,9 +53,23 @@ class DeliveryController extends Controller
         $this->syncRelatedLines($delivery, $request->input('lines', []));
         $this->syncRelatedReceipt($delivery, $request->input('receipt'));
 
+        ClientEvent::create([
+            'event' => "create_delivery",
+            'reference_table' => "deliveries",
+            'reference_id' => $delivery->id,
+            'client_id' => $delivery->client->id,
+        ]);
+
+        CourierEvent::create([
+            'event' => "create_delivery",
+            'reference_table' => "deliveries",
+            'reference_id' => $delivery->id,
+            'courier_id' => $delivery->courier->id,
+        ]);
+
         return response()->json(
             $delivery->load($this->relations),
-            201
+            200
         );
     }
 
@@ -76,6 +97,27 @@ class DeliveryController extends Controller
             $this->syncRelatedReceipt($delivery, $request->input('receipt'));
         }
 
+        DeliveryEvent::create([
+            'event' => "update_delivery",
+            'reference_table' => null,
+            'reference_id' => null,
+            'client_id' => $delivery->id,
+        ]);
+
+        ClientEvent::create([
+            'event' => "update_delivery",
+            'reference_table' => "deliveries",
+            'reference_id' => $delivery->id,
+            'client_id' => $delivery->client->id,
+        ]);
+
+        CourierEvent::create([
+            'event' => "update_delivery",
+            'reference_table' => "deliveries",
+            'reference_id' => $delivery->id,
+            'courier_id' => $delivery->courier->id,
+        ]);
+
         return response()->json(
             $delivery->load($this->relations),
             200
@@ -101,6 +143,91 @@ class DeliveryController extends Controller
             ->get();
 
         return response()->json($delivery, 200);
+    }
+
+    public function updateStatus(DeliveryStatusRequest $request, Delivery $delivery): JsonResponse
+    {
+        $this->authorizeOwner($delivery);
+
+        $delivery->update([
+            'status' => $request->input('status')
+        ]);
+
+        DeliveryEvent::create([
+            'event' => "status_updated",
+            'reference_table' => "deliveries",
+            'reference_id' => $delivery->id,
+            'delivery_id' => $delivery->id,
+        ]);
+
+        return response()->json(
+            $delivery->load($this->relations),
+            200
+        );
+    }
+
+    public function storeClientPayment(DeliveryClientPaymentRequest $request, Delivery $delivery): JsonResponse
+    {
+        $this->authorizeOwner($delivery);
+
+        $payment = $delivery->clientPayments()->create([
+            'date' => $request->input('date'),
+            'method' => $request->input('method'),
+            'amount' => $request->input('amount'),
+            'user_id' => Auth::id(),
+        ]);
+
+        DeliveryEvent::create([
+            'event' => "client_payment_added",
+            'reference_table' => "delivery_client_payments",
+            'reference_id' => $payment->id,
+            'delivery_id' => $delivery->id,
+        ]);
+
+        ClientEvent::create([
+            'event' => "client_payment_added",
+            'reference_table' => "delivery_client_payments",
+            'reference_id' => $payment->id,
+            'client_id' => $delivery->client->id,
+        ]);
+
+
+        return response()->json(
+            $payment,
+            200
+        );
+    }
+
+    public function storeCourierPayment(DeliveryCourierPaymentRequest $request, Delivery $delivery): JsonResponse
+    {
+        $this->authorizeOwner($delivery);
+
+        $payment = $delivery->courierPayments()->create([
+            'date' => $request->input('date'),
+            'method' => $request->input('method'),
+            'amount' => $request->input('amount'),
+            'user_id' => Auth::id(),
+        ]);
+
+        DeliveryEvent::create([
+            'event' => "courier_payment_added",
+            'reference_table' => "delivery_courier_payments",
+            'reference_id' => $payment->id,
+            'delivery_id' => $delivery->id,
+        ]);
+
+        CourierEvent::create([
+            'event' => "courier_payment_added",
+            'reference_table' => "delivery_courier_payments",
+            'reference_id' => $payment->id,
+            'courier_id' => $delivery->courier->id,
+        ]);
+
+
+        return response()->json(
+            $payment,
+            200
+        );
     }
 
     private function syncRelatedLines(Delivery $delivery, array $lines): void

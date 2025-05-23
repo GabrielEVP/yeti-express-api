@@ -28,6 +28,15 @@ return new class extends Migration {
             $table->foreignId('close_box_id')->nullable()->constrained('box')->onDelete('set null');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
         });
+
+        Schema::create('delivery_events', function (Blueprint $table) {
+            $table->id();
+            $table->string('event');
+            $table->string('reference_table')->nullable();
+            $table->unsignedBigInteger('reference_id')->nullable();
+            $table->timestamps();
+            $table->foreignId('delivery_id')->constrained()->onDelete('cascade');
+        });
     }
 
     /**

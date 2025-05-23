@@ -20,6 +20,15 @@ return new class extends Migration {
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
+
+        Schema::create('employer_events', function (Blueprint $table) {
+            $table->id();
+            $table->string('event');
+            $table->string('reference_table')->nullable();
+            $table->unsignedBigInteger('reference_id')->nullable();
+            $table->timestamps();
+            $table->foreignId('employer_id')->constrained()->onDelete('cascade');
+        });
     }
 
     /**

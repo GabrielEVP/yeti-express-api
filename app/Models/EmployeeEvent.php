@@ -6,21 +6,21 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class EmployerEvent extends Model
+class employeeEvent extends Model
 {
     use HasFactory;
 
-    protected $table = 'employer_events';
+    protected $table = 'employee_events';
 
     protected $fillable = [
         'event',
         'reference_table',
         'reference_id',
-        'employer_id',
+        'employee_id',
     ];
 
-    public function employer(): BelongsTo
+    public function employee(): BelongsTo
     {
-        return $this->belongsTo(Employer::class);
+        return $this->belongsTo(employee::class);
     }
 }

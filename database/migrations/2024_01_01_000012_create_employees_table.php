@@ -21,13 +21,13 @@ return new class extends Migration {
             $table->timestamps();
         });
 
-        Schema::create('employer_events', function (Blueprint $table) {
+        Schema::create('employee_events', function (Blueprint $table) {
             $table->id();
             $table->string('event');
             $table->string('reference_table')->nullable();
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->timestamps();
-            $table->foreignId('employer_id')->constrained()->onDelete('cascade');
+            $table->foreignId('employee_id')->constrained()->onDelete('cascade');
         });
     }
 

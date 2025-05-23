@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\ProfileImageController;
 use App\Http\Controllers\Api\CourierController;
 use App\Http\Controllers\Api\BoxController;
 use App\Http\Controllers\Api\DeliveryController;
-use App\Http\Controllers\Api\EmployerController;
+use App\Http\Controllers\Api\employeeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -28,7 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::resource('couriers', CourierController::class);
     Route::resource('boxes', BoxController::class);
     Route::resource('deliveries', DeliveryController::class);
-    Route::resource('employees', EmployerController::class);
+    Route::resource('employees', employeeController::class);
 
     Route::get('/clients/search/{query}', [ClientController::class, 'search']);
 

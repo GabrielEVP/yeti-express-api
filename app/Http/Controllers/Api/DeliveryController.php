@@ -128,7 +128,6 @@ class DeliveryController extends Controller
         $delivery = Delivery::with(['lines', 'receipt'])
             ->where('client_id', $clientId)
             ->orderBy('date', 'desc')
-            ->take(5)
             ->get();
 
         return response()->json($delivery, 200);
@@ -139,7 +138,6 @@ class DeliveryController extends Controller
         $delivery = Delivery::with(['lines', 'receipt'])
             ->where('courier_id', $courier_id)
             ->orderBy('date', 'desc')
-            ->take(5)
             ->get();
 
         return response()->json($delivery, 200);

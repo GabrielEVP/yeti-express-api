@@ -25,6 +25,11 @@ class Courier extends Model
         'active' => 'boolean'
     ];
 
+    public function events()
+    {
+        return $this->hasMany(CourierEvent::class);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

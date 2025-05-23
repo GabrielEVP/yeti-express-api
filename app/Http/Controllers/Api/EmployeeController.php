@@ -48,6 +48,7 @@ class employeeController extends Controller
 
         employeeEvent::create([
             'event' => "update_employee",
+            "section" => "employees",
             'reference_table' => null,
             'reference_id' => null,
             'client_id' => $employee->id,

@@ -20,6 +20,7 @@ class DeliveryController extends Controller
     private array $relations = [
         'client',
         'clientAddress',
+        'events',
         'courier',
         'openBox',
         'closeBox',
@@ -55,6 +56,7 @@ class DeliveryController extends Controller
 
         ClientEvent::create([
             'event' => "create_delivery",
+            "section" => "clients",
             'reference_table' => "deliveries",
             'reference_id' => $delivery->id,
             'client_id' => $delivery->client->id,
@@ -62,6 +64,7 @@ class DeliveryController extends Controller
 
         CourierEvent::create([
             'event' => "create_delivery",
+            "section" => "couries",
             'reference_table' => "deliveries",
             'reference_id' => $delivery->id,
             'courier_id' => $delivery->courier->id,
@@ -99,13 +102,15 @@ class DeliveryController extends Controller
 
         DeliveryEvent::create([
             'event' => "update_delivery",
+            "section" => "deliveries",
             'reference_table' => null,
             'reference_id' => null,
-            'client_id' => $delivery->id,
+            'delivery_id' => $delivery->id,
         ]);
 
         ClientEvent::create([
             'event' => "update_delivery",
+            "section" => "clients",
             'reference_table' => "deliveries",
             'reference_id' => $delivery->id,
             'client_id' => $delivery->client->id,
@@ -113,6 +118,7 @@ class DeliveryController extends Controller
 
         CourierEvent::create([
             'event' => "update_delivery",
+            "section" => "couries",
             'reference_table' => "deliveries",
             'reference_id' => $delivery->id,
             'courier_id' => $delivery->courier->id,
@@ -155,7 +161,8 @@ class DeliveryController extends Controller
 
         DeliveryEvent::create([
             'event' => "status_updated",
-            'reference_table' => "deliveries",
+            "section" => "deliveries",
+            'reference_table' => "clients",
             'reference_id' => $delivery->id,
             'delivery_id' => $delivery->id,
         ]);
@@ -179,6 +186,7 @@ class DeliveryController extends Controller
 
         DeliveryEvent::create([
             'event' => "client_payment_added",
+            "section" => "deliveries",
             'reference_table' => "delivery_client_payments",
             'reference_id' => $payment->id,
             'delivery_id' => $delivery->id,
@@ -186,6 +194,7 @@ class DeliveryController extends Controller
 
         ClientEvent::create([
             'event' => "client_payment_added",
+            "section" => "clients",
             'reference_table' => "delivery_client_payments",
             'reference_id' => $payment->id,
             'client_id' => $delivery->client->id,
@@ -211,6 +220,7 @@ class DeliveryController extends Controller
 
         DeliveryEvent::create([
             'event' => "courier_payment_added",
+            "section" => "deliveries",
             'reference_table' => "delivery_courier_payments",
             'reference_id' => $payment->id,
             'delivery_id' => $delivery->id,
@@ -218,6 +228,7 @@ class DeliveryController extends Controller
 
         CourierEvent::create([
             'event' => "courier_payment_added",
+            "section" => "couriers",
             'reference_table' => "delivery_courier_payments",
             'reference_id' => $payment->id,
             'courier_id' => $delivery->courier->id,

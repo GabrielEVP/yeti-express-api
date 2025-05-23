@@ -14,6 +14,7 @@ class employeeEvent extends Model
 
     protected $fillable = [
         'event',
+        'section',
         'reference_table',
         'reference_id',
         'employee_id',

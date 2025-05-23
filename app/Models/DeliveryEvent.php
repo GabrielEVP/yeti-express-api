@@ -14,6 +14,7 @@ class DeliveryEvent extends Model
 
     protected $fillable = [
         'event',
+        'section',
         'reference_table',
         'reference_id',
         'delivery_id',

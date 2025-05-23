@@ -105,6 +105,7 @@ class ClientController extends Controller
 
         ClientEvent::create([
             'event' => "update_client",
+            "section" => "clients",
             'reference_table' => null,
             'reference_id' => null,
             'client_id' => $client->id,

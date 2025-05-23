@@ -43,9 +43,10 @@ class CourierController extends Controller
 
         CourierEvent::create([
             'event' => "update_courier",
+            "section" => "couriers",
             'reference_table' => null,
             'reference_id' => null,
-            'client_id' => $courier->id,
+            'courier_id' => $courier->id,
         ]);
 
         return response()->json($courier, 200);

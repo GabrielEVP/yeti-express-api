@@ -8,6 +8,7 @@ class ClientEvent extends Model
 {
     protected $fillable = [
         'event',
+        'section',
         'reference_table',
         'reference_id',
         'client_id',

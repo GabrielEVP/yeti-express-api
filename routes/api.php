@@ -33,6 +33,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/clients/search/{query}', [ClientController::class, 'search']);
 
     Route::get('/deliveries/clients/{clientId}', [DeliveryController::class, 'latestByClient']);
+    Route::get('/deliveries/couriers/{courier_id}', [DeliveryController::class, 'latestByCourier']);
+
     Route::put('/deliveries/{delivery}/status', [DeliveryController::class, 'updateStatus']);
     Route::post('/deliveries/{delivery}/client-payments', [DeliveryController::class, 'storeClientPayment']);
     Route::post('/deliveries/{delivery}/courier-payments', [DeliveryController::class, 'storeCourierPayment']);

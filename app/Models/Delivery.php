@@ -50,10 +50,6 @@ class Delivery extends Model
         return $this->belongsTo(ClientAddress::class);
     }
 
-    public function events()
-    {
-        return $this->hasMany(DeliveryEvent::class);
-    }
 
     public function courier()
     {
@@ -78,5 +74,10 @@ class Delivery extends Model
     public function receipt()
     {
         return $this->hasOne(DeliveryReceipt::class);
+    }
+
+    public function events()
+    {
+        return $this->hasMany(DeliveryEvent::class)->latest()->limit(7);
     }
 }

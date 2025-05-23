@@ -79,7 +79,6 @@ class DeliveryController extends Controller
     public function show(Delivery $delivery): JsonResponse
     {
         $this->authorizeOwner($delivery);
-
         return response()->json($delivery->load($this->relations), 200);
     }
 
@@ -106,22 +105,6 @@ class DeliveryController extends Controller
             'reference_table' => null,
             'reference_id' => null,
             'delivery_id' => $delivery->id,
-        ]);
-
-        ClientEvent::create([
-            'event' => "update_delivery",
-            "section" => "clients",
-            'reference_table' => "deliveries",
-            'reference_id' => $delivery->id,
-            'client_id' => $delivery->client->id,
-        ]);
-
-        CourierEvent::create([
-            'event' => "update_delivery",
-            "section" => "couries",
-            'reference_table' => "deliveries",
-            'reference_id' => $delivery->id,
-            'courier_id' => $delivery->courier->id,
         ]);
 
         return response()->json(
@@ -151,6 +134,16 @@ class DeliveryController extends Controller
         return response()->json($delivery, 200);
     }
 
+    public function latestByCourier(string $courier_id): JsonResponse
+    {
+        $delivery = Delivery::with(['lines', 'receipt'])
+            ->where('courier_id', $courier_id)
+            ->orderBy('date', 'desc')
+            ->take(5)
+            ->get();
+
+        return response()->json($delivery, 200);
+    }
     public function updateStatus(DeliveryStatusRequest $request, Delivery $delivery): JsonResponse
     {
         $this->authorizeOwner($delivery);

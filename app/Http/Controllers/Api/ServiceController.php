@@ -53,6 +53,7 @@ class ServiceController extends Controller
     public function store(ServiceRequest $request): JsonResponse
     {
         $data = $request->only(["name", "description", "amount", "comision"]);
+        $data['user_id'] = $request->user()->id;
         $service = Service::create($data);
 
         $bills = $request->input("bills", []);
@@ -73,7 +74,10 @@ class ServiceController extends Controller
     {
         $service = Service::findOrFail($id);
         $service->update(
-            $request->only(["name", "description", "amount", "comision"])
+            array_merge(
+                $request->only(["name", "description", "amount", "comision"]),
+                ['user_id' => $request->user()->id]
+            )
         );
 
         $service->bills()->delete();

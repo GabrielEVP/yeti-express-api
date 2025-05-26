@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-class employee extends Model
+
+class Employee extends Model
 {
     use HasApiTokens, HasFactory, Notifiable;
     protected $table = 'employees';
@@ -20,7 +21,6 @@ class employee extends Model
         'user_id',
     ];
 
-    public $timestamps = false;
 
     protected $hidden = [
         'password'
@@ -40,6 +40,6 @@ class employee extends Model
 
     public function events()
     {
-        return $this->hasMany(employeeEvent::class);
+        return $this->hasMany(EmployeeEvent::class);
     }
 }

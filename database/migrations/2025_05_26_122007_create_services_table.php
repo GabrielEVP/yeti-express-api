@@ -8,18 +8,22 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create("services", function (Blueprint $table) {
-            $table->uuid("id")->primary();
+            $table->id();
             $table->string("name");
             $table->text("description")->nullable();
             $table->decimal("amount", 10, 2);
             $table->decimal("comision", 10, 2);
+            $table
+                ->foreignId("user_id")
+                ->constrained("users")
+                ->onDelete("cascade");
             $table->timestamps();
         });
 
         Schema::create("bills", function (Blueprint $table) {
             $table->id();
             $table
-                ->foreignUuid("service_id")
+                ->foreignId("service_id")
                 ->constrained("services")
                 ->onDelete("cascade");
             $table->string("name");

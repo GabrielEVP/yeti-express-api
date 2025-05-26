@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\employeeRequest;
-use App\Models\employee;
-use App\Models\employeeEvent;
+use App\Http\Requests\EmployeeRequest;
+use App\Models\Employee;
+use App\Models\EmployeeEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
-class employeeController extends Controller
+class EmployeeController extends Controller
 {
     public function index(): JsonResponse
     {
@@ -18,13 +18,13 @@ class employeeController extends Controller
         return response()->json($employees, 200);
     }
 
-    public function show(employee $employee): JsonResponse
+    public function show(Employee $employee): JsonResponse
     {
         $this->authorizeOwner($employee);
         return response()->json($employee, 200);
     }
 
-    public function store(employeeRequest $request): JsonResponse
+    public function store(EmployeeRequest $request): JsonResponse
     {
         $data = $request->safe()->except('password');
         $data['user_id'] = Auth::id();
@@ -34,7 +34,7 @@ class employeeController extends Controller
         return response()->json($employee, 201);
     }
 
-    public function update(employeeRequest $request, employee $employee): JsonResponse
+    public function update(EmployeeRequest $request, Employee $employee): JsonResponse
     {
         $this->authorizeOwner($employee);
         $data = $request->safe()->except('password');
@@ -46,7 +46,7 @@ class employeeController extends Controller
 
         $employee->update($data);
 
-        employeeEvent::create([
+        EmployeeEvent::create([
             'event' => "update_employee",
             "section" => "employees",
             'reference_table' => null,
@@ -57,14 +57,14 @@ class employeeController extends Controller
         return response()->json($employee, 200);
     }
 
-    public function destroy(employee $employee): JsonResponse
+    public function destroy(Employee $employee): JsonResponse
     {
         $this->authorizeOwner($employee);
         $employee->delete();
         return response()->json(['message' => "employee with ID {$employee->id} has been deleted"], 200);
     }
 
-    private function authorizeOwner(employee $employee): void
+    private function authorizeOwner(Employee $employee): void
     {
         abort_if($employee->user_id !== Auth::id(), 403, 'No tienes permiso para acceder a este empleado.');
     }

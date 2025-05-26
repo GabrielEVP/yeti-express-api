@@ -7,11 +7,9 @@ use App\Http\Requests\DeliveryRequest;
 use App\Http\Requests\DeliveryStatusRequest;
 use App\Http\Requests\DeliveryCourierPaymentRequest;
 use App\Http\Requests\DeliveryClientPaymentRequest;
-
 use App\Models\Delivery;
 use App\Models\DeliveryEvent;
 use App\Models\ClientEvent;
-use App\Models\CourierEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -60,14 +58,6 @@ class DeliveryController extends Controller
             'reference_table' => "deliveries",
             'reference_id' => $delivery->id,
             'client_id' => $delivery->client->id,
-        ]);
-
-        CourierEvent::create([
-            'event' => "create_delivery",
-            "section" => "couries",
-            'reference_table' => "deliveries",
-            'reference_id' => $delivery->id,
-            'courier_id' => $delivery->courier->id,
         ]);
 
         return response()->json(
@@ -216,15 +206,6 @@ class DeliveryController extends Controller
             'reference_id' => $payment->id,
             'delivery_id' => $delivery->id,
         ]);
-
-        CourierEvent::create([
-            'event' => "courier_payment_added",
-            "section" => "couriers",
-            'reference_table' => "delivery_courier_payments",
-            'reference_id' => $payment->id,
-            'courier_id' => $delivery->courier->id,
-        ]);
-
 
         return response()->json(
             $payment,

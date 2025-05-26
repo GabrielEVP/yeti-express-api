@@ -22,7 +22,6 @@ class DeliveryController extends Controller
         'courier',
         'openBox',
         'closeBox',
-        'lines',
         'receipt'
     ];
 
@@ -38,7 +37,7 @@ class DeliveryController extends Controller
 
     public function store(DeliveryRequest $request): JsonResponse
     {
-        $data = $request->safe()->except(['lines', 'receipt']);
+        $data = $request->safe()->except(['receipt']);
         $data['user_id'] = Auth::id();
 
         $lastNumber = Delivery::max('id') ?? 0;
@@ -49,7 +48,6 @@ class DeliveryController extends Controller
             ->deliveries()
             ->create($data);
 
-        $this->syncRelatedLines($delivery, $request->input('lines', []));
         $this->syncRelatedReceipt($delivery, $request->input('receipt'));
 
         ClientEvent::create([
@@ -76,14 +74,12 @@ class DeliveryController extends Controller
     {
         $this->authorizeOwner($delivery);
 
-        $data = $request->safe()->except(['lines', 'receipt']);
+        $data = $request->safe()->except(['receipt']);
         $data['user_id'] = Auth::id();
 
         $delivery->update($data);
 
-        if ($request->has('lines')) {
-            $this->syncRelatedLines($delivery, $request->input('lines', []));
-        }
+
 
         if ($request->has('receipt')) {
             $this->syncRelatedReceipt($delivery, $request->input('receipt'));
@@ -115,7 +111,7 @@ class DeliveryController extends Controller
 
     public function latestByClient(string $clientId): JsonResponse
     {
-        $delivery = Delivery::with(['lines', 'receipt'])
+        $delivery = Delivery::with(['receipt'])
             ->where('client_id', $clientId)
             ->orderBy('date', 'desc')
             ->get();
@@ -125,7 +121,7 @@ class DeliveryController extends Controller
 
     public function latestByCourier(string $courier_id): JsonResponse
     {
-        $delivery = Delivery::with(['lines', 'receipt'])
+        $delivery = Delivery::with(['receipt'])
             ->where('courier_id', $courier_id)
             ->orderBy('date', 'desc')
             ->get();
@@ -211,23 +207,6 @@ class DeliveryController extends Controller
             $payment,
             200
         );
-    }
-
-    private function syncRelatedLines(Delivery $delivery, array $lines): void
-    {
-        $ids = collect($lines)->pluck('id')->filter();
-
-        $delivery->lines()->whereNotIn('id', $ids)->delete();
-
-        foreach ($lines as $item) {
-            if (isset($item['id'])) {
-                $delivery->lines()->where('id', $item['id'])->update($item);
-            } else {
-                $delivery->lines()->create([
-                    ...$item,
-                ]);
-            }
-        }
     }
 
     private function syncRelatedReceipt(Delivery $delivery, ?array $receipt): void

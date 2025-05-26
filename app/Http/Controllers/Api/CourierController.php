@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CourierRequest;
 use App\Models\Courier;
-use App\Models\CourierEvent;
-
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -40,14 +38,6 @@ class CourierController extends Controller
         $data = $request->all();
         $data['user_id'] = Auth::id();
         $courier->update($data);
-
-        CourierEvent::create([
-            'event' => "update_courier",
-            "section" => "couriers",
-            'reference_table' => null,
-            'reference_id' => null,
-            'courier_id' => $courier->id,
-        ]);
 
         return response()->json($courier, 200);
 

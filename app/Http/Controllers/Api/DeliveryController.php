@@ -39,6 +39,7 @@ class DeliveryController extends Controller
     {
         $data = $request->safe()->except(['receipt']);
         $data['user_id'] = Auth::id();
+        $data['date'] = now()->toDateString();
 
         $lastNumber = Delivery::max('id') ?? 0;
         $nextNumber = $lastNumber + 1;

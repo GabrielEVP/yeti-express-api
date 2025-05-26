@@ -15,6 +15,7 @@ class Delivery extends Model
         "status",
         "payment_type",
         "notes",
+        "service_id",
         "client_id",
         "client_address_id",
         "courier_id",

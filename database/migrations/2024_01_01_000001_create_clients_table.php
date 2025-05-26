@@ -10,23 +10,35 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('clients', function (Blueprint $table) {
+        Schema::create("clients", function (Blueprint $table) {
             $table->id();
-            $table->string('legal_name', 100);
-            $table->string('registration_number', 50);
-            $table->text('notes')->nullable();
+            $table->string("legal_name", 100);
+            $table->enum("type", [
+                "venezolano",
+                "foreing",
+                "legal",
+                "commune",
+                "government",
+                "pasaport",
+                "personal_signature",
+            ]);
+            $table->string("registration_number", 50);
+            $table->text("notes")->nullable();
             $table->timestamps();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table
+                ->foreignId("user_id")
+                ->constrained("users")
+                ->onDelete("cascade");
         });
 
-        Schema::create('client_events', function (Blueprint $table) {
+        Schema::create("client_events", function (Blueprint $table) {
             $table->id();
-            $table->string('event');
-            $table->string('section');
-            $table->string('reference_table')->nullable();
-            $table->unsignedBigInteger('reference_id')->nullable();
+            $table->string("event");
+            $table->string("section");
+            $table->string("reference_table")->nullable();
+            $table->unsignedBigInteger("reference_id")->nullable();
             $table->timestamps();
-            $table->foreignId('client_id')->constrained()->onDelete('cascade');
+            $table->foreignId("client_id")->constrained()->onDelete("cascade");
         });
     }
 
@@ -35,6 +47,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('clients');
+        Schema::dropIfExists("clients");
     }
 };

@@ -8,23 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class DeliveryReceipt extends Model
 {
     use HasFactory;
-    protected $table = 'delivery_receipt';
+    protected $table = "delivery_receipt";
 
-    protected $fillable = [
-        'full_name',
-        'phone',
-        'address',
-        'state',
-        'city',
-        'municipality',
-        'postal_code',
-        'delevery_id',
-    ];
+    protected $fillable = ["full_name", "phone", "address", "delevery_id"];
 
     public $timestamps = false;
 
     protected $casts = [
-        'received_at' => 'datetime'
+        "received_at" => "datetime",
     ];
 
     public function delivery()

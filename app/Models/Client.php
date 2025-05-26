@@ -10,10 +10,11 @@ class Client extends Model
     use HasFactory;
 
     protected $fillable = [
-        'legal_name',
-        'registration_number',
-        'notes',
-        'user_id'
+        "legal_name",
+        "type",
+        "registration_number",
+        "notes",
+        "user_id",
     ];
 
     public function user()
@@ -21,12 +22,10 @@ class Client extends Model
         return $this->belongsTo(User::class);
     }
 
-
     public function events()
     {
         return $this->hasMany(ClientEvent::class)->latest()->limit(3);
     }
-
 
     public function addresses()
     {

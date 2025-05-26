@@ -10,11 +10,13 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('client_emails', function (Blueprint $table) {
+        Schema::create("client_emails", function (Blueprint $table) {
             $table->id();
-            $table->string('email', 100);
-            $table->enum('type', ['work', 'personal']);
-            $table->foreignId('client_id')->constrained('clients')->onDelete('cascade');
+            $table->string("email", 100);
+            $table
+                ->foreignId("client_id")
+                ->constrained("clients")
+                ->onDelete("cascade");
         });
     }
 
@@ -23,6 +25,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('client_emails');
+        Schema::dropIfExists("client_emails");
     }
 };

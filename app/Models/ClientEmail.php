@@ -11,7 +11,6 @@ class ClientEmail extends Model
 
     protected $fillable = [
         'email',
-        'type',
         'client_id',
     ];
 

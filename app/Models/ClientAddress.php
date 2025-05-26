@@ -9,14 +9,7 @@ class ClientAddress extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'address',
-        'city',
-        'state',
-        'municipality',
-        'postal_code',
-        'client_id',
-    ];
+    protected $fillable = ["address", "client_id"];
 
     public $timestamps = false;
 

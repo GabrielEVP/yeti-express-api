@@ -14,11 +14,10 @@ class CourierRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => ['required', 'string', 'max:50'],
-            'last_name' => ['required', 'string', 'max:50'],
-            'phone' => ['required', 'string', 'max:20'],
-            'commission' => ['required', 'numeric', 'between:0,100'],
-            'active' => ['boolean']
+            "first_name" => ["required", "string", "max:50"],
+            "last_name" => ["required", "string", "max:50"],
+            "phone" => ["required", "string", "max:20"],
+            "active" => ["boolean"],
         ];
     }
 }

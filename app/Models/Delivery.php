@@ -10,34 +10,34 @@ class Delivery extends Model
     use HasFactory;
 
     protected $fillable = [
-        'number',
-        'date',
-        'status',
-        'currency',
-        'payment_type',
-        'total',
-        'comision',
-        'notes',
-        'client_id',
-        'client_address_id',
-        'courier_id',
-        'open_box_id',
-        'close_box_id',
-        'user_id',
+        "number",
+        "date",
+        "status",
+        "payment_type",
+        "notes",
+        "client_id",
+        "client_address_id",
+        "courier_id",
+        "open_box_id",
+        "close_box_id",
+        "user_id",
     ];
 
     public $timestamps = true;
 
     protected $casts = [
-        'delivery_date' => 'datetime',
-        'total_amount' => 'decimal:2',
-        'comision' => 'decimal:2',
-        'status' => 'string'
+        "delivery_date" => "datetime",
+        "status" => "string",
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function service()
+    {
+        return $this->belongsTo(Service::class);
     }
 
     public function client()
@@ -50,7 +50,6 @@ class Delivery extends Model
         return $this->belongsTo(ClientAddress::class);
     }
 
-
     public function courier()
     {
         return $this->belongsTo(Courier::class);
@@ -58,17 +57,12 @@ class Delivery extends Model
 
     public function openBox()
     {
-        return $this->belongsTo(Box::class, 'open_box_id');
+        return $this->belongsTo(Box::class, "open_box_id");
     }
 
     public function closeBox()
     {
-        return $this->belongsTo(Box::class, 'close_box_id');
-    }
-
-    public function lines()
-    {
-        return $this->hasMany(DeliveryLine::class);
+        return $this->belongsTo(Box::class, "close_box_id");
     }
 
     public function receipt()

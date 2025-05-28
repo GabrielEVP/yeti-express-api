@@ -35,9 +35,16 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::resource("services", ServiceController::class);
 
     Route::get("/clients/search/{query}", [ClientController::class, "search"]);
+    Route::get("/employees/search/{query}", [EmployeeController::class, "search"]);
+
     Route::get("/services/search/{query}", [
         ServiceController::class,
         "search",
+    ]);
+
+    Route::get("/services/deliveries/{deliveryId}", [
+        ServiceController::class,
+        "getByDelivery",
     ]);
 
     Route::get("/deliveries/clients/{clientId}", [

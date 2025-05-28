@@ -100,6 +100,12 @@ class ServiceController extends Controller
         );
     }
 
+    public function getByDelivery(string $delivery_id): JsonResponse
+    {
+        $service = Service::where('courier_id', $delivery_id)->get();
+        return response()->json($service, 200);
+    }
+
     public function search(string $query): JsonResponse
     {
         $services = Service::with("bills")

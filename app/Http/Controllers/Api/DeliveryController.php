@@ -20,6 +20,7 @@ class DeliveryController extends Controller
         'clientAddress',
         'events',
         'courier',
+        'service',
         'openBox',
         'closeBox',
         'receipt'
@@ -112,7 +113,7 @@ class DeliveryController extends Controller
 
     public function latestByClient(string $clientId): JsonResponse
     {
-        $delivery = Delivery::with(['receipt'])
+        $delivery = Delivery::with($this->relations)
             ->where('client_id', $clientId)
             ->orderBy('date', 'desc')
             ->get();

@@ -64,6 +64,19 @@ class EmployeeController extends Controller
         return response()->json(['message' => "employee with ID {$employee->id} has been deleted"], 200);
     }
 
+    public function search(string $query): JsonResponse
+    {
+        $user = Auth::user();
+
+        $employees = $user->employees()
+            ->when($query !== '', function ($queryBuilder) use ($query) {
+                $queryBuilder->where('name', 'LIKE', "%{$query}%");
+            })
+            ->get();
+
+        return response()->json($employees, 200);
+    }
+
     private function authorizeOwner(Employee $employee): void
     {
         abort_if($employee->user_id !== Auth::id(), 403, 'No tienes permiso para acceder a este empleado.');

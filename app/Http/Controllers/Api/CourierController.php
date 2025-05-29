@@ -19,43 +19,59 @@ class CourierController extends Controller
     public function show(Courier $courier): JsonResponse
     {
         $this->authorizeOwner($courier);
+        $courier->load([
+            "deliveries",
+            "deliveries.service",
+            "deliveries.client",
+            "deliveries.ClientAddress",
+            "deliveries.courier",
+            "deliveries.receipt",
+            "deliveries.events",
+        ]);
+
         return response()->json($courier, 200);
     }
 
     public function store(CourierRequest $request): JsonResponse
     {
         $data = $request->all();
-        $data['user_id'] = Auth::id();
+        $data["user_id"] = Auth::id();
 
         $courier = Auth::user()->couriers()->create($data);
         return response()->json($courier, 201);
     }
 
-    public function update(CourierRequest $request, Courier $courier): JsonResponse
-    {
+    public function update(
+        CourierRequest $request,
+        Courier $courier
+    ): JsonResponse {
         $this->authorizeOwner($courier);
 
         $data = $request->all();
-        $data['user_id'] = Auth::id();
+        $data["user_id"] = Auth::id();
         $courier->update($data);
 
         return response()->json($courier, 200);
-
     }
-
-
 
     public function destroy(Courier $courier): JsonResponse
     {
         $this->authorizeOwner($courier);
         $courier->delete();
-        return response()->json([
-            'message' => "Courier with ID {$courier->id} has been deleted"
-        ], 200);
+        return response()->json(
+            [
+                "message" => "Courier with ID {$courier->id} has been deleted",
+            ],
+            200
+        );
     }
 
     private function authorizeOwner(Courier $courier): void
     {
-        abort_if($courier->user_id !== Auth::id(), 403, 'No tienes permiso para acceder a este mensajero.');
+        abort_if(
+            $courier->user_id !== Auth::id(),
+            403,
+            "No tienes permiso para acceder a este mensajero."
+        );
     }
 }

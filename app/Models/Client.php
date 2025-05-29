@@ -24,7 +24,7 @@ class Client extends Model
 
     public function events()
     {
-        return $this->hasMany(ClientEvent::class)->latest()->limit(3);
+        return $this->hasMany(ClientEvent::class);
     }
 
     public function addresses()

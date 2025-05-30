@@ -30,6 +30,11 @@ class Courier extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function events()
+    {
+        return $this->belongsTo(CourierEvent::class);
+    }
+
     public function deliveries()
     {
         return $this->hasMany(Delivery::class);

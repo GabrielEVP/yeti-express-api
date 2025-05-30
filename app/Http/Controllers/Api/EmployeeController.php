@@ -14,8 +14,7 @@ class EmployeeController extends Controller
 {
     public function index(): JsonResponse
     {
-        $employees = Auth::user()->employees()->get();
-        return response()->json($employees, 200);
+        return response()->json(Auth::user()->employees()->get(), 200);
     }
 
     public function show(Employee $employee): JsonResponse
@@ -31,12 +30,16 @@ class EmployeeController extends Controller
         $data['password'] = Hash::make($request->password);
 
         $employee = Auth::user()->employees()->create($data);
+
+        $this->logEvent('create_employee', $employee->id);
+
         return response()->json($employee, 201);
     }
 
     public function update(EmployeeRequest $request, Employee $employee): JsonResponse
     {
         $this->authorizeOwner($employee);
+
         $data = $request->safe()->except('password');
         $data['user_id'] = Auth::id();
 
@@ -46,13 +49,7 @@ class EmployeeController extends Controller
 
         $employee->update($data);
 
-        EmployeeEvent::create([
-            'event' => "update_employee",
-            "section" => "employees",
-            'reference_table' => null,
-            'reference_id' => null,
-            'client_id' => $employee->id,
-        ]);
+        $this->logEvent('update_employee', $employee->id);
 
         return response()->json($employee, 200);
     }
@@ -61,17 +58,16 @@ class EmployeeController extends Controller
     {
         $this->authorizeOwner($employee);
         $employee->delete();
-        return response()->json(['message' => "employee with ID {$employee->id} has been deleted"], 200);
+
+        $this->logEvent('delete_employee', $employee->id);
+
+        return response()->json(['message' => "Employee with ID {$employee->id} has been deleted"], 200);
     }
 
     public function search(string $query): JsonResponse
     {
-        $user = Auth::user();
-
-        $employees = $user->employees()
-            ->when($query !== '', function ($queryBuilder) use ($query) {
-                $queryBuilder->where('name', 'LIKE', "%{$query}%");
-            })
+        $employees = Auth::user()->employees()
+            ->when($query !== '', fn($q) => $q->where('name', 'LIKE', "%{$query}%"))
             ->get();
 
         return response()->json($employees, 200);
@@ -80,5 +76,16 @@ class EmployeeController extends Controller
     private function authorizeOwner(Employee $employee): void
     {
         abort_if($employee->user_id !== Auth::id(), 403, 'No tienes permiso para acceder a este empleado.');
+    }
+
+    private function logEvent(string $event, int $employeeId): void
+    {
+        EmployeeEvent::create([
+            'event' => $event,
+            'section' => 'employees',
+            'reference_table' => null,
+            'reference_id' => null,
+            'employee_id' => $employeeId,
+        ]);
     }
 }

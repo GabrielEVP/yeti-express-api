@@ -13,6 +13,8 @@ class Delivery extends Model
         "number",
         "date",
         "status",
+        "collection_status",
+        "courier_payouts",
         "payment_type",
         "notes",
         "service_id",
@@ -73,6 +75,6 @@ class Delivery extends Model
 
     public function events()
     {
-        return $this->hasMany(DeliveryEvent::class)->latest()->limit(7);
+        return $this->hasMany(DeliveryEvent::class);
     }
 }

@@ -5,51 +5,58 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CourierRequest;
 use App\Models\Courier;
+use App\Models\CourierEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 class CourierController extends Controller
 {
+    private array $relations = [
+        'deliveries',
+        'deliveries.service',
+        'deliveries.courier',
+        'deliveries.receipt',
+        'events'
+    ];
+
     public function index(): JsonResponse
     {
-        $couriers = Auth::user()->couriers()->get();
-        return response()->json($couriers, 200);
+        return response()->json(Auth::user()->couriers()->get(), 200);
     }
 
     public function show(Courier $courier): JsonResponse
     {
         $this->authorizeOwner($courier);
-        $courier->load([
-            "deliveries",
-            "deliveries.service",
-            "deliveries.client",
-            "deliveries.ClientAddress",
-            "deliveries.courier",
-            "deliveries.receipt",
-            "deliveries.events",
-        ]);
-
-        return response()->json($courier, 200);
+        return response()->json($courier->load($this->relations), 200);
     }
 
     public function store(CourierRequest $request): JsonResponse
     {
-        $data = $request->all();
-        $data["user_id"] = Auth::id();
+        $courier = Auth::user()->couriers()->create($request->merge(['user_id' => Auth::id()])->all());
 
-        $courier = Auth::user()->couriers()->create($data);
+        CourierEvent::create([
+            'event' => 'create_courier',
+            'section' => 'couriers',
+            'reference_table' => null,
+            'reference_id' => null,
+            'courier_id' => $courier->id,
+        ]);
+
         return response()->json($courier, 201);
     }
 
-    public function update(
-        CourierRequest $request,
-        Courier $courier
-    ): JsonResponse {
+    public function update(CourierRequest $request, Courier $courier): JsonResponse
+    {
         $this->authorizeOwner($courier);
+        $courier->update($request->merge(['user_id' => Auth::id()])->all());
 
-        $data = $request->all();
-        $data["user_id"] = Auth::id();
-        $courier->update($data);
+        CourierEvent::create([
+            'event' => 'update_courier',
+            'section' => 'couriers',
+            'reference_table' => null,
+            'reference_id' => null,
+            'courier_id' => $courier->id,
+        ]);
 
         return response()->json($courier, 200);
     }
@@ -58,12 +65,18 @@ class CourierController extends Controller
     {
         $this->authorizeOwner($courier);
         $courier->delete();
-        return response()->json(
-            [
-                "message" => "Courier with ID {$courier->id} has been deleted",
-            ],
-            200
-        );
+
+        CourierEvent::create([
+            'event' => 'delete_courier',
+            'section' => 'couriers',
+            'reference_table' => null,
+            'reference_id' => null,
+            'courier_id' => $courier->id,
+        ]);
+
+        return response()->json([
+            'message' => "Courier with ID {$courier->id} has been deleted",
+        ], 200);
     }
 
     private function authorizeOwner(Courier $courier): void
@@ -71,7 +84,7 @@ class CourierController extends Controller
         abort_if(
             $courier->user_id !== Auth::id(),
             403,
-            "No tienes permiso para acceder a este mensajero."
+            'You do not have permission to access this courier.'
         );
     }
 }

@@ -20,6 +20,16 @@ return new class extends Migration {
                 "delivered",
                 "cancelled",
             ]);
+            $table->enum("collection_status", [
+                "pending",
+                "partially_collected",
+                "fully_collected",
+            ]);
+            $table->enum("courier_payouts", [
+                "pending",
+                "partially_paid",
+                "paid",
+            ]);
             $table->enum("payment_type", ["partial", "full"]);
             $table->text("notes")->nullable();
             $table->timestamps();

@@ -10,6 +10,7 @@ use App\Http\Requests\DeliveryClientPaymentRequest;
 use App\Models\Delivery;
 use App\Models\DeliveryEvent;
 use App\Models\ClientEvent;
+use App\Models\CourierEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,13 +24,25 @@ class DeliveryController extends Controller
         'service',
         'openBox',
         'closeBox',
-        'receipt'
+        'receipt',
     ];
+
+    private function getCurrentDate(): string
+    {
+        return now()->toDateString();
+    }
+
+    private function generateDeliveryNumber(): string
+    {
+        $lastId = Delivery::max('id') ?? 0;
+        return 'DEV-' . str_pad($lastId + 1, 5, '0', STR_PAD_LEFT);
+    }
 
     public function index(): JsonResponse
     {
-        $deliveries = Auth::user()
-            ->deliveries()
+        $user = Auth::user();
+
+        $deliveries = $user->deliveries()
             ->with($this->relations)
             ->get();
 
@@ -38,37 +51,26 @@ class DeliveryController extends Controller
 
     public function store(DeliveryRequest $request): JsonResponse
     {
-        $data = $request->safe()->except(['receipt']);
-        $data['user_id'] = Auth::id();
-        $data['date'] = now()->toDateString();
+        $user = Auth::user();
+        $data = $request->safe()->except('receipt');
 
-        $lastNumber = Delivery::max('id') ?? 0;
-        $nextNumber = $lastNumber + 1;
-        $data['number'] = 'DEV-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+        $data['user_id'] = $user->id;
+        $data['date'] = $this->getCurrentDate();
+        $data['number'] = $this->generateDeliveryNumber();
 
-        $delivery = Auth::user()
-            ->deliveries()
-            ->create($data);
+        $delivery = $user->deliveries()->create($data);
 
         $this->syncRelatedReceipt($delivery, $request->input('receipt'));
 
-        ClientEvent::create([
-            'event' => "create_delivery",
-            "section" => "clients",
-            'reference_table' => "deliveries",
-            'reference_id' => $delivery->id,
-            'client_id' => $delivery->client->id,
-        ]);
+        $this->logClientEvent('create_delivery', $delivery, 'clients', 'deliveries', $delivery->id);
 
-        return response()->json(
-            $delivery->load($this->relations),
-            200
-        );
+        return response()->json($delivery->load($this->relations), 201);
     }
 
     public function show(Delivery $delivery): JsonResponse
     {
         $this->authorizeOwner($delivery);
+
         return response()->json($delivery->load($this->relations), 200);
     }
 
@@ -76,34 +78,23 @@ class DeliveryController extends Controller
     {
         $this->authorizeOwner($delivery);
 
-        $data = $request->safe()->except(['receipt']);
+        $data = $request->safe()->except('receipt');
         $data['user_id'] = Auth::id();
-
         $delivery->update($data);
-
-
 
         if ($request->has('receipt')) {
             $this->syncRelatedReceipt($delivery, $request->input('receipt'));
         }
 
-        DeliveryEvent::create([
-            'event' => "update_delivery",
-            "section" => "deliveries",
-            'reference_table' => null,
-            'reference_id' => null,
-            'delivery_id' => $delivery->id,
-        ]);
+        $this->logDeliveryEvent('update_delivery', $delivery);
 
-        return response()->json(
-            $delivery->load($this->relations),
-            200
-        );
+        return response()->json($delivery->load($this->relations), 200);
     }
 
     public function destroy(Delivery $delivery): JsonResponse
     {
         $this->authorizeOwner($delivery);
+
         $delivery->delete();
 
         return response()->json([
@@ -113,43 +104,35 @@ class DeliveryController extends Controller
 
     public function latestByClient(string $clientId): JsonResponse
     {
-        $delivery = Delivery::with($this->relations)
+        $deliveries = Delivery::with($this->relations)
             ->where('client_id', $clientId)
-            ->orderBy('date', 'desc')
+            ->orderByDesc('date')
             ->get();
 
-        return response()->json($delivery, 200);
+        return response()->json($deliveries, 200);
     }
 
-    public function latestByCourier(string $courier_id): JsonResponse
+    public function latestByCourier(string $courierId): JsonResponse
     {
-        $delivery = Delivery::with(['receipt'])
-            ->where('courier_id', $courier_id)
-            ->orderBy('date', 'desc')
+        $deliveries = Delivery::with('receipt')
+            ->where('courier_id', $courierId)
+            ->orderByDesc('date')
             ->get();
 
-        return response()->json($delivery, 200);
+        return response()->json($deliveries, 200);
     }
+
     public function updateStatus(DeliveryStatusRequest $request, Delivery $delivery): JsonResponse
     {
         $this->authorizeOwner($delivery);
 
         $delivery->update([
-            'status' => $request->input('status')
+            'status' => $request->input('status'),
         ]);
 
-        DeliveryEvent::create([
-            'event' => "status_updated",
-            "section" => "deliveries",
-            'reference_table' => "clients",
-            'reference_id' => $delivery->id,
-            'delivery_id' => $delivery->id,
-        ]);
+        $this->logDeliveryEvent('status_updated', $delivery, 'deliveries', 'clients', $delivery->id);
 
-        return response()->json(
-            $delivery->load($this->relations),
-            200
-        );
+        return response()->json($delivery->load($this->relations), 200);
     }
 
     public function storeClientPayment(DeliveryClientPaymentRequest $request, Delivery $delivery): JsonResponse
@@ -163,27 +146,11 @@ class DeliveryController extends Controller
             'user_id' => Auth::id(),
         ]);
 
-        DeliveryEvent::create([
-            'event' => "client_payment_added",
-            "section" => "deliveries",
-            'reference_table' => "delivery_client_payments",
-            'reference_id' => $payment->id,
-            'delivery_id' => $delivery->id,
-        ]);
+        $this->logDeliveryEvent('client_payment_added', $delivery, 'deliveries', 'delivery_client_payments', $payment->id);
 
-        ClientEvent::create([
-            'event' => "client_payment_added",
-            "section" => "clients",
-            'reference_table' => "delivery_client_payments",
-            'reference_id' => $payment->id,
-            'client_id' => $delivery->client->id,
-        ]);
+        $this->logClientEvent('client_payment_added', $delivery, 'clients', 'delivery_client_payments', $payment->id);
 
-
-        return response()->json(
-            $payment,
-            200
-        );
+        return response()->json($payment, 201);
     }
 
     public function storeCourierPayment(DeliveryCourierPaymentRequest $request, Delivery $delivery): JsonResponse
@@ -197,18 +164,11 @@ class DeliveryController extends Controller
             'user_id' => Auth::id(),
         ]);
 
-        DeliveryEvent::create([
-            'event' => "courier_payment_added",
-            "section" => "deliveries",
-            'reference_table' => "delivery_courier_payments",
-            'reference_id' => $payment->id,
-            'delivery_id' => $delivery->id,
-        ]);
+        $this->logDeliveryEvent('courier_payment_added', $delivery, 'deliveries', 'delivery_courier_payments', $payment->id);
 
-        return response()->json(
-            $payment,
-            200
-        );
+        $this->logCourierEvent('courier_payment_added', $delivery, 'couriers', 'delivery_courier_payments', $payment->id);
+
+        return response()->json($payment, 201);
     }
 
     private function syncRelatedReceipt(Delivery $delivery, ?array $receipt): void
@@ -219,20 +179,47 @@ class DeliveryController extends Controller
         }
 
         if ($delivery->receipt) {
-            $delivery->receipt()->update([
-                ...$receipt,
-                'delivery_id' => $delivery->id,
-            ]);
+            $delivery->receipt()->update(array_merge($receipt, ['delivery_id' => $delivery->id]));
         } else {
-            $delivery->receipt()->create([
-                ...$receipt,
-                'delivery_id' => $delivery->id,
-            ]);
+            $delivery->receipt()->create(array_merge($receipt, ['delivery_id' => $delivery->id]));
         }
     }
 
     private function authorizeOwner(Delivery $delivery): void
     {
         abort_if($delivery->user_id !== Auth::id(), 403, 'No tienes permiso para acceder a esta entrega.');
+    }
+
+    private function logDeliveryEvent(string $event, Delivery $delivery, ?string $section = 'deliveries', ?string $referenceTable = null, ?int $referenceId = null): void
+    {
+        DeliveryEvent::create([
+            'event' => $event,
+            'section' => $section,
+            'reference_table' => $referenceTable,
+            'reference_id' => $referenceId,
+            'delivery_id' => $delivery->id,
+        ]);
+    }
+
+    private function logClientEvent(string $event, Delivery $delivery, ?string $section = 'clients', ?string $referenceTable = null, ?int $referenceId = null): void
+    {
+        ClientEvent::create([
+            'event' => $event,
+            'section' => $section,
+            'reference_table' => $referenceTable,
+            'reference_id' => $referenceId,
+            'client_id' => $delivery->client->id,
+        ]);
+    }
+
+    private function logCourierEvent(string $event, Delivery $delivery, ?string $section = 'couriers', ?string $referenceTable = null, ?int $referenceId = null): void
+    {
+        CourierEvent::create([
+            'event' => $event,
+            'section' => $section,
+            'reference_table' => $referenceTable,
+            'reference_id' => $referenceId,
+            'courier_id' => $delivery->courier->id,
+        ]);
     }
 }

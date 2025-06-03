@@ -23,7 +23,6 @@ class CompanyBillRequest extends FormRequest
                 Rule::in(["cash", "mobile_payment", "bank_transfered"]),
             ],
             "amount" => ["required", "numeric", "min:0"],
-            "user_id" => ["required", "exists:users,id"],
         ];
     }
 }

@@ -4,33 +4,28 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class Delivery extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        "number",
-        "date",
-        "status",
-        "collection_status",
-        "courier_payouts",
-        "payment_type",
-        "notes",
-        "service_id",
-        "client_id",
-        "client_address_id",
-        "courier_id",
-        "open_box_id",
-        "close_box_id",
-        "user_id",
+        'number',
+        'date',
+        'status',
+        'payment_type',
+        'payment_status',
+        'notes',
+        'service_id',
+        'client_id',
+        'client_address_id',
+        'courier_id',
+        'user_id',
     ];
 
-    public $timestamps = true;
-
     protected $casts = [
-        "delivery_date" => "datetime",
-        "status" => "string",
+        'date' => 'date',
     ];
 
     public function user()
@@ -58,16 +53,6 @@ class Delivery extends Model
         return $this->belongsTo(Courier::class);
     }
 
-    public function openBox()
-    {
-        return $this->belongsTo(Box::class, "open_box_id");
-    }
-
-    public function closeBox()
-    {
-        return $this->belongsTo(Box::class, "close_box_id");
-    }
-
     public function receipt()
     {
         return $this->hasOne(DeliveryReceipt::class);
@@ -77,4 +62,5 @@ class Delivery extends Model
     {
         return $this->hasMany(DeliveryEvent::class);
     }
+
 }

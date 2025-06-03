@@ -14,6 +14,7 @@ class Client extends Model
         "type",
         "registration_number",
         "notes",
+        "allow_credit",
         "user_id",
     ];
 

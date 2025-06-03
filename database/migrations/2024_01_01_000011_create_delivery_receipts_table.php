@@ -15,10 +15,7 @@ return new class extends Migration {
             $table->string("full_name");
             $table->string("phone");
             $table->string("address", 200);
-            $table
-                ->foreignId("delivery_id")
-                ->constrained("deliveries")
-                ->onDelete("cascade");
+            $table->foreignId("delivery_id")->constrained("deliveries")->onDelete("cascade");
         });
     }
 

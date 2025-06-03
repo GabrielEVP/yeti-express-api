@@ -13,10 +13,7 @@ return new class extends Migration {
         Schema::create("client_emails", function (Blueprint $table) {
             $table->id();
             $table->string("email", 100);
-            $table
-                ->foreignId("client_id")
-                ->constrained("clients")
-                ->onDelete("cascade");
+            $table->foreignId("client_id")->constrained("clients")->onDelete("cascade");
         });
     }
 

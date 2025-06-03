@@ -17,10 +17,7 @@ return new class extends Migration {
             $table->string("phone", 20);
             $table->boolean("active")->default(true);
             $table->timestamps();
-            $table
-                ->foreignId("user_id")
-                ->constrained("users")
-                ->onDelete("cascade");
+            $table->foreignId("user_id")->constrained("users")->onDelete("cascade");
         });
 
         Schema::create("courier_events", function (Blueprint $table) {
@@ -39,6 +36,7 @@ return new class extends Migration {
      */
     public function down(): void
     {
+        Schema::dropIfExists("courier_events");
         Schema::dropIfExists("couriers");
     }
 };

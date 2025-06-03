@@ -15,11 +15,7 @@ return new class extends Migration {
             $table->date("date");
             $table->string("name");
             $table->text("description");
-            $table->enum("method", [
-                "cash",
-                "mobile_payment",
-                "bank_transfered",
-            ]);
+            $table->enum("method", ["cash", "mobile_payment", "bank_transfered",]);
             $table->decimal("amount", 10, 2);
             $table->foreignId("user_id")->constrained()->onDelete("cascade");
             $table->timestamps();

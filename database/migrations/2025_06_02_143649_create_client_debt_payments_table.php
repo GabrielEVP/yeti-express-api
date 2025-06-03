@@ -8,11 +8,11 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('client_debt_payments', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('client_id')->constrained()->onDelete('cascade');
+            $table->id();
+            $table->date('date');
             $table->decimal('amount', 10, 2);
-            $table->dateTime('paid_at');
-            $table->enum('method', ['mobile_payment', 'transfer', 'cash']);
+            $table->enum('method', ['pending', 'partial_paid', 'paid']);
+            $table->foreignId('client_delivery_debt_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }

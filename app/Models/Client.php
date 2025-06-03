@@ -47,4 +47,9 @@ class Client extends Model
     {
         return $this->hasMany(Delivery::class);
     }
+
+    public function clientDeliveryDebts()
+    {
+        return $this->hasMany(ClientDeliveryDebt::class);
+    }
 }

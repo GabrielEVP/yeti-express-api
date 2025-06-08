@@ -42,18 +42,14 @@ class DeliveryController extends Controller
         $data['date'] = now()->toDateString();
         $data['number'] = $this->generateDeliveryNumber();
 
+        $client = \App\Models\Client::findOrFail($data['client_id']);
+        if (!$client->allow_credit) {
+            $data['payment_type'] = 'full';
+        }
+
         $delivery = $user->deliveries()->create($data);
 
         $this->syncRelatedReceipt($delivery, $request->input('receipt'));
-
-        if ($delivery->payment_type === 'partial') {
-            $delivery->debt()->create([
-                'amount' => $delivery->service->amount,
-                'status' => 'pending',
-                'client_id' => $delivery->client_id,
-                'delivery_id' => $delivery->id,
-            ]);
-        }
 
         return response()->json($delivery->load($this->relations), 200);
     }
@@ -96,11 +92,39 @@ class DeliveryController extends Controller
     {
         $this->authorizeOwner($delivery);
 
-        $delivery->update([
-            'status' => $request->input('status'),
+        $oldStatus = $delivery->status;
+        $newStatus = $request->input('status');
+
+        $updateData = ['status' => $newStatus];
+
+        if ($newStatus === 'delivered') {
+            if ($delivery->payment_type === 'partial') {
+                $delivery->debt()->create([
+                    'amount' => $delivery->service->amount,
+                    'status' => 'pending',
+                    'client_id' => $delivery->client_id,
+                    'delivery_id' => $delivery->id,
+                ]);
+            } else if ($delivery->payment_type === 'full') {
+                $updateData['payment_status'] = 'paid';
+            }
+        }
+
+        $delivery->update($updateData);
+
+        $delivery->events()->create([
+            'event' => 'status_update',
+            'section' => 'deliveries',
+            'reference_table' => 'deliveries',
+            'reference_id' => $delivery->id,
         ]);
 
-        return response()->json($delivery->load($this->relations), 200);
+        $deliveries = Auth::user()
+            ->deliveries()
+            ->with($this->relations)
+            ->get();
+
+        return response()->json($deliveries, 200);
     }
 
     private function generateDeliveryNumber(): string

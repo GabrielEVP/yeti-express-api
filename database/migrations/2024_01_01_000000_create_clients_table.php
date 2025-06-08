@@ -21,7 +21,7 @@ return new class extends Migration {
             ]);
             $table->string("registration_number", 50);
             $table->text("notes")->nullable();
-            $table->boolean("allow_credit")->default(false);
+            $table->boolean(column: "allow_credit")->default(false);
             $table->timestamps();
             $table->foreignId("user_id")->constrained("users")->onDelete("cascade");
         });

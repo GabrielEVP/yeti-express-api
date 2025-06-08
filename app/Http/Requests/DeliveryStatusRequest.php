@@ -18,7 +18,7 @@ class DeliveryStatusRequest extends FormRequest
             'status' => [
                 'required',
                 'string',
-                Rule::in(['pending', 'in_progress', 'delivered', 'cancelled']),
+                Rule::in(['in_transit', 'cancelled', 'delivered']),
             ],
         ];
     }

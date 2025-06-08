@@ -32,7 +32,7 @@ class Courier extends Model
 
     public function events()
     {
-        return $this->belongsTo(CourierEvent::class);
+        return $this->hasMany(CourierEvent::class);
     }
 
     public function deliveries()

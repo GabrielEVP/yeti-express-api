@@ -12,11 +12,11 @@ use Illuminate\Support\Facades\Auth;
 class CourierController extends Controller
 {
     private array $relations = [
+        'events',
         'deliveries',
         'deliveries.service',
         'deliveries.courier',
         'deliveries.receipt',
-        'events'
     ];
 
     public function index(): JsonResponse
@@ -33,14 +33,6 @@ class CourierController extends Controller
     public function store(CourierRequest $request): JsonResponse
     {
         $courier = Auth::user()->couriers()->create($request->merge(['user_id' => Auth::id()])->all());
-
-        CourierEvent::create([
-            'event' => 'create_courier',
-            'section' => 'couriers',
-            'reference_table' => null,
-            'reference_id' => null,
-            'courier_id' => $courier->id,
-        ]);
 
         return response()->json($courier, 201);
     }
@@ -66,14 +58,6 @@ class CourierController extends Controller
         $this->authorizeOwner($courier);
         $courier->delete();
 
-        CourierEvent::create([
-            'event' => 'delete_courier',
-            'section' => 'couriers',
-            'reference_table' => null,
-            'reference_id' => null,
-            'courier_id' => $courier->id,
-        ]);
-
         return response()->json([
             'message' => "Courier with ID {$courier->id} has been deleted",
         ], 200);
@@ -85,6 +69,17 @@ class CourierController extends Controller
             $courier->user_id !== Auth::id(),
             403,
             'You do not have permission to access this courier.'
+        );
+    }
+
+    public function search(string $query): JsonResponse
+    {
+        return response()->json(
+            Courier::with($this->relations)
+                ->where('first_name', 'LIKE', "%{$query}%")
+                ->orWhere('last_name', 'LIKE', "%{$query}%")
+                ->get(),
+            200
         );
     }
 }

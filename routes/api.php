@@ -34,6 +34,10 @@ Route::middleware("auth:sanctum")->group(function () {
         Route::get("search/{query}", [ClientController::class, "search"]);
     });
 
+    Route::prefix("couriers")->group(function () {
+        Route::get("search/{query}", [CourierController::class, "search"]);
+    });
+
     Route::prefix("employees")->group(function () {
         Route::get("search/{query}", [EmployeeController::class, "search"]);
     });
@@ -48,14 +52,10 @@ Route::middleware("auth:sanctum")->group(function () {
         Route::get("couriers/{courierId}", [DeliveryController::class, "latestByCourier"]);
         Route::put("{delivery}/status", [DeliveryController::class, "updateStatus"]);
         Route::post("{delivery}/client-payments", [DeliveryController::class, "storeClientPayment"]);
-
-        // Rutas para filtros por estado
         Route::get("status/received", [DeliveryController::class, "getReceived"]);
         Route::get("status/cancelled", [DeliveryController::class, "getCancelled"]);
         Route::get("status/pending", [DeliveryController::class, "getPending"]);
         Route::get("status/in-transit", [DeliveryController::class, "getInTransit"]);
-
-        // Rutas para filtros por estado de pago
         Route::get("payment/pending", [DeliveryController::class, "getPaymentPending"]);
         Route::get("payment/partially-paid", [DeliveryController::class, "getPartiallyPaid"]);
         Route::get("payment/paid", [DeliveryController::class, "getPaid"]);

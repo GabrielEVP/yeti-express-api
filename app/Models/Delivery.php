@@ -63,9 +63,9 @@ class Delivery extends Model
         return $this->hasMany(DeliveryEvent::class);
     }
 
-    public function clientDeliveryDebts()
+    public function debt()
     {
-        return $this->hasOne(ClientDeliveryDebt::class);
+        return $this->hasOne(Debt::class);
     }
 
 }

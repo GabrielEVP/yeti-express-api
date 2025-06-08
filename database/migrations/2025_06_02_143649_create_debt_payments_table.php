@@ -7,18 +7,18 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('client_debt_payments', function (Blueprint $table) {
+        Schema::create('debt_payments', function (Blueprint $table) {
             $table->id();
             $table->date('date');
             $table->decimal('amount', 10, 2);
-            $table->enum('method', ['pending', 'partial_paid', 'paid']);
-            $table->foreignId('client_delivery_debt_id')->constrained()->onDelete('cascade');
+            $table->enum('method', ['cash', 'mobile_payment', 'transfer']);
+            $table->foreignId('debt_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('client_debt_payments');
+        Schema::dropIfExists('debt_payments');
     }
 };

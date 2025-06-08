@@ -17,8 +17,8 @@ class DeliveryController extends Controller
         'service.bills',
         'client',
         'clientAddress',
-        'clientDeliveryDebts',
-        'clientDeliveryDebts.payments',
+        'debt',
+        'debt.payments',
         'courier',
         'receipt',
     ];
@@ -47,7 +47,7 @@ class DeliveryController extends Controller
         $this->syncRelatedReceipt($delivery, $request->input('receipt'));
 
         if ($delivery->payment_type === 'partial') {
-            $delivery->clientDeliveryDebts()->create([
+            $delivery->debt()->create([
                 'amount' => $delivery->service->amount,
                 'status' => 'pending',
                 'client_id' => $delivery->client_id,
@@ -55,7 +55,7 @@ class DeliveryController extends Controller
             ]);
         }
 
-        return response()->json($delivery->load($this->relations), 201);
+        return response()->json($delivery->load($this->relations), 200);
     }
 
     public function show(Delivery $delivery): JsonResponse

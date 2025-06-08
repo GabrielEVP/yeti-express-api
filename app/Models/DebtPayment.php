@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ClientDebtPayment extends Model
+class DebtPayment extends Model
 {
     use HasFactory;
 
@@ -13,7 +13,7 @@ class ClientDebtPayment extends Model
         'date',
         'amount',
         'method',
-        'client_delivery_debt_id',
+        'debt_id',
     ];
 
     protected $casts = [
@@ -23,6 +23,6 @@ class ClientDebtPayment extends Model
 
     public function clientDeliveryDebt()
     {
-        return $this->belongsTo(ClientDeliveryDebt::class);
+        return $this->belongsTo(Debt::class);
     }
 }

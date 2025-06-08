@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('client_delivery_debts', function (Blueprint $table) {
+        Schema::create('debts', function (Blueprint $table) {
             $table->id();
             $table->decimal('amount', 10, 2);
             $table->enum('status', ['pending', 'partial_paid', 'paid']);
@@ -19,6 +19,6 @@ return new class extends Migration {
 
     public function down(): void
     {
-        Schema::dropIfExists('client_delivery_debts');
+        Schema::dropIfExists('debts');
     }
 };

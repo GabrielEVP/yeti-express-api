@@ -48,8 +48,8 @@ class Client extends Model
         return $this->hasMany(Delivery::class);
     }
 
-    public function clientDeliveryDebts()
+    public function Debts()
     {
-        return $this->hasMany(ClientDeliveryDebt::class);
+        return $this->hasMany(Debt::class);
     }
 }

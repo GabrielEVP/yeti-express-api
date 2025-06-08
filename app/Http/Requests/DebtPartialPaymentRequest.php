@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class DeliveryClientPaymentRequest extends FormRequest
+class DebtPartialPaymentRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -15,13 +15,12 @@ class DeliveryClientPaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'date' => 'required|date',
+            'amount' => 'required|numeric|min:0',
             'method' => [
                 'required',
                 'string',
                 Rule::in(['cash', 'mobile_payment', 'bank_transfer', 'other']),
             ],
-            'amount' => 'required|numeric|min:0',
         ];
     }
 }

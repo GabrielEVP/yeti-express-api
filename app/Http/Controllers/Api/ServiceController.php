@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ServiceEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\Service;
@@ -10,35 +11,12 @@ use App\Http\Requests\ServiceRequest;
 
 class ServiceController extends Controller
 {
-    private array $relations = ['bills'];
+    private array $relations = ['bills', 'events'];
 
     public function index(Request $request): JsonResponse
     {
-        $search = $request->string('search')->toString();
-        $sort = $request->input('sort.column', 'name');
-        $order = strtolower($request->input('sort.order', 'asc'));
-
-        $validColumns = ['id', 'name', 'amount', 'comision'];
-
-        if (!in_array($sort, $validColumns) || !in_array($order, ['asc', 'desc'])) {
-            return response()->json(['error' => 'Invalid sort parameters'], 400);
-        }
-
-        $query = Service::with($this->relations)
-            ->when($search, fn($q) => $q->where('name', 'LIKE', "%{$search}%"))
-            ->when($request->has('select'), function ($q) use ($request, $validColumns) {
-                foreach ($request->input('select', []) as $filter) {
-                    if (
-                        isset($filter['option'], $filter['value']) &&
-                        in_array($filter['option'], $validColumns)
-                    ) {
-                        $q->where($filter['option'], $filter['value']);
-                    }
-                }
-            })
-            ->orderBy($sort, $order);
-
-        return response()->json($query->get(), 200);
+        $service = Service::with($this->relations);
+        return response()->json($service->get(), 200);
     }
 
     public function store(ServiceRequest $request): JsonResponse
@@ -73,6 +51,14 @@ class ServiceController extends Controller
         foreach ($request->input('bills', []) as $bill) {
             $service->bills()->create($bill);
         }
+
+        ServiceEvent::create([
+            "event" => "update_service",
+            "section" => "services",
+            "reference_table" => null,
+            "reference_id" => null,
+            "service_id" => $service->id,
+        ]);
 
         return response()->json($service->load($this->relations), 200);
     }

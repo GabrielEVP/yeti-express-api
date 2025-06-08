@@ -25,4 +25,9 @@ class Service extends Model
     {
         return $this->hasMany(Bill::class);
     }
+
+    public function events()
+    {
+        return $this->hasMany(ServiceEvent::class);
+    }
 }

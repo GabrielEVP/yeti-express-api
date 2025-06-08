@@ -55,10 +55,13 @@ class Debt extends Model
             }
 
             $this->status = 'paid';
+            $this->delivery->update(['payment_status' => 'paid']);
         } elseif ($totalPaid > 0) {
             $this->status = 'partial_paid';
+            $this->delivery->update(['payment_status' => 'partial_paid']);
         } else {
             $this->status = 'pending';
+            $this->delivery->update(['payment_status' => 'pending']);
         }
 
         $this->save();

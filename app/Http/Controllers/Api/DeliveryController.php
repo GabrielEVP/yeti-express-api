@@ -128,4 +128,81 @@ class DeliveryController extends Controller
     {
         abort_if($delivery->user_id !== Auth::id(), 403, 'No tienes permiso para acceder a esta entrega.');
     }
+
+    public function getReceived(): JsonResponse
+    {
+        $deliveries = Auth::user()
+            ->deliveries()
+            ->received()
+            ->with($this->relations)
+            ->get();
+
+        return response()->json($deliveries, 200);
+    }
+
+    public function getCancelled(): JsonResponse
+    {
+        $deliveries = Auth::user()
+            ->deliveries()
+            ->cancelled()
+            ->with($this->relations)
+            ->get();
+
+        return response()->json($deliveries, 200);
+    }
+
+    public function getPending(): JsonResponse
+    {
+        $deliveries = Auth::user()
+            ->deliveries()
+            ->pending()
+            ->with($this->relations)
+            ->get();
+
+        return response()->json($deliveries, 200);
+    }
+
+    public function getInTransit(): JsonResponse
+    {
+        $deliveries = Auth::user()
+            ->deliveries()
+            ->inTransit()
+            ->with($this->relations)
+            ->get();
+
+        return response()->json($deliveries, 200);
+    }
+
+    public function getPaymentPending(): JsonResponse
+    {
+        $deliveries = Auth::user()
+            ->deliveries()
+            ->paymentPending()
+            ->with($this->relations)
+            ->get();
+
+        return response()->json($deliveries, 200);
+    }
+
+    public function getPartiallyPaid(): JsonResponse
+    {
+        $deliveries = Auth::user()
+            ->deliveries()
+            ->partiallyPaid()
+            ->with($this->relations)
+            ->get();
+
+        return response()->json($deliveries, 200);
+    }
+
+    public function getPaid(): JsonResponse
+    {
+        $deliveries = Auth::user()
+            ->deliveries()
+            ->paid()
+            ->with($this->relations)
+            ->get();
+
+        return response()->json($deliveries, 200);
+    }
 }

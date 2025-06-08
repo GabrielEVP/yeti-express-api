@@ -15,27 +15,11 @@ class CompanyBillController extends Controller
     public function index(Request $request): JsonResponse
     {
         $search = $request->string("search")->toString();
-        $sort = $request->input("sort.column", "date");
-        $order = strtolower($request->input("sort.order", "desc"));
-
         $validColumns = ["id", "name", "date", "amount", "method"];
-
-        if (
-            !in_array($sort, $validColumns) ||
-            !in_array($order, ["asc", "desc"])
-        ) {
-            return response()->json(
-                ["error" => "Invalid sort parameters"],
-                400
-            );
-        }
 
         $query = CompanyBill::with($this->relations)
             ->when($search, fn($q) => $q->where("name", "LIKE", "%{$search}%"))
-            ->when($request->has("select"), function ($q) use (
-                $request,
-                $validColumns
-            ) {
+            ->when($request->has("select"), function ($q) use ($request, $validColumns) {
                 foreach ($request->input("select", []) as $filter) {
                     if (
                         isset($filter["option"], $filter["value"]) &&
@@ -44,26 +28,27 @@ class CompanyBillController extends Controller
                         $q->where($filter["option"], $filter["value"]);
                     }
                 }
-            })
-            ->orderBy($sort, $order);
+            });
 
         return response()->json($query->get(), 200);
     }
 
     public function store(CompanyBillRequest $request): JsonResponse
     {
-        $bill = CompanyBill::create(
-            $request
-                ->merge(["user_id" => $request->user()->id])
-                ->only([
-                    "date",
-                    "name",
-                    "description",
-                    "method",
-                    "amount",
-                    "user_id",
-                ])
-        );
+        $data = $request->merge(["user_id" => $request->user()->id])->only([
+            "date",
+            "name",
+            "description",
+            "method",
+            "amount",
+            "user_id",
+        ]);
+
+        if (isset($data['date'])) {
+            $data['date'] = date('Y-m-d', strtotime($data['date']));
+        }
+
+        $bill = CompanyBill::create($data);
 
         return response()->json($bill->load($this->relations), 201);
     }
@@ -82,18 +67,21 @@ class CompanyBillController extends Controller
     ): JsonResponse {
         $bill = CompanyBill::findOrFail($id);
 
-        $bill->update(
-            $request
-                ->merge(["user_id" => $request->user()->id])
-                ->only([
-                    "date",
-                    "name",
-                    "description",
-                    "method",
-                    "amount",
-                    "user_id",
-                ])
-        );
+        $data = $request->merge(["user_id" => $request->user()->id])->only([
+            "date",
+            "name",
+            "description",
+            "method",
+            "amount",
+            "user_id",
+        ]);
+
+        // Formatear la fecha a Y-m-d
+        if (isset($data['date'])) {
+            $data['date'] = date('Y-m-d', strtotime($data['date']));
+        }
+
+        $bill->update($data);
 
         return response()->json($bill->load($this->relations), 200);
     }

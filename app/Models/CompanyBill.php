@@ -19,7 +19,7 @@ class CompanyBill extends Model
     ];
 
     protected $casts = [
-        "date" => "date",
+        "date" => "date:Y-m-d",
         "amount" => "decimal:2",
         "method" => "string",
     ];

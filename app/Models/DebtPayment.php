@@ -21,7 +21,7 @@ class DebtPayment extends Model
         'amount' => 'float',
     ];
 
-    public function clientDeliveryDebt()
+    public function debt()
     {
         return $this->belongsTo(Debt::class);
     }

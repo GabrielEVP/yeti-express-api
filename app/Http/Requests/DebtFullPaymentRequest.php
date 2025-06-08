@@ -15,6 +15,7 @@ class DebtFullPaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
+            "debt_id" => "required",
             'method' => [
                 'required',
                 'string',

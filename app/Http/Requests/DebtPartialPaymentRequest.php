@@ -15,6 +15,7 @@ class DebtPartialPaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
+            "debt_id" => "required",
             'amount' => 'required|numeric|min:0',
             'method' => [
                 'required',

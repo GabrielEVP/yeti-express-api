@@ -27,9 +27,9 @@ class DebtPaymentController extends Controller
 
         $payment = DebtPayment::create($data);
 
-        $payment->clientDeliveryDebt->updateStatusBasedOnPayments();
+        $payment->debt->updateStatusBasedOnPayments();
 
-        return response()->json($payment->load('debts'), 200);
+        return response()->json($payment->load('debt'), 200);
     }
 
     public function storePartialPayment(DebtPartialPaymentRequest $request): JsonResponse
@@ -39,13 +39,13 @@ class DebtPaymentController extends Controller
 
         $payment = DebtPayment::create($data);
 
-        $payment->clientDeliveryDebt->updateStatusBasedOnPayments();
+        $payment->debt->updateStatusBasedOnPayments();
 
-        return response()->json($payment->load('debts'), 200);
+        return response()->json($payment->load('debt'), 200);
     }
 
     public function show(DebtPayment $debtPayment): JsonResponse
     {
-        return response()->json($debtPayment->load('debts'), 200);
+        return response()->json($debtPayment->load('debt'), 200);
     }
 }

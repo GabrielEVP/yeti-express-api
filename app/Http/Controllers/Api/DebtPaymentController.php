@@ -23,7 +23,8 @@ class DebtPaymentController extends Controller
         $data['date'] = now();
 
         $debt = Debt::findOrFail($data['debt_id']);
-        $data['amount'] = $debt->amount;
+        $totalPaid = $debt->payments()->sum('amount');
+        $data['amount'] = $debt->amount - $totalPaid;
 
         $payment = DebtPayment::create($data);
 

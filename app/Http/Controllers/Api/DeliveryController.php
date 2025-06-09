@@ -8,6 +8,7 @@ use App\Http\Requests\DeliveryStatusRequest;
 use App\Models\Delivery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 class DeliveryController extends Controller
 {
@@ -29,6 +30,86 @@ class DeliveryController extends Controller
             ->deliveries()
             ->with($this->relations)
             ->get();
+
+        return response()->json($deliveries, 200);
+    }
+
+    public function filter(Request $request): JsonResponse
+    {
+        $search = $request->string("search")->toString();
+        $sort = $request->input("sortBy", "date");
+        $order = strtolower($request->input("sortDirection", "desc"));
+        $perPage = $request->input("perPage", 15);
+        $page = $request->input("page", 1);
+
+        $validColumns = [
+            "number",
+            "date",
+            "status",
+            "payment_status",
+            "payment_type",
+            "amount"
+        ];
+
+        if (
+            !in_array($sort, $validColumns) ||
+            !in_array($order, ["asc", "desc"])
+        ) {
+            return response()->json(
+                ["error" => "Invalid sort parameters"],
+                400
+            );
+        }
+
+        $query = Auth::user()->deliveries()->with($this->relations);
+
+        if ($search) {
+            $query->where("number", "LIKE", "%{$search}%");
+        }
+
+        if ($request->has("status")) {
+            $query->where("status", $request->input("status"));
+        }
+
+        if ($request->has("paymentStatus")) {
+            $query->where("payment_status", strtolower($request->input("paymentStatus")));
+        }
+
+        if ($request->has("paymentMethod")) {
+            $query->where("payment_type", strtolower($request->input("paymentMethod")));
+        }
+
+        // Filtros de fecha
+        if ($request->has("startDate")) {
+            $query->whereDate("date", ">=", $request->input("startDate"));
+        }
+
+        if ($request->has("endDate")) {
+            $query->whereDate("date", "<=", $request->input("endDate"));
+        }
+
+        // Ordenamiento
+        if ($sort === 'client') {
+            $query->join('clients', 'deliveries.client_id', '=', 'clients.id')
+                ->orderBy('clients.legal_name', $order)
+                ->select('deliveries.*');
+        } elseif ($sort === 'courier') {
+            $query->join('couriers', 'deliveries.courier_id', '=', 'couriers.id')
+                ->orderBy('couriers.first_name', $order)
+                ->select('deliveries.*');
+        } elseif ($sort === 'service') {
+            $query->join('services', 'deliveries.service_id', '=', 'services.id')
+                ->orderBy('services.name', $order)
+                ->select('deliveries.*');
+        } elseif ($sort === 'amount') {
+            $query->join('services', 'deliveries.service_id', '=', 'services.id')
+                ->orderBy('services.amount', $order)
+                ->select('deliveries.*');
+        } else {
+            $query->orderBy($sort, $order);
+        }
+
+        $deliveries = $query->paginate($perPage, ['*'], 'page', $page);
 
         return response()->json($deliveries, 200);
     }
@@ -226,6 +307,30 @@ class DeliveryController extends Controller
             ->paid()
             ->with($this->relations)
             ->get();
+
+        return response()->json($deliveries, 200);
+    }
+
+    public function getWithDebt(): JsonResponse
+    {
+        $deliveries = Auth::user()
+            ->deliveries()
+            ->whereHas('debt')
+            ->with($this->relations)
+            ->get();
+
+        return response()->json($deliveries, 200);
+    }
+
+    public function getWithDebtByClient(int $clientId): JsonResponse
+    {
+        $deliveries = Auth::user()
+            ->deliveries()
+            ->where('client_id', $clientId)
+            ->whereHas('debt')
+            ->with($this->relations)
+            ->get();
+
 
         return response()->json($deliveries, 200);
     }

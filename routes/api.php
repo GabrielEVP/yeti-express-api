@@ -22,17 +22,34 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::put("user/update", [AuthController::class, "update"]);
     Route::get("user", fn(Request $request) => $request->user());
 
+    Route::prefix("clients")->group(function () {
+        Route::get("search/{query}", [ClientController::class, "search"]);
+        Route::get("filter", [ClientController::class, "filter"]);
+    });
     Route::apiResource("clients", ClientController::class);
+
     Route::apiResource("couriers", CourierController::class);
     Route::apiResource("boxes", BoxController::class);
+    Route::prefix("deliveries")->group(function () {
+        Route::get("filter", [DeliveryController::class, "filter"]);
+        Route::get("clients/{clientId}", [DeliveryController::class, "latestByClient"]);
+        Route::get("couriers/{courierId}", [DeliveryController::class, "latestByCourier"]);
+        Route::put("{delivery}/status", [DeliveryController::class, "updateStatus"]);
+        Route::post("{delivery}/client-payments", [DeliveryController::class, "storeClientPayment"]);
+        Route::get("status/received", [DeliveryController::class, "getReceived"]);
+        Route::get("status/cancelled", [DeliveryController::class, "getCancelled"]);
+        Route::get("status/pending", [DeliveryController::class, "getPending"]);
+        Route::get("status/in-transit", [DeliveryController::class, "getInTransit"]);
+        Route::get("payment/pending", [DeliveryController::class, "getPaymentPending"]);
+        Route::get("payment/partially-paid", [DeliveryController::class, "getPartiallyPaid"]);
+        Route::get("payment/paid", [DeliveryController::class, "getPaid"]);
+        Route::get("with-debt", [DeliveryController::class, "getWithDebt"]);
+        Route::get("with-debt/client/{clientId}", [DeliveryController::class, "getWithDebtByClient"]);
+    });
     Route::apiResource("deliveries", DeliveryController::class);
     Route::apiResource("employees", EmployeeController::class);
     Route::apiResource("services", ServiceController::class);
     Route::apiResource("company-bills", CompanyBillController::class);
-
-    Route::prefix("clients")->group(function () {
-        Route::get("search/{query}", [ClientController::class, "search"]);
-    });
 
     Route::prefix("couriers")->group(function () {
         Route::get("search/{query}", [CourierController::class, "search"]);
@@ -45,20 +62,6 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::prefix("services")->group(function () {
         Route::get("search/{query}", [ServiceController::class, "search"]);
         Route::get("deliveries/{deliveryId}", [ServiceController::class, "getByDelivery"]);
-    });
-
-    Route::prefix("deliveries")->group(function () {
-        Route::get("clients/{clientId}", [DeliveryController::class, "latestByClient"]);
-        Route::get("couriers/{courierId}", [DeliveryController::class, "latestByCourier"]);
-        Route::put("{delivery}/status", [DeliveryController::class, "updateStatus"]);
-        Route::post("{delivery}/client-payments", [DeliveryController::class, "storeClientPayment"]);
-        Route::get("status/received", [DeliveryController::class, "getReceived"]);
-        Route::get("status/cancelled", [DeliveryController::class, "getCancelled"]);
-        Route::get("status/pending", [DeliveryController::class, "getPending"]);
-        Route::get("status/in-transit", [DeliveryController::class, "getInTransit"]);
-        Route::get("payment/pending", [DeliveryController::class, "getPaymentPending"]);
-        Route::get("payment/partially-paid", [DeliveryController::class, "getPartiallyPaid"]);
-        Route::get("payment/paid", [DeliveryController::class, "getPaid"]);
     });
 
     Route::prefix("company-bills")->group(function () {

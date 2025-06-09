@@ -22,11 +22,19 @@ class ClientController extends Controller
         "events",
     ];
 
-    public function index(Request $request): JsonResponse
+    public function index(): JsonResponse
+    {
+        $clients = Client::with($this->relations)->get();
+        return response()->json($clients, 200);
+    }
+
+    public function filter(Request $request): JsonResponse
     {
         $search = $request->string("search")->toString();
-        $sort = $request->input("sort.column", "legal_name");
-        $order = strtolower($request->input("sort.order", "asc"));
+        $sort = $request->input("sortBy", "legal_name");
+        $order = strtolower($request->input("sortDirection", "asc"));
+        $perPage = $request->input("perPage", 15);
+        $page = $request->input("page", 1);
 
         $validColumns = [
             "id",
@@ -35,7 +43,13 @@ class ClientController extends Controller
             "type",
             "country",
             "tax_rate",
+            "allow_credit"
         ];
+
+        // Convertir legalName a legal_name para mantener consistencia con la base de datos
+        if ($sort === 'legalName') {
+            $sort = 'legal_name';
+        }
 
         if (
             !in_array($sort, $validColumns) ||
@@ -52,6 +66,12 @@ class ClientController extends Controller
                 $search,
                 fn($q) => $q->where("legal_name", "LIKE", "%{$search}%")
             )
+            ->when($request->has("type"), function ($q) use ($request) {
+                $q->where("type", $request->input("type"));
+            })
+            ->when($request->has("allowCredit"), function ($q) use ($request) {
+                $q->where("allow_credit", $request->boolean("allowCredit"));
+            })
             ->when($request->has("select"), function ($q) use ($request, $validColumns) {
                 foreach ($request->input("select", []) as $filter) {
                     if (
@@ -64,7 +84,9 @@ class ClientController extends Controller
             })
             ->orderBy($sort, $order);
 
-        return response()->json($query->get(), 200);
+        $clients = $query->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json($clients, 200);
     }
 
     public function store(ClientRequest $request): JsonResponse

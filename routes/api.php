@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\CompanyBillController;
 use App\Http\Controllers\Api\DebtPaymentController;
+use App\Http\Controllers\Api\ReportController;
 
 Route::post("register", [AuthController::class, "register"]);
 Route::post("login", [AuthController::class, "login"]);
@@ -25,6 +26,7 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::prefix("clients")->group(function () {
         Route::get("search/{query}", [ClientController::class, "search"]);
         Route::get("filter", [ClientController::class, "filter"]);
+        Route::get("{client}/debt-report", [ReportController::class, "clientDebtReport"]);
     });
     Route::apiResource("clients", ClientController::class);
 
@@ -45,6 +47,7 @@ Route::middleware("auth:sanctum")->group(function () {
         Route::get("payment/paid", [DeliveryController::class, "getPaid"]);
         Route::get("with-debt", [DeliveryController::class, "getWithDebt"]);
         Route::get("with-debt/client/{clientId}", [DeliveryController::class, "getWithDebtByClient"]);
+        Route::get("{delivery}/ticket", [ReportController::class, "deliveryTicket"]);
     });
     Route::apiResource("deliveries", DeliveryController::class);
     Route::apiResource("employees", EmployeeController::class);
@@ -53,6 +56,7 @@ Route::middleware("auth:sanctum")->group(function () {
 
     Route::prefix("couriers")->group(function () {
         Route::get("search/{query}", [CourierController::class, "search"]);
+        Route::get("{courier}/deliveries-report", [ReportController::class, "courierDeliveriesReport"]);
     });
 
     Route::prefix("employees")->group(function () {

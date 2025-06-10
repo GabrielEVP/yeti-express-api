@@ -12,21 +12,22 @@ class Delivery extends Model
     use HasFactory;
 
     protected $fillable = [
-        'number',
-        'date',
-        'status',
-        'payment_type',
-        'payment_status',
-        'notes',
-        'service_id',
-        'client_id',
-        'client_address_id',
-        'courier_id',
-        'user_id',
+        "number",
+        "date",
+        "status",
+        "payment_type",
+        "payment_status",
+        "amount",
+        "notes",
+        "service_id",
+        "client_id",
+        "client_address_id",
+        "courier_id",
+        "user_id",
     ];
 
     protected $casts = [
-        'date' => 'date',
+        "date" => "date",
     ];
 
     public function user()
@@ -72,37 +73,37 @@ class Delivery extends Model
     // Scopes para filtrar por estado
     public function scopeReceived(Builder $query): Builder
     {
-        return $query->where('status', 'received');
+        return $query->where("status", "received");
     }
 
     public function scopeCancelled(Builder $query): Builder
     {
-        return $query->where('status', 'cancelled');
+        return $query->where("status", "cancelled");
     }
 
     public function scopePending(Builder $query): Builder
     {
-        return $query->where('status', 'pending');
+        return $query->where("status", "pending");
     }
 
     public function scopeInTransit(Builder $query): Builder
     {
-        return $query->where('status', 'in_transit');
+        return $query->where("status", "in_transit");
     }
 
     public function scopePaymentPending(Builder $query): Builder
     {
-        return $query->where('payment_status', 'pending');
+        return $query->where("payment_status", "pending");
     }
 
     public function scopePartiallyPaid(Builder $query): Builder
     {
-        return $query->where('payment_status', 'partial_paid');
+        return $query->where("payment_status", "partial_paid");
     }
 
     public function scopePaid(Builder $query): Builder
     {
-        return $query->where('payment_status', 'paid');
+        return $query->where("payment_status", "paid");
     }
 
     public static function getReceived(): Collection

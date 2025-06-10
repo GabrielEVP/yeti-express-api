@@ -30,4 +30,10 @@ class Service extends Model
     {
         return $this->hasMany(ServiceEvent::class);
     }
+
+    public function getTotalEarning(): float
+    {
+        $totalBills = $this->bills()->sum('amount');
+        return $this->amount - $this->comision - $totalBills;
+    }
 }

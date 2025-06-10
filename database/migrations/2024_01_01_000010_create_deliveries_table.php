@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->enum("status", allowed: ["pending", "in_transit", "delivered", "cancelled",]);
             $table->enum("payment_type", ["partial", "full"]);
             $table->enum("payment_status", ["pending", "partially_paid", "paid",]);
+            $table->decimal("amount", 10, 2);
             $table->text("notes")->nullable();
             $table->timestamps();
             $table->foreignId("service_id")->constrained("services")->onDelete("cascade");

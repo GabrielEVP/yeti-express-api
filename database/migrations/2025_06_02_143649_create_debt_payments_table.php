@@ -13,6 +13,7 @@ return new class extends Migration {
             $table->decimal('amount', 10, 2);
             $table->enum('method', ['cash', 'mobile_payment', 'transfer']);
             $table->foreignId('debt_id')->constrained()->onDelete('cascade');
+            $table->foreignId("user_id")->constrained("users")->onDelete("cascade");
             $table->timestamps();
         });
     }

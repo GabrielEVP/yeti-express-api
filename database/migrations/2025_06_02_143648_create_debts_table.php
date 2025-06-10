@@ -13,6 +13,7 @@ return new class extends Migration {
             $table->enum('status', ['pending', 'partial_paid', 'paid']);
             $table->foreignId('client_id')->constrained()->onDelete('cascade');
             $table->foreignId('delivery_id')->constrained()->onDelete('cascade');
+            $table->foreignId("user_id")->constrained("users")->onDelete("cascade");
             $table->timestamps();
         });
     }

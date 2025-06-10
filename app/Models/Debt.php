@@ -14,6 +14,7 @@ class Debt extends Model
         'status',
         'client_id',
         'delivery_id',
+        'user_id',
     ];
 
     protected $casts = [
@@ -25,7 +26,6 @@ class Debt extends Model
         return $this->hasMany(DebtPayment::class);
     }
 
-
     public function client()
     {
         return $this->belongsTo(Client::class);
@@ -34,6 +34,11 @@ class Debt extends Model
     public function delivery()
     {
         return $this->belongsTo(Delivery::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function updateStatusBasedOnPayments(): void
@@ -66,5 +71,4 @@ class Debt extends Model
 
         $this->save();
     }
-
 }

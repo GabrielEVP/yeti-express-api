@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\CompanyBillController;
 use App\Http\Controllers\Api\DebtPaymentController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\HomeController;
 
 Route::post("register", [AuthController::class, "register"]);
 Route::post("login", [AuthController::class, "login"]);
@@ -22,6 +23,9 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::post("logout", [AuthController::class, "logout"]);
     Route::put("user/update", [AuthController::class, "update"]);
     Route::get("user", fn(Request $request) => $request->user());
+
+    // Dashboard statistics
+    Route::get("dashboard", [HomeController::class, "getDashboardStats"]);
 
     Route::prefix("clients")->group(function () {
         Route::get("search/{query}", [ClientController::class, "search"]);

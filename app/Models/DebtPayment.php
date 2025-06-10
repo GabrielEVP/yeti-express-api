@@ -14,6 +14,7 @@ class DebtPayment extends Model
         'amount',
         'method',
         'debt_id',
+        'user_id',
     ];
 
     protected $casts = [
@@ -24,5 +25,10 @@ class DebtPayment extends Model
     public function debt()
     {
         return $this->belongsTo(Debt::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

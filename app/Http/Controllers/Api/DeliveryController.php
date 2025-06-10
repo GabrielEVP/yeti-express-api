@@ -189,6 +189,7 @@ class DeliveryController extends Controller
                     'status' => 'pending',
                     'client_id' => $delivery->client_id,
                     'delivery_id' => $delivery->id,
+                    'user_id' => Auth::id(),
                 ]);
             } else if ($delivery->payment_type === 'full') {
                 $updateData['payment_status'] = 'paid';

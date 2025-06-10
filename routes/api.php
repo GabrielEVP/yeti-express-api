@@ -24,7 +24,6 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::put("user/update", [AuthController::class, "update"]);
     Route::get("user", fn(Request $request) => $request->user());
 
-    // Dashboard statistics
     Route::get("dashboard", [HomeController::class, "getDashboardStats"]);
 
     Route::prefix("clients")->group(function () {

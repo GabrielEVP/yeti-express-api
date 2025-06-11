@@ -82,3 +82,57 @@ Route::middleware("auth:sanctum")->group(function () {
         Route::post("partial", [DebtPaymentController::class, "storePartialPayment"]);
     });
 });
+
+Route::prefix('employee')->group(function () {
+
+    Route::middleware(['auth:employee', 'employee.permissions'])->group(function () {
+
+        // Rutas permitidas para empleados
+        Route::prefix('deliveries')->group(function () {
+            Route::get('/', [DeliveryController::class, 'index']);
+            Route::get('/{delivery}', [DeliveryController::class, 'show']);
+            Route::get('/status/pending', [DeliveryController::class, 'getPending']);
+            Route::get('/status/in-transit', [DeliveryController::class, 'getInTransit']);
+            Route::put('/{delivery}/status', [DeliveryController::class, 'updateStatus']);
+            Route::get('/status/received', [DeliveryController::class, 'getReceived']);
+            Route::get('/status/cancelled', [DeliveryController::class, 'getCancelled']);
+            Route::get('/payment/pending', [DeliveryController::class, 'getPaymentPending']);
+            Route::get('/payment/partially-paid', [DeliveryController::class, 'getPartiallyPaid']);
+            Route::get('/payment/paid', [DeliveryController::class, 'getPaid']);
+            Route::get('/with-debt', [DeliveryController::class, 'getWithDebt']);
+            Route::get('/with-debt/client/{clientId}', [DeliveryController::class, 'getWithDebtByClient']);
+            Route::get('/{delivery}/ticket', [ReportController::class, 'deliveryTicket']);
+        });
+
+        Route::prefix('clients')->group(function () {
+            Route::get('/', [ClientController::class, 'index']);
+            Route::get('/{client}', [ClientController::class, 'show']);
+            Route::get('/search/{query}', [ClientController::class, 'search']);
+            Route::get('/filter', [ClientController::class, 'filter']);
+            Route::get('/{client}/debt-report', [ReportController::class, 'clientDebtReport']);
+        });
+
+        Route::prefix('couriers')->group(function () {
+            Route::get('/', [CourierController::class, 'index']);
+            Route::get('/{courier}', [CourierController::class, 'show']);
+            Route::get('/search/{query}', [CourierController::class, 'search']);
+            Route::get('/{courier}/deliveries-report', [ReportController::class, 'courierDeliveriesReport']);
+        });
+
+        Route::prefix('services')->group(function () {
+            Route::get('/', [ServiceController::class, 'index']);
+            Route::get('/{service}', [ServiceController::class, 'show']);
+            Route::get('/search/{query}', [ServiceController::class, 'search']);
+            Route::get('/deliveries/{deliveryId}', [ServiceController::class, 'getByDelivery']);
+        });
+
+        Route::prefix('company-bills')->group(function () {
+            Route::get('/', [CompanyBillController::class, 'index']);
+            Route::get('/{companyBill}', [CompanyBillController::class, 'show']);
+            Route::get('/search/{query}', [CompanyBillController::class, 'search']);
+        });
+
+        Route::post("logout", [AuthController::class, "logout"]);
+
+    });
+});

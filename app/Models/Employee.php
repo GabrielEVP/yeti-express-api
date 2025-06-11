@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class Employee extends Model
+class Employee extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
     protected $table = 'employees';
@@ -41,5 +42,30 @@ class Employee extends Model
     public function events()
     {
         return $this->hasMany(EmployeeEvent::class);
+    }
+
+    public function couriers()
+    {
+        return $this->user->couriers();
+    }
+
+    public function deliveries()
+    {
+        return $this->user->deliveries();
+    }
+
+    public function clients()
+    {
+        return $this->user->clients();
+    }
+
+    public function services()
+    {
+        return $this->user->services();
+    }
+
+    public function companyBills()
+    {
+        return $this->user->companyBills();
     }
 }

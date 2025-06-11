@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AuthRequest;
 use App\Models\User;
+use App\Models\Employee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -31,21 +33,39 @@ class AuthController extends Controller
 
     public function login(AuthRequest $request): JsonResponse
     {
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        // Primero intentar autenticar como usuario
+        if (Auth::attempt($request->only('email', 'password'))) {
+            $user = User::where('email', $request->email)->firstOrFail();
+            $token = $user->createToken('auth_token')->plainTextToken;
+
             return response()->json([
-                'message' => 'Invalid login details',
-            ], 401);
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+                'user' => $user,
+                'type' => 'user'
+            ], 200);
         }
 
-        $user = User::where('email', $request->email)->firstOrFail();
+        // Si no es usuario, intentar como empleado
+        $employee = Employee::where('email', $request->email)
+            ->where('active', true)
+            ->first();
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        if ($employee && Hash::check($request->password, $employee->password)) {
+            $employee->tokens()->delete();
+            $token = $employee->createToken('employee_token')->plainTextToken;
 
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
-        ], 200);
+            return response()->json([
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+                'user' => $employee,
+                'type' => 'employee'
+            ], 200);
+        }
+
+        throw ValidationException::withMessages([
+            'email' => ['Las credenciales proporcionadas son incorrectas.'],
+        ]);
     }
 
     public function changePassword(AuthRequest $request): JsonResponse

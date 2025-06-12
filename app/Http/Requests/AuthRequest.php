@@ -38,4 +38,27 @@ class AuthRequest extends FormRequest
 
         return [];
     }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'El nombre es obligatorio',
+            'name.string' => 'El nombre debe ser texto',
+            'name.max' => 'El nombre no puede tener más de 255 caracteres',
+
+            'email.required' => 'El correo electrónico es obligatorio',
+            'email.string' => 'El correo electrónico debe ser texto',
+            'email.email' => 'El correo electrónico debe ser válido',
+            'email.max' => 'El correo electrónico no puede tener más de 255 caracteres',
+            'email.unique' => 'Este correo electrónico ya está registrado',
+
+            'password.required' => 'La contraseña es obligatoria',
+            'password.string' => 'La contraseña debe ser texto',
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres',
+
+            'profile_image.image' => 'El archivo debe ser una imagen',
+            'profile_image.mimes' => 'La imagen debe ser de tipo: jpeg, png, jpg, gif',
+            'profile_image.max' => 'La imagen no puede pesar más de 2MB',
+        ];
+    }
 }

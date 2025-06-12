@@ -74,14 +74,14 @@ class AuthController extends Controller
 
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
-                'message' => 'Current password is incorrect.',
+                'message' => 'La contraseña actual es incorrecta.',
             ], 404);
         }
 
         $user->password = Hash::make($request->new_password);
         $user->save();
 
-        return response()->json(['message' => 'Password updated successfully.'], 200);
+        return response()->json(['message' => 'Contraseña actualizada exitosamente.'], 200);
     }
 
     public function update(Request $request): JsonResponse
@@ -96,7 +96,7 @@ class AuthController extends Controller
         $user->update($validated);
 
         return response()->json([
-            'message' => 'User updated successfully.',
+            'message' => 'Usuario actualizado exitosamente.',
             'user' => $user->fresh(),
         ], 200);
     }
@@ -106,7 +106,7 @@ class AuthController extends Controller
         auth()->user()->tokens()->delete();
 
         return response()->json([
-            'message' => 'Successfully logged out',
+            'message' => 'Sesión cerrada exitosamente',
         ], 200);
     }
 }

@@ -22,12 +22,6 @@ class ClientController extends Controller
 
     public function index(): JsonResponse
     {
-        $clients = Client::where('user_id', Auth::id())->get();
-        return response()->json($clients, 200);
-    }
-
-    public function indexWithAddress(): JsonResponse
-    {
         $clients = Client::with('addresses')->where('user_id', Auth::id())->get();
         return response()->json($clients, 200);
     }

@@ -26,64 +26,7 @@ class ClientController extends Controller
         return response()->json($clients, 200);
     }
 
-    public function filter(Request $request): JsonResponse
-    {
-        $search = $request->string("search")->toString();
-        $sort = $request->input("sortBy", "legal_name");
-        $order = strtolower($request->input("sortDirection", "asc"));
-        $perPage = $request->input("perPage", 15);
-        $page = $request->input("page", 1);
 
-        $validColumns = [
-            "id",
-            "registration_number",
-            "legal_name",
-            "type",
-            "country",
-            "tax_rate",
-            "allow_credit"
-        ];
-
-        if ($sort === 'legalName') {
-            $sort = 'legal_name';
-        }
-
-        if (
-            !in_array($sort, $validColumns) ||
-            !in_array($order, ["asc", "desc"])
-        ) {
-            return response()->json(
-                ["error" => "Invalid sort parameters"],
-                400
-            );
-        }
-
-        $query = Client::when(
-            $search,
-            fn($q) => $q->where("legal_name", "LIKE", "%{$search}%")
-        )
-            ->when($request->has("type"), function ($q) use ($request) {
-                $q->where("type", $request->input("type"));
-            })
-            ->when($request->has("allowCredit"), function ($q) use ($request) {
-                $q->where("allow_credit", $request->boolean("allowCredit"));
-            })
-            ->when($request->has("select"), function ($q) use ($request, $validColumns) {
-                foreach ($request->input("select", []) as $filter) {
-                    if (
-                        isset($filter["option"], $filter["value"]) &&
-                        in_array($filter["option"], $validColumns)
-                    ) {
-                        $q->where($filter["option"], $filter["value"]);
-                    }
-                }
-            })
-            ->orderBy($sort, $order);
-
-        $clients = $query->paginate($perPage, ['*'], 'page', $page);
-
-        return response()->json($clients, 200);
-    }
 
     public function store(ClientRequest $request): JsonResponse
     {
@@ -146,6 +89,64 @@ class ClientController extends Controller
             200
         );
     }
+
+    public function filter(Request $request): JsonResponse
+    {
+        $search = $request->string("search")->toString();
+        $sort = $request->input("sortBy", "legal_name");
+        $order = strtolower($request->input("sortDirection", "asc"));
+
+        $validColumns = [
+            "id",
+            "registration_number",
+            "legal_name",
+            "type",
+            "country",
+            "tax_rate",
+            "allow_credit"
+        ];
+
+        if ($sort === 'legalName') {
+            $sort = 'legal_name';
+        }
+
+        if (
+            !in_array($sort, $validColumns) ||
+            !in_array($order, ["asc", "desc"])
+        ) {
+            return response()->json(
+                ["error" => "Invalid sort parameters"],
+                400
+            );
+        }
+
+        $query = Client::when(
+            $search,
+            fn($q) => $q->where("legal_name", "LIKE", "%{$search}%")
+        )
+            ->when($request->has("type"), function ($q) use ($request) {
+                $q->where("type", $request->input("type"));
+            })
+            ->when($request->has("allowCredit"), function ($q) use ($request) {
+                $q->where("allow_credit", $request->boolean("allowCredit"));
+            })
+            ->when($request->has("select"), function ($q) use ($request, $validColumns) {
+                foreach ($request->input("select", []) as $filter) {
+                    if (
+                        isset($filter["option"], $filter["value"]) &&
+                        in_array($filter["option"], $validColumns)
+                    ) {
+                        $q->where($filter["option"], $filter["value"]);
+                    }
+                }
+            })
+            ->orderBy($sort, $order);
+
+        $clients = $query->get();
+
+        return response()->json($clients, 200);
+    }
+
 
     public function getTotalInvoiced(string $id): JsonResponse
     {

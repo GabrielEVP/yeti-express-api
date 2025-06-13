@@ -10,7 +10,7 @@ use App\Http\Requests\CompanyBillRequest;
 
 class CompanyBillController extends Controller
 {
-    private array $relations = ["user"];
+    private array $relations = [];
 
     public function index(Request $request): JsonResponse
     {

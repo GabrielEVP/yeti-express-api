@@ -90,19 +90,14 @@ class DeliveryController extends Controller
 
     public function filter(Request $request): JsonResponse
     {
-        $search = $request->string("search")->toString();
-        $sort = $request->input("sortBy", "date");
-        $order = strtolower($request->input("sortDirection", "desc"));
-        $perPage = $request->input("perPage", 15);
-        $page = $request->input("page", 1);
+        $search = (string) $request->input("search", "");
+        $sort = $request->input("sortBy", "legal_name");
+        $order = strtolower($request->input("sortDirection", "asc"));
 
         $validColumns = [
-            "number",
-            "date",
-            "status",
-            "payment_status",
-            "payment_type",
-            "amount"
+            "legal_name",
+            "type",
+            "allow_credit"
         ];
 
         if (
@@ -115,57 +110,27 @@ class DeliveryController extends Controller
             );
         }
 
-        $query = Auth::user()->deliveries()->with($this->relations);
+        $query = Client::query();
 
         if ($search) {
-            $query->where("number", "LIKE", "%{$search}%");
+            $query->where("legal_name", "LIKE", "%{$search}%");
         }
 
-        if ($request->has("status")) {
-            $query->where("status", $request->input("status"));
+        foreach ($request->input('filters', []) as $field => $value) {
+
+            if (in_array($field, $validColumns) && $value !== null && $value !== '') {
+                $query->where($field, $value);
+            }
         }
 
-        if ($request->has("paymentStatus")) {
-            $query->where("payment_status", strtolower($request->input("paymentStatus")));
-        }
+        $query->orderBy($sort, $order);
+        $clients = $query->get();
 
-        if ($request->has("paymentMethod")) {
-            $query->where("payment_type", strtolower($request->input("paymentMethod")));
-        }
-
-        // Filtros de fecha
-        if ($request->has("startDate")) {
-            $query->whereDate("date", ">=", $request->input("startDate"));
-        }
-
-        if ($request->has("endDate")) {
-            $query->whereDate("date", "<=", $request->input("endDate"));
-        }
-
-        if ($sort === 'client') {
-            $query->join('clients', 'deliveries.client_id', '=', 'clients.id')
-                ->orderBy('clients.legal_name', $order)
-                ->select('deliveries.*');
-        } elseif ($sort === 'courier') {
-            $query->join('couriers', 'deliveries.courier_id', '=', 'couriers.id')
-                ->orderBy('couriers.first_name', $order)
-                ->select('deliveries.*');
-        } elseif ($sort === 'service') {
-            $query->join('services', 'deliveries.service_id', '=', 'services.id')
-                ->orderBy('services.name', $order)
-                ->select('deliveries.*');
-        } elseif ($sort === 'amount') {
-            $query->join('services', 'deliveries.service_id', '=', 'services.id')
-                ->orderBy('services.amount', $order)
-                ->select('deliveries.*');
-        } else {
-            $query->orderBy($sort, $order);
-        }
-
-        $deliveries = $query->paginate($perPage, ['*'], 'page', $page);
-
-        return response()->json($deliveries, 200);
+        return response()->json($clients, 200);
     }
+
+
+
 
     public function updateStatus(DeliveryStatusRequest $request, Delivery $delivery): JsonResponse
     {

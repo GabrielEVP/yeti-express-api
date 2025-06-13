@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\DeliveryController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\CompanyBillController;
+use App\Http\Controllers\Api\DebtController;
 use App\Http\Controllers\Api\DebtPaymentController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\HomeController;
@@ -40,6 +41,16 @@ Route::middleware("auth:sanctum")->group(function () {
 
     Route::apiResource("couriers", CourierController::class);
     Route::apiResource("boxes", BoxController::class);
+
+    Route::prefix('debts')->middleware('auth:sanctum')->group(function () {
+        Route::get('/', [DebtController::class, 'index']);
+        Route::get('/{debt}', [DebtController::class, 'show']);
+        Route::delete('/{debt}', [DebtController::class, 'destroy']);
+
+        Route::get('/clients/with-debts', [DebtController::class, 'clientsWithDebt']);
+        Route::get('/clients/debt-count', [DebtController::class, 'debtCountPerClient']);
+    });
+
     Route::prefix("deliveries")->group(function () {
         Route::get("filter", [DeliveryController::class, "filter"]);
         Route::get("clients/{clientId}", [DeliveryController::class, "latestByClient"]);

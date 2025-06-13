@@ -30,6 +30,11 @@ Route::middleware("auth:sanctum")->group(function () {
         Route::get("search/{query}", [ClientController::class, "search"]);
         Route::get("filter", [ClientController::class, "filter"]);
         Route::get("{client}/debt-report", [ReportController::class, "clientDebtReport"]);
+        Route::get("{client}/total-invoiced", [ClientController::class, "getTotalInvoiced"]);
+        Route::get("{client}/earnings-delivery", [ClientController::class, "getEarningsDelivery"]);
+        Route::get("{client}/pending-earnings", [ClientController::class, "getPendingEarnings"]);
+        Route::get("{client}/pending-earnings/count", [ClientController::class, "getPendingEarningsCount"]);
+        Route::get("{client}/earnings-delivery-current-month", [ClientController::class, "getEarningsDeliveryOfCurrentMonth"]);
     });
     Route::apiResource("clients", ClientController::class);
 
@@ -110,6 +115,12 @@ Route::prefix('employee')->group(function () {
             Route::get('/search/{query}', [ClientController::class, 'search']);
             Route::get('/filter', [ClientController::class, 'filter']);
             Route::get('/{client}/debt-report', [ReportController::class, 'clientDebtReport']);
+
+            // Nuevas rutas para empleados también (si necesitan acceso)
+            Route::get('/{client}/total-invoiced', [ClientController::class, 'getTotalInvoiced']);
+            Route::get('/{client}/earnings-delivery', [ClientController::class, 'getEarningsDelivery']);
+            Route::get('/{client}/pending-earnings', [ClientController::class, 'getPendingEarnings']);
+            Route::get('/{client}/earnings-delivery-current-month', [ClientController::class, 'getEarningsDeliveryOfCurrentMonth']);
         });
 
         Route::prefix('couriers')->group(function () {

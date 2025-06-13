@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\ClientEvent;
 use App\Http\Requests\ClientRequest;
+use Carbon\Carbon;
 
 class ClientController extends Controller
 {
@@ -16,15 +17,18 @@ class ClientController extends Controller
         "addresses",
         "phones",
         "emails",
-        "deliveries",
-        "deliveries.service",
-        "debts",
         "events",
     ];
 
     public function index(): JsonResponse
     {
-        $clients = Client::with($this->relations)->get();
+        $clients = Client::where('user_id', Auth::id())->get();
+        return response()->json($clients, 200);
+    }
+
+    public function indexWithAddress(): JsonResponse
+    {
+        $clients = Client::with('addresses')->where('user_id', Auth::id())->get();
         return response()->json($clients, 200);
     }
 
@@ -46,7 +50,6 @@ class ClientController extends Controller
             "allow_credit"
         ];
 
-        // Convertir legalName a legal_name para mantener consistencia con la base de datos
         if ($sort === 'legalName') {
             $sort = 'legal_name';
         }
@@ -61,11 +64,10 @@ class ClientController extends Controller
             );
         }
 
-        $query = Client::with($this->relations)
-            ->when(
-                $search,
-                fn($q) => $q->where("legal_name", "LIKE", "%{$search}%")
-            )
+        $query = Client::when(
+            $search,
+            fn($q) => $q->where("legal_name", "LIKE", "%{$search}%")
+        )
             ->when($request->has("type"), function ($q) use ($request) {
                 $q->where("type", $request->input("type"));
             })
@@ -151,6 +153,56 @@ class ClientController extends Controller
         );
     }
 
+    public function getTotalInvoiced(string $id): JsonResponse
+    {
+        $client = Client::findOrFail($id);
+        $total = $client->deliveries()->sum('amount');
+
+        return response()->json($total, 200);
+    }
+
+    public function getEarningsDelivery(string $id): JsonResponse
+    {
+        $client = Client::findOrFail($id);
+        $earnings = $client->deliveries()
+            ->where('payment_status', 'PAID')
+            ->sum('amount');
+
+        return response()->json($earnings, 200);
+    }
+
+    public function getPendingEarnings(string $id): JsonResponse
+    {
+        $client = Client::findOrFail($id);
+        $pending = $client->deliveries()
+            ->where('payment_status', '!=', 'PAID')
+            ->sum('amount');
+
+        return response()->json($pending, 200);
+    }
+
+    public function getPendingEarningsCount(string $id): JsonResponse
+    {
+        $client = Client::findOrFail($id);
+        $pending = $client->deliveries()->where('payment_status', '!=', 'PAID')->count();
+        return response()->json($pending, 200);
+    }
+
+    public function getEarningsDeliveryOfCurrentMonth(string $id): JsonResponse
+    {
+        $client = Client::findOrFail($id);
+        $currentMonth = Carbon::now()->month;
+        $currentYear = Carbon::now()->year;
+
+        $earnings = $client->deliveries()
+            ->where('payment_status', 'PAID')
+            ->whereMonth('created_at', $currentMonth)
+            ->whereYear('created_at', $currentYear)
+            ->sum('amount');
+
+        return response()->json($earnings, 200);
+    }
+
     private function syncRelations(Client $client, Request $request): void
     {
         $this->syncGenericRelation(
@@ -162,11 +214,8 @@ class ClientController extends Controller
         $this->syncGenericRelation($client, "emails");
     }
 
-    private function syncGenericRelation(
-        Client $client,
-        string $relation,
-        callable $deleteConstraint = null
-    ): void {
+    private function syncGenericRelation(Client $client, string $relation, callable $deleteConstraint = null): void
+    {
         $data = collect(request()->input($relation, []));
         $idsToKeep = $data->pluck("id")->filter()->toArray();
 

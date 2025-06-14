@@ -91,13 +91,16 @@ class DeliveryController extends Controller
     public function filter(Request $request): JsonResponse
     {
         $search = (string) $request->input("search", "");
-        $sort = $request->input("sortBy", "legal_name");
-        $order = strtolower($request->input("sortDirection", "asc"));
+        $sort = $request->input("sortBy", "id");
+        $order = strtolower($request->input("sortDirection", "desc"));
 
         $validColumns = [
-            "legal_name",
-            "type",
-            "allow_credit"
+            "id",
+            "number",
+            "date",
+            "status",
+            "payment_status",
+            "amount"
         ];
 
         if (
@@ -110,27 +113,42 @@ class DeliveryController extends Controller
             );
         }
 
-        $query = Client::query();
+        $query = Auth::user()->deliveries()->with($this->relations);
 
         if ($search) {
-            $query->where("legal_name", "LIKE", "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where("number", "LIKE", "%{$search}%")
+                    ->orWhereHas('client', function ($q) use ($search) {
+                        $q->where('legal_name', 'LIKE', "%{$search}%");
+                    });
+            });
         }
 
         foreach ($request->input('filters', []) as $field => $value) {
+            if ($value === null || $value === '')
+                continue;
 
-            if (in_array($field, $validColumns) && $value !== null && $value !== '') {
-                $query->where($field, $value);
+            switch ($field) {
+                case 'status':
+                    $query->where('status', $value);
+                    break;
+                case 'paymentStatus':
+                    $query->where('payment_status', $value);
+                    break;
+                case 'startDate':
+                    $query->whereDate('date', '>=', $value);
+                    break;
+                case 'endDate':
+                    $query->whereDate('date', '<=', $value);
+                    break;
             }
         }
 
         $query->orderBy($sort, $order);
-        $clients = $query->get();
+        $deliveries = $query->get();
 
-        return response()->json($clients, 200);
+        return response()->json($deliveries, 200);
     }
-
-
-
 
     public function updateStatus(DeliveryStatusRequest $request, Delivery $delivery): JsonResponse
     {
@@ -144,7 +162,7 @@ class DeliveryController extends Controller
         if ($newStatus === 'delivered') {
             if ($delivery->payment_type === 'partial') {
                 $delivery->debt()->create([
-                    'amount' => $delivery->service->amount,
+                    'amount' => $delivery->amount,
                     'status' => 'pending',
                     'client_id' => $delivery->client_id,
                     'delivery_id' => $delivery->id,

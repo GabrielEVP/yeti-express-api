@@ -8,7 +8,6 @@ use App\Http\Requests\DebtPartialPaymentRequest;
 use App\Models\DebtPayment;
 use App\Models\Debt;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DebtPaymentController extends Controller
@@ -21,7 +20,7 @@ class DebtPaymentController extends Controller
         return response()->json($payments, 200);
     }
 
-    public function storeFullPayment(Request $request): JsonResponse
+    public function storeFullPayment(DebtFullPaymentRequest $request): JsonResponse
     {
         $debt = Debt::findOrFail($request->input('debt_id'));
         $this->authorizeOwner($debt);
@@ -38,7 +37,7 @@ class DebtPaymentController extends Controller
         return response()->json($payment, 201);
     }
 
-    public function storePartialPayment(Request $request): JsonResponse
+    public function storePartialPayment(DebtPartialPaymentRequest $request): JsonResponse
     {
         $debt = Debt::findOrFail($request->input('debt_id'));
         $this->authorizeOwner($debt);

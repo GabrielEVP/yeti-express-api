@@ -69,6 +69,7 @@ class DeliveryController extends Controller
         $data = $delivery->toArray();
 
         $data['client_legal_name'] = optional($delivery->client)?->legal_name;
+        $data['client_address_name'] = optional($delivery->clientAddress)?->address;
         $data['courier_name'] = $delivery->courier ? "{$delivery->courier->first_name} {$delivery->courier->last_name}" : null;
         $data['service_name'] = optional($delivery->service)?->name;
 
@@ -193,6 +194,17 @@ class DeliveryController extends Controller
         $eventKey = 'status_update';
 
         if ($newStatus === 'delivered') {
+            if ($delivery->payment_type === 'partial') {
+                $delivery->debt()->create([
+                    'amount' => $delivery->amount,
+                    'status' => 'pending',
+                    'client_id' => $delivery->client_id,
+                    'delivery_id' => $delivery->id,
+                    'user_id' => Auth::id(),
+                ]);
+            } else if ($delivery->payment_type === 'full') {
+                $updateData['payment_status'] = 'paid';
+            }
             $eventKey = 'update_status_delivered_delivery';
         } elseif ($newStatus === 'canceled') {
             $eventKey = 'update_status_canceled_delivery';

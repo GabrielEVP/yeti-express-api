@@ -11,5 +11,6 @@ Route::prefix("clients")->group(function () {
     Route::get("{client}/pending-earnings", [ClientController::class, "getPendingEarnings"]);
     Route::get("{client}/pending-earnings/count", [ClientController::class, "getPendingEarningsCount"]);
     Route::get("{client}/earnings-delivery-current-month", [ClientController::class, "getEarningsDeliveryOfCurrentMonth"]);
+    Route::post("{client}/addresses", [ClientController::class, "createAddress"]);
 });
 Route::apiResource("clients", ClientController::class);

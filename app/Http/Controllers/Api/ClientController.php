@@ -198,6 +198,16 @@ class ClientController extends Controller
         return response()->json($earnings, 200);
     }
 
+    public function createAddress(Request $request, string $clientId): JsonResponse
+    {
+        $client = Client::findOrFail($clientId);
+
+        $validated = $request->validate(['address' => 'required|string|max:255',]);
+        $address = $client->addresses()->create($validated);
+
+        return response()->json($address, 200);
+    }
+
     private function syncRelations(Client $client, Request $request): void
     {
         $this->syncGenericRelation(

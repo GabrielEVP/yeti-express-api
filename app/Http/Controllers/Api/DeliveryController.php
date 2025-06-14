@@ -26,7 +26,6 @@ class DeliveryController extends Controller
     public function index(): JsonResponse
     {
         $deliveries = Auth::user()->deliveries()->get();
-
         return response()->json($deliveries, 200);
     }
 
@@ -58,7 +57,22 @@ class DeliveryController extends Controller
     {
         $this->authorizeOwner($delivery);
 
-        return response()->json($delivery->load($this->relations), 200);
+        $delivery->load([
+            'events',
+            'receipt',
+            'courier',
+            'client:id,legal_name',
+            'courier:id,first_name,last_name',
+            'service:id,name',
+        ]);
+
+        $data = $delivery->toArray();
+
+        $data['client_legal_name'] = optional($delivery->client)?->legal_name;
+        $data['courier_name'] = $delivery->courier ? "{$delivery->courier->first_name} {$delivery->courier->last_name}" : null;
+        $data['service_name'] = optional($delivery->service)?->name;
+
+        return response()->json($data, 200);
     }
 
     public function update(DeliveryRequest $request, Delivery $delivery): JsonResponse
@@ -73,6 +87,13 @@ class DeliveryController extends Controller
         if ($request->has('receipt')) {
             $this->syncRelatedReceipt($delivery, $request->input('receipt'));
         }
+
+        $delivery->events()->create([
+            'event' => 'update_delivery',
+            'section' => 'deliveries',
+            'reference_table' => 'deliveries',
+            'reference_id' => $delivery->id,
+        ]);
 
         return response()->json($delivery->load($this->relations), 200);
     }
@@ -103,17 +124,13 @@ class DeliveryController extends Controller
             "amount"
         ];
 
-        if (
-            !in_array($sort, $validColumns) ||
-            !in_array($order, ["asc", "desc"])
-        ) {
-            return response()->json(
-                ["error" => "Invalid sort parameters"],
-                400
-            );
+        if (!in_array($sort, $validColumns) || !in_array($order, ["asc", "desc"])) {
+            return response()->json(["error" => "Invalid sort parameters"], 400);
         }
 
-        $query = Auth::user()->deliveries()->with($this->relations);
+        $query = Auth::user()
+            ->deliveries()
+            ->with(['client:id,legal_name', 'courier:id,first_name', 'service:id,name']);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -145,38 +162,48 @@ class DeliveryController extends Controller
         }
 
         $query->orderBy($sort, $order);
+
         $deliveries = $query->get();
 
-        return response()->json($deliveries, 200);
+        $result = $deliveries->map(function ($delivery) {
+            return [
+                'id' => $delivery->id,
+                'number' => $delivery->number,
+                'date' => $delivery->date,
+                'status' => $delivery->status,
+                'payment_status' => $delivery->payment_status,
+                'amount' => $delivery->amount,
+
+                'client_legal_name' => optional($delivery->client)->legal_name,
+                'courier_name' => optional($delivery->courier)?->first_name . ' ' . optional($delivery->courier)?->last_name,
+                'service_name' => optional($delivery->service)->name,
+            ];
+        });
+
+        return response()->json($result, 200);
     }
+
 
     public function updateStatus(DeliveryStatusRequest $request, Delivery $delivery): JsonResponse
     {
         $this->authorizeOwner($delivery);
 
-        $oldStatus = $delivery->status;
         $newStatus = $request->input('status');
-
         $updateData = ['status' => $newStatus];
+        $eventKey = 'status_update';
 
         if ($newStatus === 'delivered') {
-            if ($delivery->payment_type === 'partial') {
-                $delivery->debt()->create([
-                    'amount' => $delivery->amount,
-                    'status' => 'pending',
-                    'client_id' => $delivery->client_id,
-                    'delivery_id' => $delivery->id,
-                    'user_id' => Auth::id(),
-                ]);
-            } else if ($delivery->payment_type === 'full') {
-                $updateData['payment_status'] = 'paid';
-            }
+            $eventKey = 'update_status_delivered_delivery';
+        } elseif ($newStatus === 'canceled') {
+            $eventKey = 'update_status_canceled_delivery';
+        } elseif ($newStatus === 'in_transit') {
+            $eventKey = 'update_status_transit_delivery';
         }
 
         $delivery->update($updateData);
 
         $delivery->events()->create([
-            'event' => 'status_update',
+            'event' => $eventKey,
             'section' => 'deliveries',
             'reference_table' => 'deliveries',
             'reference_id' => $delivery->id,

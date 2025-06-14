@@ -80,12 +80,26 @@ class DebtController extends Controller
                 $remainingAmount = $debt->amount - $totalPaid;
                 $delivery->debt_id = $debt->id;
                 $delivery->debt_remaining_amount = max(0, $remainingAmount);
+
+                // Puedes usar esto como indicador de estado
+                $delivery->debt_status = $remainingAmount > 0 ? 'pending' : 'paid';
+            } else {
+                $delivery->debt_status = 'no_debt';
+                $delivery->debt_remaining_amount = 0;
             }
 
             unset($delivery->debt);
-
             return $delivery;
         });
+
+        // Ordenamos: primero por estado (pendiente > pagado > sin deuda), luego por fecha (si lo deseas)
+        $deliveries = $deliveries->sortBy(function ($delivery) {
+            return match ($delivery->debt_status) {
+                'pending' => 0,
+                'paid' => 1,
+                'no_debt' => 2,
+            };
+        })->values(); // `values()` para resetear los índices del array
 
         return response()->json($deliveries, 200);
     }

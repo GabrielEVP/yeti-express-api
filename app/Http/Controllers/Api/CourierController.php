@@ -13,10 +13,6 @@ class CourierController extends Controller
 {
     private array $relations = [
         'events',
-        'deliveries',
-        'deliveries.service',
-        'deliveries.courier',
-        'deliveries.receipt',
     ];
 
     public function index(): JsonResponse

@@ -13,11 +13,53 @@ class ServiceController extends Controller
 {
     private array $relations = ['bills', 'events'];
 
-    public function index(Request $request): JsonResponse
+    public function index(): JsonResponse
     {
-        $service = Service::with($this->relations);
-        return response()->json($service->get(), 200);
+        $services = Service::get();
+
+        $result = $services->map(function ($service) {
+            $totalBillAmount = $service->bills->sum('amount');
+            $totalExpense = $totalBillAmount + $service->commission;
+            $profit = $service->amount - $totalExpense;
+
+            return [
+                'id' => $service->id,
+                'name' => $service->name,
+                'amount' => $service->amount,
+                'commission' => $service->commission,
+                'total_expense' => $totalExpense,
+                'total_earning' => $profit,
+            ];
+        });
+
+        return response()->json($result, 200);
     }
+
+    public function show(string $id): JsonResponse
+    {
+        $service = Service::with($this->relations)->findOrFail($id);
+
+        $totalBillAmount = $service->bills->sum('amount');
+        $totalExpense = $totalBillAmount + $service->commission;
+        $profit = $service->amount - $totalExpense;
+
+        $data = [
+            'id' => $service->id,
+            'name' => $service->name,
+            'description' => $service->description,
+            'amount' => $service->amount,
+            'commission' => $service->commission,
+            'bills' => $service->bills,
+            'events' => $service->events,
+            'created_at' => $service->created_at,
+            'updated_at' => $service->updated_at,
+            'total_expense' => $totalExpense,
+            'total_earning' => $profit,
+        ];
+
+        return response()->json($data, 200);
+    }
+
 
     public function store(ServiceRequest $request): JsonResponse
     {
@@ -31,11 +73,6 @@ class ServiceController extends Controller
         }
 
         return response()->json($service->load($this->relations), 201);
-    }
-
-    public function show(string $id): JsonResponse
-    {
-        return response()->json(Service::with($this->relations)->findOrFail($id), 200);
     }
 
     public function update(ServiceRequest $request, string $id): JsonResponse
@@ -85,9 +122,26 @@ class ServiceController extends Controller
 
     public function search(string $query): JsonResponse
     {
-        return response()->json(
-            Service::with($this->relations)->where('name', 'LIKE', "%{$query}%")->get(),
-            200
-        );
+        $services = Service::where('name', 'LIKE', "%{$query}%")->get();
+        $result = $services->map(function ($service) {
+            $totalBillAmount = $service->bills->sum('amount');
+            $totalExpense = $totalBillAmount + $service->commission;
+            $profit = $service->amount - $totalExpense;
+
+            return [
+                'id' => $service->id,
+                'name' => $service->name,
+                'description' => $service->description,
+                'amount' => $service->amount,
+                'commission' => $service->commission,
+                'bills' => $service->bills,
+                'events' => $service->events,
+                'total_expense' => $totalExpense,
+                'total_earning' => $profit,
+            ];
+        });
+
+        return response()->json($result, 200);
     }
+
 }

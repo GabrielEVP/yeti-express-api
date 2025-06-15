@@ -111,7 +111,7 @@
                     <td>
                         @if($delivery->payment_status === 'pending')
                             Pendiente
-                        @elseif($delivery->payment_status === 'partially_paid')
+                        @elseif($delivery->payment_status === 'partial_paid')
                             Parcialmente Pagado
                         @else
                             Pagado

@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->date("date");
             $table->enum("status", allowed: ["pending", "in_transit", "delivered", "cancelled",]);
             $table->enum("payment_type", ["partial", "full"]);
-            $table->enum("payment_status", ["pending", "partially_paid", "paid",]);
+            $table->enum("payment_status", ["pending", "partial_paid", "paid",]);
             $table->decimal("amount", 10, 2);
             $table->text("notes")->nullable();
             $table->timestamps();

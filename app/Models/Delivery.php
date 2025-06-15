@@ -170,7 +170,7 @@ class Delivery extends Model
             ->sum(function ($delivery) {
                 if ($delivery->payment_status === 'paid') {
                     return $delivery->amount;
-                } elseif ($delivery->payment_status === 'partially_paid' && $delivery->debt) {
+                } elseif ($delivery->payment_status === 'partial_paid' && $delivery->debt) {
                     return $delivery->debt->payments->sum('amount');
                 }
                 return 0;
@@ -331,7 +331,7 @@ class Delivery extends Model
                 return $group->sum(function ($delivery) {
                     if ($delivery->payment_status === 'paid') {
                         return $delivery->amount;
-                    } elseif ($delivery->payment_status === 'partially_paid' && $delivery->debt) {
+                    } elseif ($delivery->payment_status === 'partial_paid' && $delivery->debt) {
                         return $delivery->debt->payments->sum('amount');
                     }
                     return 0;
@@ -415,7 +415,7 @@ class Delivery extends Model
             $totalCollected = (float) $deliveryGroup->sum(function ($delivery) {
                 if ($delivery->payment_status === 'paid') {
                     return $delivery->amount;
-                } elseif ($delivery->payment_status === 'partially_paid' && $delivery->debt) {
+                } elseif ($delivery->payment_status === 'partial_paid' && $delivery->debt) {
                     return $delivery->debt->payments->sum('amount');
                 }
                 return 0;

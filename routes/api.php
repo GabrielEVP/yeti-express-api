@@ -7,7 +7,7 @@ Route::post("register", [AuthController::class, "register"]);
 Route::post("login", [AuthController::class, "login"]);
 
 Route::middleware("auth:sanctum")->group(function () {
-    Route::post("changePassword", [AuthController::class, "changePassword"]);
+    Route::put("user/password", [AuthController::class, "changePassword"]);
     Route::post("logout", [AuthController::class, "logout"]);
     Route::put("user/update", [AuthController::class, "update"]);
     Route::get("user", fn(Request $request) => $request->user());

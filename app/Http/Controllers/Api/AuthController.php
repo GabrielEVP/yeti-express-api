@@ -28,12 +28,12 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user,
+            'type' => 'user'
         ], 200);
     }
 
     public function login(AuthRequest $request): JsonResponse
     {
-        // Primero intentar autenticar como usuario
         if (Auth::attempt($request->only('email', 'password'))) {
             $user = User::where('email', $request->email)->firstOrFail();
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -46,7 +46,6 @@ class AuthController extends Controller
             ], 200);
         }
 
-        // Si no es usuario, intentar como empleado
         $employee = Employee::where('email', $request->email)
             ->where('active', true)
             ->first();
@@ -72,13 +71,7 @@ class AuthController extends Controller
     {
         $user = auth()->user();
 
-        if (!Hash::check($request->current_password, $user->password)) {
-            return response()->json([
-                'message' => 'La contraseña actual es incorrecta.',
-            ], 404);
-        }
-
-        $user->password = Hash::make($request->new_password);
+        $user->password = Hash::make($request->password);
         $user->save();
 
         return response()->json(['message' => 'Contraseña actualizada exitosamente.'], 200);
@@ -91,6 +84,14 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+        ], [
+            'name.required' => 'El nombre es obligatorio.',
+            'name.string' => 'El nombre debe ser un texto.',
+            'name.max' => 'El nombre no debe superar los 255 caracteres.',
+            'email.required' => 'El correo electrónico es obligatorio.',
+            'email.email' => 'Debe ingresar un correo electrónico válido.',
+            'email.max' => 'El correo electrónico no debe superar los 255 caracteres.',
+            'email.unique' => 'Este correo electrónico ya está en uso.',
         ]);
 
         $user->update($validated);

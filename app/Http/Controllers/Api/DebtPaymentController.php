@@ -21,7 +21,7 @@ class DebtPaymentController extends Controller
 
     public function storeFullPayment(DebtFullPaymentRequest $request): JsonResponse
     {
-        $debt = Auth::user()->debt()->findOrFail($request->input("debt_id"));
+        $debt = Auth::user()->debts()->findOrFail($request->input("debt_id"));
 
         $payment = $debt->payments()->create([
             "date" => now(),
@@ -37,7 +37,7 @@ class DebtPaymentController extends Controller
 
     public function storePartialPayment(DebtPartialPaymentRequest $request): JsonResponse
     {
-        $debt = Auth::user()->debt()->findOrFail($request->input("debt_id"));
+        $debt = Auth::user()->debts()->findOrFail($request->input("debt_id"));
 
         $payment = $debt->payments()->create([
             "date" => now(),

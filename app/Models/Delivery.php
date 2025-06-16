@@ -4,9 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Carbon\Carbon;
+use App\utils\FormatDate;
 
 class Delivery extends Model
 {
@@ -71,80 +70,9 @@ class Delivery extends Model
         return $this->hasOne(Debt::class);
     }
 
-    // Scopes para filtrar por estado
-    public function scopeReceived(Builder $query): Builder
-    {
-        return $query->where("status", "received");
-    }
-
-    public function scopeCancelled(Builder $query): Builder
-    {
-        return $query->where("status", "cancelled");
-    }
-
-    public function scopePending(Builder $query): Builder
-    {
-        return $query->where("status", "pending");
-    }
-
-    public function scopeInTransit(Builder $query): Builder
-    {
-        return $query->where("status", "in_transit");
-    }
-
-    public function scopePaymentPending(Builder $query): Builder
-    {
-        return $query->where("payment_status", "pending");
-    }
-
-    public function scopePartiallyPaid(Builder $query): Builder
-    {
-        return $query->where("payment_status", "partial_paid");
-    }
-
-    public function scopePaid(Builder $query): Builder
-    {
-        return $query->where("payment_status", "paid");
-    }
-
     public function scopeByPeriod($query, $startDate, $endDate)
     {
         return $query->whereBetween('date', [$startDate, $endDate]);
-    }
-
-    public static function getReceived(): Collection
-    {
-        return static::received()->get();
-    }
-
-    public static function getCancelled(): Collection
-    {
-        return static::cancelled()->get();
-    }
-
-    public static function getPending(): Collection
-    {
-        return static::pending()->get();
-    }
-
-    public static function getInTransit(): Collection
-    {
-        return static::inTransit()->get();
-    }
-
-    public static function getPaymentPending(): Collection
-    {
-        return static::paymentPending()->get();
-    }
-
-    public static function getPartiallyPaid(): Collection
-    {
-        return static::partiallyPaid()->get();
-    }
-
-    public static function getPaid(): Collection
-    {
-        return static::paid()->get();
     }
 
     public static function getTotalDelivered($userId, $startDate, $endDate): int
@@ -164,7 +92,7 @@ class Delivery extends Model
     public static function getTotalCollected($userId, $startDate, $endDate): float
     {
         return (float) self::where('user_id', $userId)
-            ->byPeriod($startDate, $endDate)
+            ->byPeriod($startDate, endDate: $endDate)
             ->with(['debt', 'debt.payments'])
             ->get()
             ->sum(function ($delivery) {
@@ -186,16 +114,23 @@ class Delivery extends Model
         ];
     }
 
+    private static function formatDateLabel($deliveryDate, $period, $requestDate): string
+    {
+        $today = Carbon::today();
+        $deliveryDay = Carbon::parse($deliveryDate->toDateString());
+
+        return match ($period) {
+            'day' => $deliveryDay->isSameDay($today) ? 'Hoy' : $deliveryDay->format('d/m'),
+            'week' => FormatDate::getSpanishDayName($deliveryDate->format('D')),
+            'month' => 'Semana ' . $deliveryDate->weekOfMonth,
+            'year' => FormatDate::getSpanishMonthName($deliveryDate->format('M')),
+            default => $deliveryDay->isSameDay($today) ? 'Hoy' : $deliveryDay->format('d/m'),
+        };
+    }
+
     public static function getHistoricalDelivered($userId, string $period, string $date): array
     {
         $date = Carbon::parse($date);
-        $format = match ($period) {
-            'day' => 'H:i',
-            'week' => 'D',
-            'month' => 'W',
-            'year' => 'M',
-            default => 'H:i',
-        };
 
         $startDate = match ($period) {
             'day' => Carbon::parse($date)->startOfDay(),
@@ -216,15 +151,9 @@ class Delivery extends Model
         return self::where('user_id', $userId)
             ->whereBetween('date', [$startDate, $endDate])
             ->get()
-            ->groupBy(function ($delivery) use ($format, $period) {
+            ->groupBy(function ($delivery) use ($period, $date) {
                 $deliveryDate = Carbon::parse($delivery->date);
-                return match ($period) {
-                    'day' => $deliveryDate->format('H:i'),
-                    'week' => $deliveryDate->format('D'),
-                    'month' => 'Week ' . $deliveryDate->weekOfMonth,
-                    'year' => $deliveryDate->format('M'),
-                    default => $deliveryDate->format('H:i'),
-                };
+                return self::formatDateLabel($deliveryDate, $period, $date);
             })
             ->map(function ($group) {
                 return $group->count();
@@ -239,13 +168,6 @@ class Delivery extends Model
     public static function getHistoricalInvoiced($userId, string $period, string $date): array
     {
         $date = Carbon::parse($date);
-        $format = match ($period) {
-            'day' => 'H:i',
-            'week' => 'D',
-            'month' => 'W',
-            'year' => 'M',
-            default => 'H:i',
-        };
 
         $startDate = match ($period) {
             'day' => Carbon::parse($date)->startOfDay(),
@@ -266,15 +188,9 @@ class Delivery extends Model
         return self::where('user_id', $userId)
             ->whereBetween('date', [$startDate, $endDate])
             ->get()
-            ->groupBy(function ($delivery) use ($format, $period) {
+            ->groupBy(function ($delivery) use ($period, $date) {
                 $deliveryDate = Carbon::parse($delivery->date);
-                return match ($period) {
-                    'day' => $deliveryDate->format('H:i'),
-                    'week' => $deliveryDate->format('D'),
-                    'month' => 'Week ' . $deliveryDate->weekOfMonth,
-                    'year' => $deliveryDate->format('M'),
-                    default => $deliveryDate->format('H:i'),
-                };
+                return self::formatDateLabel($deliveryDate, $period, $date);
             })
             ->map(function ($group) {
                 return $group->sum('amount');
@@ -289,13 +205,6 @@ class Delivery extends Model
     public static function getHistoricalCollected($userId, string $period, string $date): array
     {
         $date = Carbon::parse($date);
-        $format = match ($period) {
-            'day' => 'H:i',
-            'week' => 'D',
-            'month' => 'W',
-            'year' => 'M',
-            default => 'H:i',
-        };
 
         $startDate = match ($period) {
             'day' => Carbon::parse($date)->startOfDay(),
@@ -317,15 +226,9 @@ class Delivery extends Model
             ->whereBetween('date', [$startDate, $endDate])
             ->with(['debt', 'debt.payments'])
             ->get()
-            ->groupBy(function ($delivery) use ($format, $period) {
+            ->groupBy(function ($delivery) use ($period, $date) {
                 $deliveryDate = Carbon::parse($delivery->date);
-                return match ($period) {
-                    'day' => $deliveryDate->format('H:i'),
-                    'week' => $deliveryDate->format('D'),
-                    'month' => 'Week ' . $deliveryDate->weekOfMonth,
-                    'year' => $deliveryDate->format('M'),
-                    default => $deliveryDate->format('H:i'),
-                };
+                return self::formatDateLabel($deliveryDate, $period, $date);
             })
             ->map(function ($group) {
                 return $group->sum(function ($delivery) {
@@ -347,13 +250,6 @@ class Delivery extends Model
     public static function getHistoricalBalance($userId, string $period, string $date): array
     {
         $date = Carbon::parse($date);
-        $format = match ($period) {
-            'day' => 'H:i',
-            'week' => 'D',
-            'month' => 'W',
-            'year' => 'M',
-            default => 'H:i',
-        };
 
         $startDate = match ($period) {
             'day' => Carbon::parse($date)->startOfDay(),
@@ -380,26 +276,14 @@ class Delivery extends Model
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
 
-        $groupedData = $deliveries->groupBy(function ($delivery) use ($format, $period) {
+        $groupedData = $deliveries->groupBy(function ($delivery) use ($period, $date) {
             $deliveryDate = Carbon::parse($delivery->date);
-            return match ($period) {
-                'day' => $deliveryDate->format('H:i'),
-                'week' => $deliveryDate->format('D'),
-                'month' => 'Week ' . $deliveryDate->weekOfMonth,
-                'year' => $deliveryDate->format('M'),
-                default => $deliveryDate->format('H:i'),
-            };
+            return self::formatDateLabel($deliveryDate, $period, $date);
         });
 
-        $billsByDate = $companyBills->groupBy(function ($bill) use ($format, $period) {
+        $billsByDate = $companyBills->groupBy(function ($bill) use ($period, $date) {
             $billDate = Carbon::parse($bill->date);
-            return match ($period) {
-                'day' => $billDate->format('H:i'),
-                'week' => $billDate->format('D'),
-                'month' => 'Week ' . $billDate->weekOfMonth,
-                'year' => $billDate->format('M'),
-                default => $billDate->format('H:i'),
-            };
+            return self::formatDateLabel($billDate, $period, $date);
         });
 
         $result = [];

@@ -96,12 +96,7 @@ class Delivery extends Model
             ->with(['debt', 'debt.payments'])
             ->get()
             ->sum(function ($delivery) {
-                if ($delivery->payment_status === 'paid') {
-                    return $delivery->amount;
-                } elseif ($delivery->payment_status === 'partial_paid' && $delivery->debt) {
-                    return $delivery->debt->payments->sum('amount');
-                }
-                return 0;
+                return $delivery->debt->payments->sum('amount') ?? 0;
             });
     }
 

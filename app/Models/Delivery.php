@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use App\utils\FormatDate;
+use Illuminate\Support\Facades\DB;
 
 class Delivery extends Model
 {
@@ -91,13 +92,13 @@ class Delivery extends Model
 
     public static function getTotalCollected($userId, $startDate, $endDate): float
     {
-        return (float) self::where('user_id', $userId)
-            ->byPeriod($startDate, endDate: $endDate)
-            ->with(['debt', 'debt.payments'])
-            ->get()
-            ->sum(function ($delivery) {
-                return $delivery->debt->payments->sum('amount') ?? 0;
-            });
+        return (float) DebtPayment::query()
+            ->select(DB::raw('SUM(debt_payments.amount) as total'))
+            ->join('debts', 'debt_payments.debt_id', '=', 'debts.id')
+            ->join('deliveries', 'debts.delivery_id', '=', 'deliveries.id')
+            ->where('deliveries.user_id', $userId)
+            ->whereBetween('debt_payments.created_at', [$startDate, $endDate])
+            ->value('total') ?? 0;
     }
 
     public static function getStatsByPeriod($userId, $startDate, $endDate): array

@@ -44,24 +44,25 @@ class HomeController extends Controller
         $date = Carbon::parse($date);
 
         return match ($period) {
-            'day' => $date->startOfDay()->toDateString(),
-            'week' => $date->startOfWeek()->toDateString(),
-            'month' => $date->startOfMonth()->toDateString(),
-            'year' => $date->startOfYear()->toDateString(),
-            default => $date->startOfDay()->toDateString(),
+            'day' => $date->startOfDay()->toDateTimeString(),
+            'week' => $date->startOfWeek()->startOfDay()->toDateTimeString(),
+            'month' => $date->startOfMonth()->startOfDay()->toDateTimeString(),
+            'year' => $date->startOfYear()->startOfDay()->toDateTimeString(),
+            default => $date->startOfDay()->toDateTimeString(),
         };
     }
+
 
     private function getEndDate(string $period, string $date): string
     {
         $date = Carbon::parse($date);
 
         return match ($period) {
-            'day' => $date->endOfDay()->toDateString(),
-            'week' => $date->endOfWeek()->toDateString(),
-            'month' => $date->endOfMonth()->toDateString(),
-            'year' => $date->endOfYear()->toDateString(),
-            default => $date->endOfDay()->toDateString(),
+            'day' => $date->endOfDay()->toDateTimeString(),
+            'week' => $date->endOfWeek()->endOfDay()->toDateTimeString(),
+            'month' => $date->endOfMonth()->endOfDay()->toDateTimeString(),
+            'year' => $date->endOfYear()->endOfDay()->toDateTimeString(),
+            default => $date->endOfDay()->toDateTimeString(),
         };
     }
 }

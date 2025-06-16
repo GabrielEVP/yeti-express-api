@@ -306,7 +306,6 @@ class Delivery extends Model
             $billsGroup = $billsByDate->get($dateKey, collect());
 
             $totalCollected = (float) $deliveryGroup->sum(function ($delivery) use ($debtPayments) {
-
                 return $debtPayments->get($delivery->id, collect())->sum('amount') ?? 0;
             });
 

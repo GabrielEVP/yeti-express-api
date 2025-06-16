@@ -10,7 +10,6 @@ class CheckEmployeePermissions
 {
     private array $restrictedEndpoints = [
         'employees',
-        'debt-payments'
     ];
 
     public function handle(Request $request, Closure $next): Response

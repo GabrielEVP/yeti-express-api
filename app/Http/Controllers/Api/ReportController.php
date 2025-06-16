@@ -7,7 +7,7 @@ use App\Models\Delivery;
 use App\Models\Client;
 use App\Models\Courier;
 use App\Services\PDFService;
-use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
 {
@@ -69,6 +69,6 @@ class ReportController extends Controller
 
     private function authorizeOwner($model)
     {
-        abort_if($model->user_id !== auth()->id(), 403, 'No tienes permiso para acceder a este recurso.');
+        abort_if(!Auth::user(), 403, 'No tienes permiso para acceder a este recurso.');
     }
 }

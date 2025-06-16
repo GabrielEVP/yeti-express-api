@@ -42,11 +42,6 @@ class User extends Authenticatable
         return $this->hasMany(Courier::class);
     }
 
-    public function boxes(): HasMany
-    {
-        return $this->hasMany(Box::class);
-    }
-
     public function deliveries(): HasMany
     {
         return $this->hasMany(Delivery::class);
@@ -60,5 +55,20 @@ class User extends Authenticatable
     public function companyBills(): HasMany
     {
         return $this->hasMany(CompanyBill::class);
+    }
+
+    public function services(): HasMany
+    {
+        return $this->hasMany(Service::class);
+    }
+
+    public function debts(): HasMany
+    {
+        return $this->hasMany(Debt::class);
+    }
+
+    public function debtPayments(): HasMany
+    {
+        return $this->hasMany(DebtPayment::class);
     }
 }

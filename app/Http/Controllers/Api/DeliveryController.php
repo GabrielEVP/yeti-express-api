@@ -8,6 +8,7 @@ use App\Http\Requests\DeliveryStatusRequest;
 use App\Models\Delivery;
 use App\Models\Service;
 use App\Models\Client;
+use App\Http\Services\EmployeeEventService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -50,11 +51,19 @@ class DeliveryController extends Controller
 
         $this->syncRelatedReceipt($delivery, $request->input('receipt'));
 
+        EmployeeEventService::log(
+            'create_delivery',
+            'deliveries',
+            'deliveries',
+            $delivery->id
+        );
+
         return response()->json($delivery->load($this->relations), 200);
     }
 
     public function show(Delivery $delivery): JsonResponse
     {
+
         $this->authorizeOwner($delivery);
 
         $delivery->load([
@@ -89,12 +98,12 @@ class DeliveryController extends Controller
             $this->syncRelatedReceipt($delivery, $request->input('receipt'));
         }
 
-        $delivery->events()->create([
-            'event' => 'update_delivery',
-            'section' => 'deliveries',
-            'reference_table' => 'deliveries',
-            'reference_id' => $delivery->id,
-        ]);
+        EmployeeEventService::log(
+            'update_delivery',
+            'deliveries',
+            'deliveries',
+            $delivery->id
+        );
 
         return response()->json($delivery->load($this->relations), 200);
     }
@@ -104,6 +113,13 @@ class DeliveryController extends Controller
         $this->authorizeOwner($delivery);
 
         $delivery->delete();
+
+        EmployeeEventService::log(
+            'delete_delivery',
+            'deliveries',
+            'deliveries',
+            $delivery->id
+        );
 
         return response()->json([
             'message' => "Delivery with ID {$delivery->id} has been deleted",
@@ -146,20 +162,13 @@ class DeliveryController extends Controller
             if ($value === null || $value === '')
                 continue;
 
-            switch ($field) {
-                case 'status':
-                    $query->where('status', $value);
-                    break;
-                case 'paymentStatus':
-                    $query->where('payment_status', $value);
-                    break;
-                case 'startDate':
-                    $query->whereDate('date', '>=', $value);
-                    break;
-                case 'endDate':
-                    $query->whereDate('date', '<=', $value);
-                    break;
-            }
+            match ($field) {
+                'status' => $query->where('status', $value),
+                'paymentStatus' => $query->where('payment_status', $value),
+                'startDate' => $query->whereDate('date', '>=', $value),
+                'endDate' => $query->whereDate('date', '<=', $value),
+                default => null
+            };
         }
 
         $query->orderBy($sort, $order);
@@ -174,7 +183,6 @@ class DeliveryController extends Controller
                 'status' => $delivery->status,
                 'payment_status' => $delivery->payment_status,
                 'amount' => $delivery->amount,
-
                 'client_legal_name' => optional($delivery->client)->legal_name,
                 'courier_name' => optional($delivery->courier)?->first_name . ' ' . optional($delivery->courier)?->last_name,
                 'service_name' => optional($delivery->service)->name,
@@ -183,7 +191,6 @@ class DeliveryController extends Controller
 
         return response()->json($result, 200);
     }
-
 
     public function updateStatus(DeliveryStatusRequest $request, Delivery $delivery): JsonResponse
     {
@@ -206,20 +213,15 @@ class DeliveryController extends Controller
                 $updateData['payment_status'] = 'paid';
             }
             $eventKey = 'update_status_delivered_delivery';
-        } elseif ($newStatus === 'canceled') {
-            $eventKey = 'update_status_canceled_delivery';
+        } elseif ($newStatus === 'cancelled') {
+            $eventKey = 'update_status_cancelled_delivery';
         } elseif ($newStatus === 'in_transit') {
             $eventKey = 'update_status_transit_delivery';
         }
 
         $delivery->update($updateData);
 
-        $delivery->events()->create([
-            'event' => $eventKey,
-            'section' => 'deliveries',
-            'reference_table' => 'deliveries',
-            'reference_id' => $delivery->id,
-        ]);
+        EmployeeEventService::log($eventKey, 'deliveries', 'deliveries', $delivery->id);
 
         $deliveries = Auth::user()
             ->deliveries()
@@ -228,33 +230,6 @@ class DeliveryController extends Controller
 
         return response()->json($deliveries, 200);
     }
-
-    private function generateDeliveryNumber(): string
-    {
-        $lastId = Delivery::max('id') ?? 0;
-
-        return 'DEV-' . str_pad($lastId + 1, 5, '0', STR_PAD_LEFT);
-    }
-
-    private function syncRelatedReceipt(Delivery $delivery, ?array $receipt): void
-    {
-        if (is_null($receipt)) {
-            $delivery->receipt()->delete();
-            return;
-        }
-
-        if ($delivery->receipt) {
-            $delivery->receipt()->update(array_merge($receipt, ['delivery_id' => $delivery->id]));
-        } else {
-            $delivery->receipt()->create(array_merge($receipt, ['delivery_id' => $delivery->id]));
-        }
-    }
-
-    private function authorizeOwner(Delivery $delivery): void
-    {
-        abort_if($delivery->user_id !== Auth::id(), 403, 'No tienes permiso para acceder a esta entrega.');
-    }
-
 
     public function getWithDebt(): JsonResponse
     {
@@ -276,7 +251,31 @@ class DeliveryController extends Controller
             ->with($this->relations)
             ->get();
 
-
         return response()->json($deliveries, 200);
+    }
+
+    private function generateDeliveryNumber(): string
+    {
+        $lastId = Delivery::max('id') ?? 0;
+        return 'DEV-' . str_pad($lastId + 1, 5, '0', STR_PAD_LEFT);
+    }
+
+    private function syncRelatedReceipt(Delivery $delivery, ?array $receipt): void
+    {
+        if (is_null($receipt)) {
+            $delivery->receipt()->delete();
+            return;
+        }
+
+        if ($delivery->receipt) {
+            $delivery->receipt()->update(array_merge($receipt, ['delivery_id' => $delivery->id]));
+        } else {
+            $delivery->receipt()->create(array_merge($receipt, ['delivery_id' => $delivery->id]));
+        }
+    }
+
+    private function authorizeOwner(Delivery $delivery): void
+    {
+        abort_if(!Auth::user(), 403, 'No tienes permiso para acceder a esta entrega.');
     }
 }

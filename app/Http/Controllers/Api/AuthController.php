@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AuthRequest;
 use App\Models\User;
 use App\Models\Employee;
+use App\Models\EmployeeEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use App\Http\Services\EmployeeEventService;
 
 class AuthController extends Controller
 {
@@ -53,6 +55,14 @@ class AuthController extends Controller
         if ($employee && Hash::check($request->password, $employee->password)) {
             $employee->tokens()->delete();
             $token = $employee->createToken('employee_token')->plainTextToken;
+
+            EmployeeEvent::create(array_merge([
+                'employee_id' => $employee->id,
+                'event' => 'login_employee',
+                'section' => 'employees',
+                'reference_table' => 'employees',
+                'reference_id' => $employee->id
+            ]));
 
             return response()->json([
                 'access_token' => $token,

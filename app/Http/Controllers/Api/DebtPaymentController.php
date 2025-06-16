@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\DebtFullPaymentRequest;
 use App\Http\Requests\DebtPartialPaymentRequest;
 use App\Models\DebtPayment;
-use App\Models\Debt;
 use App\Models\Client;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -16,16 +15,13 @@ class DebtPaymentController extends Controller
 {
     public function index(): JsonResponse
     {
-        $payments = DebtPayment::where("user_id", Auth::id())
-            ->with("debt")
-            ->get();
+        $payments = Auth::user()->debtPayments()->with("debt")->get();
         return response()->json($payments, 200);
     }
 
     public function storeFullPayment(DebtFullPaymentRequest $request): JsonResponse
     {
-        $debt = Debt::findOrFail($request->input("debt_id"));
-        $this->authorizeOwner($debt);
+        $debt = Auth::user()->debt()->findOrFail($request->input("debt_id"));
 
         $payment = $debt->payments()->create([
             "date" => now(),
@@ -41,8 +37,7 @@ class DebtPaymentController extends Controller
 
     public function storePartialPayment(DebtPartialPaymentRequest $request): JsonResponse
     {
-        $debt = Debt::findOrFail($request->input("debt_id"));
-        $this->authorizeOwner($debt);
+        $debt = Auth::user()->debt()->findOrFail($request->input("debt_id"));
 
         $payment = $debt->payments()->create([
             "date" => now(),
@@ -63,7 +58,6 @@ class DebtPaymentController extends Controller
         $method = $payData['method'] ?? null;
 
         $client = Client::findOrFail($clientId);
-        $this->authorizeClientOwner($client);
 
         $debts = $client->debts()->where("status", "!=", "paid")->get();
 
@@ -99,7 +93,6 @@ class DebtPaymentController extends Controller
         }
 
         $client = Client::findOrFail($clientId);
-        $this->authorizeClientOwner($client);
 
         $debts = $client
             ->debts()
@@ -138,27 +131,8 @@ class DebtPaymentController extends Controller
         return response()->json($payments, 201);
     }
 
-    private function authorizeClientOwner(Client $client): void
-    {
-        abort_if(
-            $client->user_id !== Auth::id(),
-            403,
-            "No tienes permiso para acceder a este cliente."
-        );
-    }
-
     public function show(DebtPayment $debtPayment): JsonResponse
     {
-        $this->authorizeOwner($debtPayment->debt);
         return response()->json($debtPayment->load("debt"), 200);
-    }
-
-    private function authorizeOwner(Debt $debt): void
-    {
-        abort_if(
-            $debt->user_id !== Auth::id(),
-            403,
-            "No tienes permiso para acceder a esta deuda."
-        );
     }
 }

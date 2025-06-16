@@ -23,7 +23,6 @@ class CheckEmployeePermissions
 
         $path = $request->path();
 
-        // Verificar si la ruta está en los endpoints restringidos
         foreach ($this->restrictedEndpoints as $endpoint) {
             if (str_contains($path, $endpoint)) {
                 return response()->json([

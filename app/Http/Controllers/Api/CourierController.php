@@ -6,6 +6,7 @@ use App\Models\Courier;
 use App\Models\CourierEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Services\EmployeeEventService;
 
 class CourierController extends Controller
 {
@@ -39,7 +40,16 @@ class CourierController extends Controller
     public function store(CourierRequest $request): JsonResponse
     {
         $courier = Auth::user()->couriers()->create($request->merge(['user_id' => Auth::id()])->all());
+
+        EmployeeEventService::log(
+            'create_courier',
+            'couriers',
+            'couriers',
+            $courier->id
+        );
+
         return response()->json($courier, 201);
+
     }
 
     public function update(CourierRequest $request, Courier $courier): JsonResponse
@@ -55,6 +65,13 @@ class CourierController extends Controller
             'courier_id' => $courier->id,
         ]);
 
+        EmployeeEventService::log(
+            'update_courier',
+            'couriers',
+            'couriers',
+            $courier->id
+        );
+
         return response()->json($courier, 200);
     }
 
@@ -62,7 +79,6 @@ class CourierController extends Controller
     {
         $this->authorizeOwner($courier);
 
-        // Verificar si el courier se puede eliminar
         if (!$this->canDeleteCourier($courier)) {
             return response()->json([
                 'message' => 'No se puede eliminar el courier porque tiene deliveries asociados',
@@ -71,6 +87,13 @@ class CourierController extends Controller
         }
 
         $courier->delete();
+
+        EmployeeEventService::log(
+            'delete_courier',
+            'couriers',
+            'couriers',
+            $courier->id
+        );
 
         return response()->json([
             'message' => "Courier with ID {$courier->id} has been deleted",

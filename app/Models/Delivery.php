@@ -79,6 +79,8 @@ class Delivery extends Model
     public static function getTotalDelivered($userId, $startDate, $endDate): int
     {
         return self::where('user_id', $userId)
+            ->whereNot('status', 'cancelled')
+            ->whereNot('status', 'pending')
             ->byPeriod($startDate, $endDate)
             ->count();
     }
@@ -86,6 +88,8 @@ class Delivery extends Model
     public static function getTotalInvoiced($userId, $startDate, $endDate): float
     {
         return (float) self::where('user_id', $userId)
+            ->whereNot('status', 'cancelled')
+            ->whereNot('status', 'pending')
             ->byPeriod($startDate, $endDate)
             ->sum('amount');
     }
@@ -288,17 +292,22 @@ class Delivery extends Model
             $billsByDate->keys()->toArray()
         ));
 
+        $debtPayments = DebtPayment::query()
+            ->select('debt_payments.amount', 'debts.delivery_id')
+            ->join('debts', 'debt_payments.debt_id', '=', 'debts.id')
+            ->join('deliveries', 'debts.delivery_id', '=', 'deliveries.id')
+            ->where('deliveries.user_id', $userId)
+            ->whereBetween('debt_payments.created_at', [$startDate, $endDate])
+            ->get()
+            ->groupBy('delivery_id');
+
         foreach ($allDates as $dateKey) {
             $deliveryGroup = $groupedData->get($dateKey, collect());
             $billsGroup = $billsByDate->get($dateKey, collect());
 
-            $totalCollected = (float) $deliveryGroup->sum(function ($delivery) {
-                if ($delivery->payment_status === 'paid') {
-                    return $delivery->amount;
-                } elseif ($delivery->payment_status === 'partial_paid' && $delivery->debt) {
-                    return $delivery->debt->payments->sum('amount');
-                }
-                return 0;
+            $totalCollected = (float) $deliveryGroup->sum(function ($delivery) use ($debtPayments) {
+
+                return $debtPayments->get($delivery->id, collect())->sum('amount') ?? 0;
             });
 
             $totalExpenses = (float) $billsGroup->sum('amount');

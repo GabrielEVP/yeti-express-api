@@ -14,7 +14,7 @@ class DebtController extends Controller
 {
     public function clientsWithDebt(): JsonResponse
     {
-        $clients = Client::whereHas('debts', function ($query) {
+        $clients = Auth::user()->clients()->whereHas('debts', function ($query) {
             $query->where('user_id', Auth::id());
         })
             ->withCount([
@@ -64,7 +64,7 @@ class DebtController extends Controller
 
     public function loadDeliveryWithDebtByClient(string $client_id): JsonResponse
     {
-        $deliveries = Delivery::with(['debt', 'debt.payments'])
+        $deliveries = Auth::user()->deliveries()->with(['debt', 'debt.payments'])
             ->whereHas('debt', function ($query) use ($client_id) {
                 $query->where('user_id', Auth::id())
                     ->where('client_id', $client_id);

@@ -10,6 +10,7 @@ use App\Models\Client;
 use App\Models\ClientEvent;
 use App\Http\Requests\ClientRequest;
 use Carbon\Carbon;
+use App\Http\Services\EmployeeEventService;
 
 class ClientController extends Controller
 {
@@ -22,24 +23,29 @@ class ClientController extends Controller
 
     public function index(): JsonResponse
     {
-        $clients = Client::with('addresses')->where('user_id', Auth::id())->get();
+        $clients = Auth::user()->clients()->with('addresses')->get();
         return response()->json($clients, 200);
     }
 
     public function store(ClientRequest $request): JsonResponse
     {
-        $client = Client::create(
-            $request->merge(["user_id" => Auth::id()])->all()
-        );
+        $client = Auth::user()->clients()->create($request->all());
 
         $this->syncRelations($client, $request);
+
+        EmployeeEventService::log(
+            'create_client',
+            'clients',
+            'clients',
+            $client->id
+        );
 
         return response()->json($client->load($this->relations), 200);
     }
 
     public function show(string $id): JsonResponse
     {
-        $client = Client::with($this->relations)->findOrFail($id);
+        $client = Auth::user()->clients()->with($this->relations)->findOrFail($id);
 
         $client->addresses->each(function ($address) {
             $address->can_delete = !$address->deliveries()->exists();
@@ -50,8 +56,8 @@ class ClientController extends Controller
 
     public function update(ClientRequest $request, string $id): JsonResponse
     {
-        $client = Client::findOrFail($id);
-        $client->update($request->merge(["user_id" => Auth::id()])->all());
+        $client = Auth::user()->clients()->findOrFail($id);
+        $client->update($request->all());
 
         $this->syncRelations($client, $request);
 
@@ -63,12 +69,19 @@ class ClientController extends Controller
             "client_id" => $client->id,
         ]);
 
+        EmployeeEventService::log(
+            'update_client',
+            'clients',
+            'clients',
+            $client->id
+        );
+
         return response()->json($client->load($this->relations), 200);
     }
 
     public function destroy(string $id): JsonResponse
     {
-        $client = Client::findOrFail($id);
+        $client = Auth::user()->clients()->findOrFail($id);
 
         if ($client->deliveries()->exists()) {
             return response()->json([
@@ -81,6 +94,13 @@ class ClientController extends Controller
         $client->emails()->delete();
         $client->delete();
 
+        EmployeeEventService::log(
+            'delete_client',
+            'clients',
+            'clients',
+            $client->id
+        );
+
         return response()->json(
             ["message" => "Client with ID {$id} has been deleted"],
             200
@@ -90,7 +110,7 @@ class ClientController extends Controller
     public function search(string $query): JsonResponse
     {
         return response()->json(
-            Client::with($this->relations)
+            Auth::user()->clients()->with($this->relations)
                 ->where("legal_name", "LIKE", "%{$query}%")
                 ->get(),
             200
@@ -127,7 +147,7 @@ class ClientController extends Controller
             );
         }
 
-        $query = Client::when(
+        $query = Auth::user()->clients()->when(
             $search,
             fn($q) => $q->where("legal_name", "LIKE", "%{$search}%")
         )
@@ -160,7 +180,7 @@ class ClientController extends Controller
     }
     public function getTotalInvoiced(string $id): JsonResponse
     {
-        $client = Client::findOrFail($id);
+        $client = Auth::user()->clients()->findOrFail($id);
         $total = $client->deliveries()->sum('amount');
 
         return response()->json($total, 200);
@@ -168,7 +188,7 @@ class ClientController extends Controller
 
     public function getEarningsDelivery(string $id): JsonResponse
     {
-        $client = Client::findOrFail($id);
+        $client = Auth::user()->clients()->findOrFail($id);
         $earnings = $client->deliveries()
             ->where('payment_status', 'PAID')
             ->sum('amount');
@@ -178,7 +198,7 @@ class ClientController extends Controller
 
     public function getPendingEarnings(string $id): JsonResponse
     {
-        $client = Client::findOrFail($id);
+        $client = Auth::user()->clients()->findOrFail($id);
         $pending = $client->deliveries()
             ->where('payment_status', '!=', 'PAID')
             ->sum('amount');
@@ -188,14 +208,14 @@ class ClientController extends Controller
 
     public function getPendingEarningsCount(string $id): JsonResponse
     {
-        $client = Client::findOrFail($id);
+        $client = Auth::user()->clients()->findOrFail($id);
         $pending = $client->deliveries()->where('payment_status', '!=', 'PAID')->count();
         return response()->json($pending, 200);
     }
 
     public function getEarningsDeliveryOfCurrentMonth(string $id): JsonResponse
     {
-        $client = Client::findOrFail($id);
+        $client = Auth::user()->clients()->findOrFail($id);
         $currentMonth = Carbon::now()->month;
         $currentYear = Carbon::now()->year;
 
@@ -210,7 +230,7 @@ class ClientController extends Controller
 
     public function createAddress(Request $request, string $clientId): JsonResponse
     {
-        $client = Client::findOrFail($clientId);
+        $client = Auth::user()->clients()->findOrFail($clientId);
 
         $validated = $request->validate(['address' => 'required|string|max:255',]);
         $address = $client->addresses()->create($validated);

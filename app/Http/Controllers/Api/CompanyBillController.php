@@ -7,6 +7,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\CompanyBill;
 use App\Http\Requests\CompanyBillRequest;
+use App\Http\Services\EmployeeEventService;
+use Illuminate\Support\Facades\Auth;
 
 class CompanyBillController extends Controller
 {
@@ -17,7 +19,7 @@ class CompanyBillController extends Controller
         $search = $request->string("search")->toString();
         $validColumns = ["id", "name", "date", "amount", "method"];
 
-        $query = CompanyBill::with($this->relations)
+        $query = Auth::user()->companyBills()->with($this->relations)
             ->when($search, fn($q) => $q->where("name", "LIKE", "%{$search}%"))
             ->when($request->has("select"), function ($q) use ($request, $validColumns) {
                 foreach ($request->input("select", []) as $filter) {
@@ -50,6 +52,7 @@ class CompanyBillController extends Controller
 
         $bill = CompanyBill::create($data);
 
+
         return response()->json($bill->load($this->relations), 201);
     }
 
@@ -61,10 +64,8 @@ class CompanyBillController extends Controller
         );
     }
 
-    public function update(
-        CompanyBillRequest $request,
-        string $id
-    ): JsonResponse {
+    public function update(CompanyBillRequest $request, string $id): JsonResponse
+    {
         $bill = CompanyBill::findOrFail($id);
 
         $data = $request->merge(["user_id" => $request->user()->id])->only([
@@ -76,10 +77,16 @@ class CompanyBillController extends Controller
             "user_id",
         ]);
 
-        // Formatear la fecha a Y-m-d
         if (isset($data['date'])) {
             $data['date'] = date('Y-m-d', strtotime($data['date']));
         }
+
+        EmployeeEventService::log(
+            'update_company_bill',
+            'companyBills',
+            'companyBills',
+            $bill->id
+        );
 
         $bill->update($data);
 
@@ -90,6 +97,13 @@ class CompanyBillController extends Controller
     {
         $bill = CompanyBill::findOrFail($id);
         $bill->delete();
+
+        EmployeeEventService::log(
+            'delete_company_bill',
+            'companyBills',
+            'companyBills',
+            $bill->id
+        );
 
         return response()->json(
             [

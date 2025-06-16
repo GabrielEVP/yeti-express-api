@@ -15,9 +15,7 @@ class ServiceController extends Controller
 
     public function index(): JsonResponse
     {
-        $services = Service::with($this->relations)
-            ->where('user_id', Auth::id())
-            ->get();
+        $services = Auth::user()->services()->get();
 
         $result = $services->map(function ($service) {
             $totalBillAmount = $service->bills->sum('amount');
@@ -42,9 +40,7 @@ class ServiceController extends Controller
 
     public function show(string $id): JsonResponse
     {
-        $service = Service::with($this->relations)
-            ->where('user_id', Auth::id())
-            ->findOrFail($id);
+        $service = Auth::user()->services()->with($this->relations)->findOrFail($id);
 
         $totalBillAmount = $service->bills->sum('amount');
         $totalExpense = $totalBillAmount + $service->commission;
@@ -70,10 +66,7 @@ class ServiceController extends Controller
 
     public function store(ServiceRequest $request): JsonResponse
     {
-        $service = Service::create(
-            $request->merge(['user_id' => $request->user()->id])
-                ->only(['name', 'description', 'amount', 'comision', 'user_id'])
-        );
+        $service = Auth::user()->services()->create($request->only(['name', 'description', 'amount', 'comision', 'user_id']));
 
         foreach ($request->input('bills', []) as $bill) {
             $service->bills()->create($bill);
@@ -84,12 +77,9 @@ class ServiceController extends Controller
 
     public function update(ServiceRequest $request, string $id): JsonResponse
     {
-        $service = Service::where('user_id', Auth::id())->findOrFail($id);
+        $service = Auth::user()->services()->findOrFail($id);
 
-        $service->update(
-            $request->merge(['user_id' => $request->user()->id])
-                ->only(['name', 'description', 'amount', 'comision', 'user_id'])
-        );
+        $service->update($request->only(['name', 'description', 'amount', 'comision', 'user_id']));
 
         $service->bills()->delete();
         foreach ($request->input('bills', []) as $bill) {
@@ -109,7 +99,7 @@ class ServiceController extends Controller
 
     public function destroy(string $id): JsonResponse
     {
-        $service = Service::where('user_id', Auth::id())->findOrFail($id);
+        $service = Auth::user()->services()->findOrFail($id);
 
         if (!$this->canDeleteService($service)) {
             return response()->json([
@@ -128,20 +118,13 @@ class ServiceController extends Controller
 
     public function getByDelivery(string $delivery_id): JsonResponse
     {
-        $services = Service::with($this->relations)
-            ->where('courier_id', $delivery_id)
-            ->where('user_id', Auth::id())
-            ->get();
-
+        $services = Auth::user()->services()->with($this->relations)->where('courier_id', $delivery_id)->get();
         return response()->json($services, 200);
     }
 
     public function search(string $query): JsonResponse
     {
-        $services = Service::with($this->relations)
-            ->where('user_id', Auth::id())
-            ->where('name', 'LIKE', "%{$query}%")
-            ->get();
+        $services = Auth::user()->services()->with($this->relations)->where('name', 'LIKE', "%{$query}%")->get();
 
         $result = $services->map(function ($service) {
             $totalBillAmount = $service->bills->sum('amount');

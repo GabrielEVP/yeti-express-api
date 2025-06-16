@@ -31,6 +31,12 @@ class Service extends Model
         return $this->hasMany(ServiceEvent::class);
     }
 
+    public function deliveries()
+    {
+        return $this->hasMany(Delivery::class);
+    }
+
+
     public function getTotalEarning(): float
     {
         $totalBills = $this->bills()->sum('amount');

@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Http\Controllers\Api;
-
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CourierRequest;
 use App\Models\Courier;
@@ -17,19 +15,30 @@ class CourierController extends Controller
 
     public function index(): JsonResponse
     {
-        return response()->json(Auth::user()->couriers()->get(), 200);
+        $couriers = Auth::user()->couriers()->get();
+
+        $result = $couriers->map(function ($courier) {
+            $courierData = $courier->toArray();
+            $courierData['can_delete'] = $this->canDeleteCourier($courier);
+            return $courierData;
+        });
+
+        return response()->json($result, 200);
     }
 
     public function show(Courier $courier): JsonResponse
     {
         $this->authorizeOwner($courier);
-        return response()->json($courier->load($this->relations), 200);
+
+        $courierData = $courier->load($this->relations)->toArray();
+        $courierData['can_delete'] = $this->canDeleteCourier($courier);
+
+        return response()->json($courierData, 200);
     }
 
     public function store(CourierRequest $request): JsonResponse
     {
         $courier = Auth::user()->couriers()->create($request->merge(['user_id' => Auth::id()])->all());
-
         return response()->json($courier, 201);
     }
 
@@ -52,6 +61,15 @@ class CourierController extends Controller
     public function destroy(Courier $courier): JsonResponse
     {
         $this->authorizeOwner($courier);
+
+        // Verificar si el courier se puede eliminar
+        if (!$this->canDeleteCourier($courier)) {
+            return response()->json([
+                'message' => 'No se puede eliminar el courier porque tiene deliveries asociados',
+                'error' => 'courier_has_deliveries'
+            ], 422);
+        }
+
         $courier->delete();
 
         return response()->json([
@@ -70,12 +88,25 @@ class CourierController extends Controller
 
     public function search(string $query): JsonResponse
     {
-        return response()->json(
-            Courier::with($this->relations)
-                ->where('first_name', 'LIKE', "%{$query}%")
-                ->orWhere('last_name', 'LIKE', "%{$query}%")
-                ->get(),
-            200
-        );
+        $couriers = Courier::with($this->relations)
+            ->where('user_id', Auth::id()) // Agregado filtro por usuario
+            ->where(function ($q) use ($query) {
+                $q->where('first_name', 'LIKE', "%{$query}%")
+                    ->orWhere('last_name', 'LIKE', "%{$query}%");
+            })
+            ->get();
+
+        $result = $couriers->map(function ($courier) {
+            $courierData = $courier->toArray();
+            $courierData['can_delete'] = $this->canDeleteCourier($courier);
+            return $courierData;
+        });
+
+        return response()->json($result, 200);
+    }
+
+    private function canDeleteCourier(Courier $courier): bool
+    {
+        return !$courier->deliveries()->exists();
     }
 }

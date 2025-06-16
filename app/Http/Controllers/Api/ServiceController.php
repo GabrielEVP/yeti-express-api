@@ -24,6 +24,8 @@ class ServiceController extends Controller
             $totalExpense = $totalBillAmount + $service->commission;
             $profit = $service->amount - $totalExpense;
 
+            $canDelete = $this->canDeleteService($service);
+
             return [
                 'id' => $service->id,
                 'name' => $service->name,
@@ -31,6 +33,7 @@ class ServiceController extends Controller
                 'commission' => $service->commission,
                 'total_expense' => $totalExpense,
                 'total_earning' => $profit,
+                'can_delete' => $canDelete,
             ];
         });
 
@@ -59,6 +62,7 @@ class ServiceController extends Controller
             'updated_at' => $service->updated_at,
             'total_expense' => $totalExpense,
             'total_earning' => $profit,
+            'can_delete' => $this->canDeleteService($service),
         ];
 
         return response()->json($data, 200);
@@ -107,6 +111,13 @@ class ServiceController extends Controller
     {
         $service = Service::where('user_id', Auth::id())->findOrFail($id);
 
+        if (!$this->canDeleteService($service)) {
+            return response()->json([
+                'message' => 'No se puede eliminar el servicio porque está relacionado con un delivery',
+                'error' => 'service_has_delivery_relation'
+            ], 422);
+        }
+
         $service->bills()->delete();
         $service->delete();
 
@@ -147,9 +158,15 @@ class ServiceController extends Controller
                 'events' => $service->events,
                 'total_expense' => $totalExpense,
                 'total_earning' => $profit,
+                'can_delete' => $this->canDeleteService($service),
             ];
         });
 
         return response()->json($result, 200);
+    }
+
+    private function canDeleteService(Service $service): bool
+    {
+        return !$service->deliveries()->exists();
     }
 }

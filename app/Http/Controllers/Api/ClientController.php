@@ -26,8 +26,6 @@ class ClientController extends Controller
         return response()->json($clients, 200);
     }
 
-
-
     public function store(ClientRequest $request): JsonResponse
     {
         $client = Client::create(
@@ -41,10 +39,13 @@ class ClientController extends Controller
 
     public function show(string $id): JsonResponse
     {
-        return response()->json(
-            Client::with($this->relations)->findOrFail($id),
-            200
-        );
+        $client = Client::with($this->relations)->findOrFail($id);
+
+        $client->addresses->each(function ($address) {
+            $address->can_delete = !$address->deliveries()->exists();
+        });
+
+        return response()->json($client, 200);
     }
 
     public function update(ClientRequest $request, string $id): JsonResponse
@@ -68,6 +69,12 @@ class ClientController extends Controller
     public function destroy(string $id): JsonResponse
     {
         $client = Client::findOrFail($id);
+
+        if ($client->deliveries()->exists()) {
+            return response()->json([
+                "error" => "Cannot delete client. It has associated deliveries."
+            ], 422);
+        }
 
         $client->addresses()->delete();
         $client->phones()->delete();
@@ -144,10 +151,13 @@ class ClientController extends Controller
 
         $clients = $query->get();
 
+        $clients->each(function ($client) {
+            $client->can_delete = !$client->deliveries()->exists();
+            $client->has_had_debt = $client->debts()->exists();
+        });
+
         return response()->json($clients, 200);
     }
-
-
     public function getTotalInvoiced(string $id): JsonResponse
     {
         $client = Client::findOrFail($id);

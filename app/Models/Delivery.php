@@ -116,15 +116,12 @@ class Delivery extends Model
 
     private static function formatDateLabel($deliveryDate, $period, $requestDate): string
     {
-        $today = Carbon::today();
-        $deliveryDay = Carbon::parse($deliveryDate->toDateString());
-
         return match ($period) {
-            'day' => $deliveryDay->isSameDay($today) ? 'Hoy' : $deliveryDay->format('d/m'),
+            'day' => $deliveryDate->isSameDay($requestDate) ? 'Hoy' : $deliveryDate->format('d/m'),
             'week' => FormatDate::getSpanishDayName($deliveryDate->format('D')),
             'month' => 'Semana ' . $deliveryDate->weekOfMonth,
             'year' => FormatDate::getSpanishMonthName($deliveryDate->format('M')),
-            default => $deliveryDay->isSameDay($today) ? 'Hoy' : $deliveryDay->format('d/m'),
+            default => $deliveryDate->isSameDay($requestDate) ? 'Hoy' : $deliveryDate->format('d/m'),
         };
     }
 

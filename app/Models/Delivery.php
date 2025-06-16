@@ -117,11 +117,11 @@ class Delivery extends Model
     private static function formatDateLabel($deliveryDate, $period, $requestDate): string
     {
         return match ($period) {
-            'day' => $deliveryDate->isSameDay($requestDate) ? 'Hoy' : $deliveryDate->format('d/m'),
+            'day' => $deliveryDate->format('H:00'),
             'week' => FormatDate::getSpanishDayName($deliveryDate->format('D')),
             'month' => 'Semana ' . $deliveryDate->weekOfMonth,
             'year' => FormatDate::getSpanishMonthName($deliveryDate->format('M')),
-            default => $deliveryDate->isSameDay($requestDate) ? 'Hoy' : $deliveryDate->format('d/m'),
+            default => $deliveryDate->format('H:00'),
         };
     }
 

@@ -62,36 +62,39 @@ class HomeController extends Controller
     private function getTotalDelivered($userId, $startDate, $endDate): int
     {
         return Delivery::where('user_id', $userId)
-            ->whereNot('status', 'cancelled')
-            ->whereNot('status', 'pending')
+            ->where('status', 'delivered')
             ->whereBetween('date', [$startDate, $endDate])
             ->count();
     }
 
-    /**
-     * Obtener total facturado
-     */
     private function getTotalInvoiced($userId, $startDate, $endDate): float
     {
         return (float) Delivery::where('user_id', $userId)
-            ->whereNot('status', 'cancelled')
-            ->whereNot('status', 'pending')
+            ->where('status', 'delivered')
             ->whereBetween('date', [$startDate, $endDate])
             ->sum('amount');
     }
 
-    /**
-     * Obtener total cobrado
-     */
     private function getTotalCollected($userId, $startDate, $endDate): float
     {
-        return (float) DebtPayment::query()
+
+        $fullPaymentsTotal = Delivery::query()
+            ->select(DB::raw('SUM(amount) as total'))
+            ->where('user_id', $userId)
+            ->where('deliveries.payment_type', 'full')
+            ->where('deliveries.payment_status', 'paid')
+            ->whereBetween('date', [$startDate, $endDate])
+            ->value('total') ?? 0;
+
+        $partialPaymentsTotal = (float) DebtPayment::query()
             ->select(DB::raw('SUM(debt_payments.amount) as total'))
             ->join('debts', 'debt_payments.debt_id', '=', 'debts.id')
             ->join('deliveries', 'debts.delivery_id', '=', 'deliveries.id')
             ->where('deliveries.user_id', $userId)
             ->whereBetween('debt_payments.created_at', [$startDate, $endDate])
             ->value('total') ?? 0;
+
+        return (float) $fullPaymentsTotal + (float) $partialPaymentsTotal;
     }
 
 
@@ -138,6 +141,14 @@ class HomeController extends Controller
         [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
         $requestDate = Carbon::parse($date);
 
+        $fullPayments = Delivery::query()
+            ->select('amount', 'date')
+            ->where('user_id', $userId)
+            ->where('payment_type', 'full')
+            ->where('payment_status', 'paid')
+            ->whereBetween('date', [$startDate, $endDate])
+            ->get();
+
         $debtPayments = DebtPayment::query()
             ->select('debt_payments.amount', 'debt_payments.created_at')
             ->join('debts', 'debt_payments.debt_id', '=', 'debts.id')
@@ -150,7 +161,11 @@ class HomeController extends Controller
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
 
-        $groupedPayments = $debtPayments->groupBy(function ($payment) use ($period, $requestDate) {
+        $groupedFullPayments = $fullPayments->groupBy(function ($delivery) use ($period, $requestDate) {
+            return $this->dateFormatter->formatDateLabel(Carbon::parse($delivery->date), $period, $requestDate);
+        });
+
+        $groupedPartialPayments = $debtPayments->groupBy(function ($payment) use ($period, $requestDate) {
             return $this->dateFormatter->formatDateLabel(Carbon::parse($payment->created_at), $period, $requestDate);
         });
 
@@ -159,15 +174,17 @@ class HomeController extends Controller
         });
 
         $allDates = array_unique(array_merge(
-            $groupedPayments->keys()->toArray(),
+            $groupedFullPayments->keys()->toArray(),
+            $groupedPartialPayments->keys()->toArray(),
             $groupedBills->keys()->toArray()
         ));
 
-        return collect($allDates)->sort()->map(function ($dateKey) use ($groupedPayments, $groupedBills) {
-            $payments = $groupedPayments->get($dateKey, collect());
+        return collect($allDates)->sort()->map(function ($dateKey) use ($groupedFullPayments, $groupedPartialPayments, $groupedBills) {
+            $fulls = $groupedFullPayments->get($dateKey, collect());
+            $partials = $groupedPartialPayments->get($dateKey, collect());
             $bills = $groupedBills->get($dateKey, collect());
 
-            $totalCollected = (float) $payments->sum('amount');
+            $totalCollected = (float) $fulls->sum('amount') + (float) $partials->sum('amount');
             $totalExpenses = (float) $bills->sum('amount');
             $balance = $totalCollected - $totalExpenses;
 
@@ -179,4 +196,5 @@ class HomeController extends Controller
             ];
         })->values()->toArray();
     }
+
 }

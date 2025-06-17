@@ -45,7 +45,14 @@ class EmployeeController extends Controller
         $this->authorizeOwner($employee);
 
         $data = $request->safe()->except('password');
-        $data['user_id'] = Auth::id();
+        $employee->update($data);
+
+        return response()->json($employee, 200);
+    }
+
+    public function updatePassword(EmployeeRequest $request, Employee $employee): JsonResponse
+    {
+        $this->authorizeOwner($employee);
 
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);

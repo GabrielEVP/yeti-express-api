@@ -25,7 +25,6 @@ class ReportController extends Controller
         $delivery->load([
             'service',
             'client',
-            'clientAddress',
             'courier',
             'receipt'
         ]);

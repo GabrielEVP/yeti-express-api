@@ -65,7 +65,7 @@
 
     <div class="info">
         <p><strong>Cliente:</strong> {{ $delivery->client->legal_name }}</p>
-        <p><strong>Dirección:</strong> {{ $delivery->clientAddress->address }}</p>
+        <p><strong>Dirección:</strong> {{ $delivery->pickup_address }}</p>
     </div>
 
     <div class="divider"></div>
@@ -134,6 +134,13 @@
             </p>
         </div>
     @endif
+
+    <div class="info">
+        <p>
+            <strong>Nota:</strong>
+        </p>
+        <p>{!! nl2br(e($delivery->notes)) !!}</p>
+    </div>
 
     <div class="divider"></div>
 

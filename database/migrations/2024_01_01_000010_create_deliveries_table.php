@@ -18,11 +18,12 @@ return new class extends Migration {
             $table->enum("payment_type", ["partial", "full"]);
             $table->enum("payment_status", ["pending", "partial_paid", "paid",]);
             $table->decimal("amount", 10, 2);
+            $table->string("pickup_address", 100);
+            $table->text("cancellation_notes")->nullable();
             $table->text("notes")->nullable();
             $table->timestamps();
             $table->foreignId("service_id")->constrained("services")->onDelete("cascade");
             $table->foreignId("client_id")->constrained("clients")->onDelete("cascade");
-            $table->foreignId("client_address_id")->constrained("client_addresses")->onDelete("cascade");
             $table->foreignId("courier_id")->constrained("couriers")->onDelete("cascade");
             $table->foreignId("user_id")->constrained("users")->onDelete("cascade");
         });

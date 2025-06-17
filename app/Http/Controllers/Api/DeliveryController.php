@@ -19,7 +19,6 @@ class DeliveryController extends Controller
         'events',
         'service',
         'client',
-        'clientAddress',
         'courier',
         'receipt',
     ];
@@ -40,7 +39,7 @@ class DeliveryController extends Controller
         $data['number'] = $this->generateDeliveryNumber();
 
         $service = Service::findOrFail($data['service_id']);
-        $data['amount'] = $service->getTotalEarning();
+        $data['amount'] = $service->amount;
 
         $client = Client::findOrFail($data['client_id']);
         if (!$client->allow_credit) {
@@ -78,7 +77,6 @@ class DeliveryController extends Controller
         $data = $delivery->toArray();
 
         $data['client_legal_name'] = optional($delivery->client)?->legal_name;
-        $data['client_address_name'] = optional($delivery->clientAddress)?->address;
         $data['courier_name'] = $delivery->courier ? "{$delivery->courier->first_name} {$delivery->courier->last_name}" : null;
         $data['service_name'] = optional($delivery->service)?->name;
 
@@ -147,7 +145,7 @@ class DeliveryController extends Controller
 
         $query = Auth::user()
             ->deliveries()
-            ->with(['client:id,legal_name', 'courier:id,first_name', 'service:id,name']);
+            ->with(['client:id,legal_name', 'courier:id,first_name', 'service:id,name', 'receipt']);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -182,6 +180,8 @@ class DeliveryController extends Controller
                 'date' => $delivery->date,
                 'status' => $delivery->status,
                 'payment_status' => $delivery->payment_status,
+                'pickup_address' => $delivery->pickup_address,
+                'receipt' => $delivery->receipt,
                 'amount' => $delivery->amount,
                 'client_legal_name' => optional($delivery->client)->legal_name,
                 'courier_name' => optional($delivery->courier)?->first_name . ' ' . optional($delivery->courier)?->last_name,

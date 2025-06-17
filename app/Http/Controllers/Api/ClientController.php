@@ -46,11 +46,6 @@ class ClientController extends Controller
     public function show(string $id): JsonResponse
     {
         $client = Auth::user()->clients()->with($this->relations)->findOrFail($id);
-
-        $client->addresses->each(function ($address) {
-            $address->can_delete = !$address->deliveries()->exists();
-        });
-
         return response()->json($client, 200);
     }
 
@@ -213,38 +208,9 @@ class ClientController extends Controller
         return response()->json($pending, 200);
     }
 
-    public function getEarningsDeliveryOfCurrentMonth(string $id): JsonResponse
-    {
-        $client = Auth::user()->clients()->findOrFail($id);
-        $currentMonth = Carbon::now()->month;
-        $currentYear = Carbon::now()->year;
-
-        $earnings = $client->deliveries()
-            ->where('payment_status', 'PAID')
-            ->whereMonth('created_at', $currentMonth)
-            ->whereYear('created_at', $currentYear)
-            ->sum('amount');
-
-        return response()->json($earnings, 200);
-    }
-
-    public function createAddress(Request $request, string $clientId): JsonResponse
-    {
-        $client = Auth::user()->clients()->findOrFail($clientId);
-
-        $validated = $request->validate(['address' => 'required|string|max:255',]);
-        $address = $client->addresses()->create($validated);
-
-        return response()->json($address, 200);
-    }
-
     private function syncRelations(Client $client, Request $request): void
     {
-        $this->syncGenericRelation(
-            $client,
-            "addresses",
-            fn($q) => $q->doesntHave("deliveries")
-        );
+        $this->syncGenericRelation($client, "addresses");
         $this->syncGenericRelation($client, "phones");
         $this->syncGenericRelation($client, "emails");
     }

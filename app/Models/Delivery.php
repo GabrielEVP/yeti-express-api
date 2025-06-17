@@ -4,9 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
-use App\utils\FormatDate;
-use Illuminate\Support\Facades\DB;
 
 class Delivery extends Model
 {
@@ -19,10 +16,11 @@ class Delivery extends Model
         "payment_type",
         "payment_status",
         "amount",
+        "pickup_address",
+        "cancellation_notes",
         "notes",
         "service_id",
         "client_id",
-        "client_address_id",
         "courier_id",
         "user_id",
     ];
@@ -44,11 +42,6 @@ class Delivery extends Model
     public function client()
     {
         return $this->belongsTo(Client::class);
-    }
-
-    public function clientAddress()
-    {
-        return $this->belongsTo(ClientAddress::class);
     }
 
     public function courier()

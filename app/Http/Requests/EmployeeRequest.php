@@ -20,7 +20,6 @@ class EmployeeRequest extends FormRequest
                 'name' => ['required', 'string', 'max:100'],
                 'email' => ['required', 'email', 'max:100', 'unique:employees,email'],
                 'password' => ['required', 'string', 'min:8'],
-                'confirmPassword' => ['required', 'same:password'],
                 'role' => ['required', 'in:admin,basic'],
                 'active' => ['boolean'],
             ];
@@ -38,7 +37,6 @@ class EmployeeRequest extends FormRequest
         if ($this->isMethod('put') && $this->routeIs('employees.updatePassword')) {
             return [
                 'password' => ['required', 'string', 'min:8'],
-                'confirmPassword' => ['required', 'same:password'],
             ];
         }
 

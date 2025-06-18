@@ -147,6 +147,15 @@ class DeliveryController extends Controller
             ->deliveries()
             ->with(['client:id,legal_name', 'courier:id,first_name', 'service:id,name', 'receipt']);
 
+        // Filtro por defecto: solo mostrar deliveries pendientes o en tránsito
+        // Solo se aplica si no se especifica un filtro de status personalizado
+        $filters = $request->input('filters', []);
+        $hasStatusFilter = isset($filters['status']) && $filters['status'] !== null && $filters['status'] !== '';
+
+        if (!$hasStatusFilter) {
+            $query->whereIn('status', ['pending', 'in_transit']);
+        }
+
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where("number", "LIKE", "%{$search}%")
@@ -156,7 +165,7 @@ class DeliveryController extends Controller
             });
         }
 
-        foreach ($request->input('filters', []) as $field => $value) {
+        foreach ($filters as $field => $value) {
             if ($value === null || $value === '')
                 continue;
 
@@ -191,6 +200,7 @@ class DeliveryController extends Controller
 
         return response()->json($result, 200);
     }
+
 
     public function updateStatus(DeliveryStatusRequest $request, Delivery $delivery): JsonResponse
     {
@@ -230,6 +240,34 @@ class DeliveryController extends Controller
 
         return response()->json($deliveries, 200);
     }
+
+    public function cancelDelivery(Request $request, Delivery $delivery): JsonResponse
+    {
+        $this->authorizeOwner($delivery);
+
+        $request->validate([
+            'cancellation_notes' => 'required|string|max:500'
+        ]);
+
+        $cancellationNotes = $request->input('cancellation_notes');
+
+        $updateData = [
+            'status' => 'cancelled',
+            'cancellation_notes' => $cancellationNotes
+        ];
+
+        $delivery->update($updateData);
+
+        EmployeeEventService::log(
+            'cancel_delivery',
+            'deliveries',
+            'deliveries',
+            $delivery->id
+        );
+
+        return response()->json($delivery->load($this->relations), 200);
+    }
+
 
     public function getWithDebt(): JsonResponse
     {

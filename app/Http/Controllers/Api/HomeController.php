@@ -3,34 +3,29 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Delivery;
-use App\Models\DebtPayment;
-use App\Models\CompanyBill;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 use App\Utils\FormatDate;
+use App\Http\Services\DashboardService;
+use App\Http\Services\PDFService;
+use Illuminate\Http\Response;
+use Carbon\Carbon;
 
 class HomeController extends Controller
 {
-
-    private FormatDate $dateFormatter;
-
-    public function __construct(FormatDate $dateFormatter)
+    public function __construct(private readonly FormatDate $dateFormatter, private readonly DashboardService $dashboardService)
     {
-        $this->dateFormatter = $dateFormatter;
     }
+
     public function getDashboardStats(Request $request): JsonResponse
     {
         $period = $request->input('period', 'day');
         $date = $request->input('date', now()->toDateString());
-
         [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
 
         $user = Auth::user();
-        $stats = $this->getStatsByPeriod($user->id, $startDate, $endDate);
+        $stats = $this->dashboardService->getStatsByPeriod($user->id, $startDate, $endDate);
 
         $companyBills = (float) $user->companyBills()
             ->whereBetween('date', [$startDate, $endDate])
@@ -44,157 +39,157 @@ class HomeController extends Controller
             'total_invoiced' => $stats['total_invoiced'],
             'total_collected' => $stats['total_collected'],
             'total_company_bills' => $companyBills,
-            'historical_delivered' => $this->getHistoricalDelivered($user->id, $period, $date),
-            'historical_invoiced' => $this->getHistoricalInvoiced($user->id, $period, $date),
-            'historical_balance' => $this->getHistoricalBalance($user->id, $period, $date)
-        ], 200);
+            'historical_delivered' => $this->dashboardService->getHistoricalDelivered($user->id, $period, $date),
+            'historical_invoiced' => $this->dashboardService->getHistoricalInvoiced($user->id, $period, $date),
+            'historical_balance' => $this->dashboardService->getHistoricalBalance($user->id, $period, $date)
+        ]);
     }
 
-    private function getStatsByPeriod($userId, $startDate, $endDate): array
+    public function getCashRegisterReport(Request $request)
     {
-        return [
-            'total_delivered' => $this->getTotalDelivered($userId, $startDate, $endDate),
-            'total_invoiced' => $this->getTotalInvoiced($userId, $startDate, $endDate),
-            'total_collected' => $this->getTotalCollected($userId, $startDate, $endDate)
+        $period = $request->input('period', 'day');
+        $date = $request->input('date', now()->toDateString());
+        [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
+
+        $user = Auth::user();
+        $periodLabels = [];
+        $periodData = [];
+
+        // Generar reportes separados por período
+        if ($period === 'day') {
+            // Si el período es por día, podemos mostrar el reporte de ese día específico
+            if ($request->has('date')) {
+                $dayStart = Carbon::parse($date)->startOfDay()->toDateTimeString();
+                $dayEnd = Carbon::parse($date)->endOfDay()->toDateTimeString();
+                $dayLabel = Carbon::parse($date)->format('d/m/Y');
+
+                $periodLabels[] = "Caja del día {$dayLabel}";
+                $periodData[] = $this->generatePeriodData($user->id, $dayStart, $dayEnd);
+            } else {
+                // Para el período actual, mostrar el día de hoy
+                $today = Carbon::today();
+                $dayStart = $today->copy()->startOfDay()->toDateTimeString();
+                $dayEnd = $today->copy()->endOfDay()->toDateTimeString();
+
+                $periodLabels[] = "Caja de hoy " . $today->format('d/m/Y');
+                $periodData[] = $this->generatePeriodData($user->id, $dayStart, $dayEnd);
+            }
+        } elseif ($period === 'week') {
+            // Si es semana, generar reporte para cada día de la semana
+            $currentDate = Carbon::parse($startDate);
+            $endDateTime = Carbon::parse($endDate);
+
+            while ($currentDate->lte($endDateTime)) {
+                $dayStart = $currentDate->copy()->startOfDay()->toDateTimeString();
+                $dayEnd = $currentDate->copy()->endOfDay()->toDateTimeString();
+                $dayLabel = $currentDate->format('l d/m/Y'); // Lunes 01/01/2025
+
+                $periodLabels[] = "Caja {$dayLabel}";
+                $periodData[] = $this->generatePeriodData($user->id, $dayStart, $dayEnd);
+
+                $currentDate->addDay();
+            }
+        } elseif ($period === 'month') {
+            // Si es mes, generar reporte para cada semana
+            $currentDate = Carbon::parse($startDate);
+            $endDateTime = Carbon::parse($endDate);
+            $weekNumber = 1;
+
+            while ($currentDate->lte($endDateTime)) {
+                $weekStart = $currentDate->copy()->toDateTimeString();
+                $weekEnd = min($currentDate->copy()->addDays(6), $endDateTime)->endOfDay()->toDateTimeString();
+
+                $periodLabels[] = "Caja Semana {$weekNumber} ({$currentDate->format('d/m/Y')} - {$currentDate->copy()->addDays(6)->format('d/m/Y')})";
+                $periodData[] = $this->generatePeriodData($user->id, $weekStart, $weekEnd);
+
+                $currentDate->addDays(7);
+                $weekNumber++;
+            }
+        } elseif ($period === 'year') {
+            // Si es año, generar reporte para cada mes
+            $currentDate = Carbon::parse($startDate);
+            $endDateTime = Carbon::parse($endDate);
+
+            while ($currentDate->lte($endDateTime) && $currentDate->year == Carbon::parse($startDate)->year) {
+                $monthStart = $currentDate->copy()->startOfMonth()->toDateTimeString();
+                $monthEnd = $currentDate->copy()->endOfMonth()->toDateTimeString();
+                $monthLabel = $currentDate->format('F Y'); // Enero 2025
+
+                $periodLabels[] = "Caja de {$monthLabel}";
+                $periodData[] = $this->generatePeriodData($user->id, $monthStart, $monthEnd);
+
+                $currentDate->addMonth();
+            }
+        } else {
+            // Para cualquier otro período, usar el rango completo
+            $periodLabels[] = "Caja del período {$period} ({$startDate} - {$endDate})";
+            $periodData[] = $this->generatePeriodData($user->id, $startDate, $endDate);
+        }
+
+        $reportData = [
+            'period' => $period,
+            'date' => $date,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'period_labels' => $periodLabels,
+            'period_data' => $periodData
         ];
+
+        $pdf = app(\App\Services\PDFService::class)->generateCashRegisterReport($reportData);
+
+        $filename = "caja";
+        if ($period === 'day') {
+            $filename .= "_" . Carbon::parse($date)->format('Y-m-d');
+        } else {
+            $filename .= "_{$period}_" . Carbon::parse($date)->format('Y-m-d');
+        }
+
+        return $pdf->download("{$filename}.pdf");
     }
 
-    private function getTotalDelivered($userId, $startDate, $endDate): int
+    /**
+     * Genera los datos para un período específico
+     */
+    private function generatePeriodData(int $userId, string $startDate, string $endDate): array
     {
-        return Delivery::where('user_id', $userId)
-            ->where('status', 'delivered')
-            ->whereBetween('date', [$startDate, $endDate])
-            ->count();
-    }
+        $stats = $this->dashboardService->getStatsByPeriod($userId, $startDate, $endDate);
 
-    private function getTotalInvoiced($userId, $startDate, $endDate): float
-    {
-        return (float) Delivery::where('user_id', $userId)
-            ->where('status', 'delivered')
+        $totalExpenses = (float) Auth::user()->companyBills()
             ->whereBetween('date', [$startDate, $endDate])
             ->sum('amount');
-    }
 
-    private function getTotalCollected($userId, $startDate, $endDate): float
-    {
+        $balance = $stats['total_collected'] - $totalExpenses;
 
-        $fullPaymentsTotal = Delivery::query()
-            ->select(DB::raw('SUM(amount) as total'))
-            ->where('user_id', $userId)
-            ->where('deliveries.payment_type', 'full')
-            ->where('deliveries.payment_status', 'paid')
-            ->whereBetween('date', [$startDate, $endDate])
-            ->value('total') ?? 0;
+        // Get all deliveries
+        $deliveries = $this->dashboardService->getCashRegisterDeliveries($userId, $startDate, $endDate);
 
-        $partialPaymentsTotal = (float) DebtPayment::query()
-            ->select(DB::raw('SUM(debt_payments.amount) as total'))
-            ->join('debts', 'debt_payments.debt_id', '=', 'debts.id')
-            ->join('deliveries', 'debts.delivery_id', '=', 'deliveries.id')
-            ->where('deliveries.user_id', $userId)
-            ->whereBetween('debt_payments.created_at', [$startDate, $endDate])
-            ->value('total') ?? 0;
+        // Get deliveries categorized by status
+        $deliveriesByStatus = $this->dashboardService->getDeliveriesByStatus($userId, $startDate, $endDate);
 
-        return (float) $fullPaymentsTotal + (float) $partialPaymentsTotal;
-    }
+        // Get courier summary with detailed deliveries
+        $courierSummary = $this->dashboardService->getCourierDeliverySummary($userId, $startDate, $endDate);
 
+        // Get client debt summary
+        $clientDebtSummary = $this->dashboardService->getClientDebtSummary($userId, $startDate, $endDate);
 
-    private function getHistoricalDelivered($userId, string $period, string $date): array
-    {
-        [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
-        $requestDate = Carbon::parse($date);
+        // Get client payment summary
+        $clientPaymentSummary = $this->dashboardService->getClientPaymentSummary($userId, $startDate, $endDate);
 
-        return Delivery::where('user_id', $userId)
-            ->whereBetween('date', [$startDate, $endDate])
-            ->get()
-            ->groupBy(function ($delivery) use ($period, $requestDate) {
-                $deliveryDate = Carbon::parse($delivery->date);
-                return $this->dateFormatter->formatDateLabel($deliveryDate, $period, $requestDate);
-            })
-            ->map(function ($group, $date) {
-                return ['date' => $date, 'total' => $group->count()];
-            })
-            ->values()
-            ->toArray();
-    }
-
-    private function getHistoricalInvoiced($userId, string $period, string $date): array
-    {
-        [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
-        $requestDate = Carbon::parse($date);
-
-        return Delivery::where('user_id', $userId)
-            ->whereBetween('date', [$startDate, $endDate])
-            ->get()
-            ->groupBy(function ($delivery) use ($period, $requestDate) {
-                $deliveryDate = Carbon::parse($delivery->date);
-                return $this->dateFormatter->formatDateLabel($deliveryDate, $period, $requestDate);
-            })
-            ->map(function ($group, $date) {
-                return ['date' => $date, 'total' => (float) $group->sum('amount')];
-            })
-            ->values()
-            ->toArray();
-    }
-
-    private function getHistoricalBalance($userId, string $period, string $date): array
-    {
-        [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
-        $requestDate = Carbon::parse($date);
-
-        $fullPayments = Delivery::query()
-            ->select('amount', 'date')
-            ->where('user_id', $userId)
-            ->where('payment_type', 'full')
-            ->where('payment_status', 'paid')
-            ->whereBetween('date', [$startDate, $endDate])
-            ->get();
-
-        $debtPayments = DebtPayment::query()
-            ->select('debt_payments.amount', 'debt_payments.created_at')
-            ->join('debts', 'debt_payments.debt_id', '=', 'debts.id')
-            ->join('deliveries', 'debts.delivery_id', '=', 'deliveries.id')
-            ->where('deliveries.user_id', $userId)
-            ->whereBetween('debt_payments.created_at', [$startDate, $endDate])
-            ->get();
-
-        $companyBills = CompanyBill::where('user_id', $userId)
-            ->whereBetween('date', [$startDate, $endDate])
-            ->get();
-
-        $groupedFullPayments = $fullPayments->groupBy(function ($delivery) use ($period, $requestDate) {
-            return $this->dateFormatter->formatDateLabel(Carbon::parse($delivery->date), $period, $requestDate);
-        });
-
-        $groupedPartialPayments = $debtPayments->groupBy(function ($payment) use ($period, $requestDate) {
-            return $this->dateFormatter->formatDateLabel(Carbon::parse($payment->created_at), $period, $requestDate);
-        });
-
-        $groupedBills = $companyBills->groupBy(function ($bill) use ($period, $requestDate) {
-            return $this->dateFormatter->formatDateLabel(Carbon::parse($bill->date), $period, $requestDate);
-        });
-
-        $allDates = array_unique(array_merge(
-            $groupedFullPayments->keys()->toArray(),
-            $groupedPartialPayments->keys()->toArray(),
-            $groupedBills->keys()->toArray()
-        ));
-
-        return collect($allDates)->sort()->map(function ($dateKey) use ($groupedFullPayments, $groupedPartialPayments, $groupedBills) {
-            $fulls = $groupedFullPayments->get($dateKey, collect());
-            $partials = $groupedPartialPayments->get($dateKey, collect());
-            $bills = $groupedBills->get($dateKey, collect());
-
-            $totalCollected = (float) $fulls->sum('amount') + (float) $partials->sum('amount');
-            $totalExpenses = (float) $bills->sum('amount');
-            $balance = $totalCollected - $totalExpenses;
-
-            return [
-                'date' => $dateKey,
-                'total_collected' => $totalCollected,
+        return [
+            'summary' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'total_delivered' => $stats['total_delivered'],
+                'total_invoiced' => $stats['total_invoiced'],
+                'total_collected' => $stats['total_collected'],
                 'total_expenses' => $totalExpenses,
-                'balance' => $balance
-            ];
-        })->values()->toArray();
+                'balance' => $balance,
+            ],
+            'deliveries' => $deliveries,
+            'deliveriesByStatus' => $deliveriesByStatus,
+            'courierSummary' => $courierSummary,
+            'clientDebtSummary' => $clientDebtSummary,
+            'clientPaymentSummary' => $clientPaymentSummary
+        ];
     }
-
 }

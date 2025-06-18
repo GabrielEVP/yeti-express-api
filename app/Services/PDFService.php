@@ -12,7 +12,6 @@ class PDFService
             'delivery' => $delivery
         ]);
 
-        // Set paper size to 80mm thermal printer width (approximately 226.77 points)
         $pdf->setPaper([0, 0, 226.77, 1000], 'portrait');
 
         return $pdf;
@@ -34,6 +33,15 @@ class PDFService
         $pdf = PDF::loadView('pdfs.courier-deliveries-report', [
             'courier' => $courier
         ]);
+
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf;
+    }
+
+    public function generateCashRegisterReport(array $reportData)
+    {
+        $pdf = PDF::loadView('pdfs.cash-register-report', $reportData);
 
         $pdf->setPaper('a4', 'portrait');
 

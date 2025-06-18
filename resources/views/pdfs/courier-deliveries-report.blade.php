@@ -72,7 +72,6 @@
         <h2>Información del Repartidor</h2>
         <p><strong>Nombre:</strong> {{ $courier->first_name }} {{ $courier->last_name }}</p>
         <p><strong>Teléfono:</strong> {{ $courier->phone }}</p>
-        <p><strong>Comisión:</strong> {{ $courier->commission }}%</p>
     </div>
 
     <h2>Historial de Entregas</h2>
@@ -85,7 +84,6 @@
                 <th>Servicio</th>
                 <th>Monto</th>
                 <th>Estado</th>
-                <th>Estado de Pago</th>
                 <th>Dirección de Entrega</th>
             </tr>
         </thead>
@@ -106,15 +104,6 @@
                             Entregado
                         @else
                             Cancelado
-                        @endif
-                    </td>
-                    <td>
-                        @if($delivery->payment_status === 'pending')
-                            Pendiente
-                        @elseif($delivery->payment_status === 'partial_paid')
-                            Parcialmente Pagado
-                        @else
-                            Pagado
                         @endif
                     </td>
                     <td>{{ $delivery->receipt->address }}</td>

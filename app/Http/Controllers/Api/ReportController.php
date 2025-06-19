@@ -7,18 +7,19 @@ use App\Models\Delivery;
 use App\Models\Client;
 use App\Models\Courier;
 use App\Services\PDFService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
 {
-    protected $pdfService;
+    protected PDFService $pdfService;
 
     public function __construct(PDFService $pdfService)
     {
         $this->pdfService = $pdfService;
     }
 
-    public function deliveryTicket(Delivery $delivery)
+    public function deliveryTicket(Delivery $delivery): \Illuminate\Http\Response
     {
         $this->authorizeOwner($delivery);
 
@@ -34,7 +35,7 @@ class ReportController extends Controller
         return $pdf->stream("delivery-ticket-{$delivery->number}.pdf");
     }
 
-    public function clientDebtReport(Client $client)
+    public function clientDebtReport(Client $client): \Illuminate\Http\Response
     {
         $this->authorizeOwner($client);
 
@@ -50,23 +51,48 @@ class ReportController extends Controller
         return $pdf->stream("client-debt-report-{$client->id}.pdf");
     }
 
-    public function courierDeliveriesReport(Courier $courier)
+    public function courierDeliveriesReport(Courier $courier, Request $request): \Illuminate\Http\Response
     {
         $this->authorizeOwner($courier);
 
-        $courier->load([
-            'deliveries',
-            'deliveries.service',
-            'deliveries.client',
-            'deliveries.receipt'
-        ]);
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
 
-        $pdf = $this->pdfService->generateCourierDeliveriesReport($courier);
+        $deliveriesQuery = $courier->deliveries();
 
+        if ($startDate && $endDate) {
+            $deliveriesQuery->byPeriod($startDate, $endDate);
+        }
+
+        $deliveries = $deliveriesQuery->with(['service', 'client', 'receipt'])->get();
+
+        $pdf = $this->pdfService->generateCourierDeliveriesReport($courier, $deliveries, $startDate, $endDate);
         return $pdf->stream("courier-deliveries-report-{$courier->id}.pdf");
     }
 
-    private function authorizeOwner($model)
+    public function allCouriersDeliveriesReport(Request $request): \Illuminate\Http\Response
+    {
+        $this->authorizeOwner(new Courier());
+
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+
+        if (!$startDate || !$endDate) {
+            abort(400, 'Se requieren fechas de inicio y fin para generar el reporte.');
+        }
+
+        $couriers = Courier::with([
+            'deliveries' => function ($query) use ($startDate, $endDate) {
+                $query->byPeriod($startDate, $endDate)
+                    ->with(['service', 'client', 'receipt']);
+            }
+        ])->get();
+
+        $pdf = $this->pdfService->generateAllCouriersDeliveriesReport($couriers, $startDate, $endDate);
+        return $pdf->stream("all-couriers-deliveries-report.pdf");
+    }
+
+    private function authorizeOwner($model): void
     {
         abort_if(!Auth::user(), 403, 'No tienes permiso para acceder a este recurso.');
     }

@@ -6,7 +6,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class PDFService
 {
-    public function generateDeliveryTicket($delivery)
+    public function generateDeliveryTicket($delivery): \Barryvdh\DomPDF\PDF
     {
         $pdf = PDF::loadView('pdfs.delivery-ticket', [
             'delivery' => $delivery
@@ -17,7 +17,7 @@ class PDFService
         return $pdf;
     }
 
-    public function generateClientDebtReport($client)
+    public function generateClientDebtReport($client): \Barryvdh\DomPDF\PDF
     {
         $pdf = PDF::loadView('pdfs.client-debt-report', [
             'client' => $client
@@ -28,10 +28,13 @@ class PDFService
         return $pdf;
     }
 
-    public function generateCourierDeliveriesReport($courier)
+    public function generateCourierDeliveriesReport($courier, $deliveries = null, $startDate = null, $endDate = null): \Barryvdh\DomPDF\PDF
     {
         $pdf = PDF::loadView('pdfs.courier-deliveries-report', [
-            'courier' => $courier
+            'courier' => $courier,
+            'deliveries' => $deliveries ?? $courier->deliveries,
+            'startDate' => $startDate,
+            'endDate' => $endDate
         ]);
 
         $pdf->setPaper('a4', 'portrait');
@@ -39,7 +42,20 @@ class PDFService
         return $pdf;
     }
 
-    public function generateCashRegisterReport(array $reportData)
+    public function generateAllCouriersDeliveriesReport($couriers, $startDate, $endDate): \Barryvdh\DomPDF\PDF
+    {
+        $pdf = PDF::loadView('pdfs.all-couriers-deliveries-report', [
+            'couriers' => $couriers,
+            'startDate' => $startDate,
+            'endDate' => $endDate
+        ]);
+
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf;
+    }
+
+    public function generateCashRegisterReport(array $reportData): \Barryvdh\DomPDF\PDF
     {
         $pdf = PDF::loadView('pdfs.cash-register-report', $reportData);
 

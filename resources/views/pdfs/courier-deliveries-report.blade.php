@@ -44,6 +44,14 @@
             background-color: #f9f9f9;
         }
 
+        .date-range {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding: 5px;
+            background-color: #f0f0f0;
+        }
+
         .status-pending {
             color: #ff0000;
         }
@@ -74,6 +82,12 @@
         <p><strong>Teléfono:</strong> {{ $courier->phone }}</p>
     </div>
 
+    @if($startDate && $endDate)
+    <div class="date-range">
+        <p>Periodo del reporte: {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} al {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}</p>
+    </div>
+    @endif
+
     <h2>Historial de Entregas</h2>
     <table>
         <thead>
@@ -88,7 +102,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($courier->deliveries as $delivery)
+            @foreach($deliveries as $delivery)
                 <tr>
                     <td>{{ $delivery->number }}</td>
                     <td>{{ $delivery->date->format('d/m/Y') }}</td>
@@ -114,12 +128,12 @@
 
     <div class="summary">
         <h3>Resumen</h3>
-        <p><strong>Total de Entregas:</strong> {{ $courier->deliveries->count() }}</p>
-        <p><strong>Entregas Pendientes:</strong> {{ $courier->deliveries->where('status', 'pending')->count() }}</p>
-        <p><strong>Entregas en Tránsito:</strong> {{ $courier->deliveries->where('status', 'in_transit')->count() }}</p>
-        <p><strong>Entregas Completadas:</strong> {{ $courier->deliveries->where('status', 'delivered')->count() }}</p>
-        <p><strong>Entregas Canceladas:</strong> {{ $courier->deliveries->where('status', 'cancelled')->count() }}</p>
-        <p><strong>Total de Montos:</strong> ${{ number_format($courier->deliveries->sum('amount'), 2) }}</p>
+        <p><strong>Total de Entregas:</strong> {{ $deliveries->count() }}</p>
+        <p><strong>Entregas Pendientes:</strong> {{ $deliveries->where('status', 'pending')->count() }}</p>
+        <p><strong>Entregas en Tránsito:</strong> {{ $deliveries->where('status', 'in_transit')->count() }}</p>
+        <p><strong>Entregas Completadas:</strong> {{ $deliveries->where('status', 'delivered')->count() }}</p>
+        <p><strong>Entregas Canceladas:</strong> {{ $deliveries->where('status', 'cancelled')->count() }}</p>
+        <p><strong>Total de Montos:</strong> ${{ number_format($deliveries->sum('amount'), 2) }}</p>
     </div>
 </body>
 

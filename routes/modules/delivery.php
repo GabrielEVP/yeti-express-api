@@ -1,13 +1,14 @@
 <?php
+
 use App\Http\Controllers\Api\DeliveryController;
-use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\DeliveryReportController;
 
 Route::prefix("deliveries")->group(function () {
     Route::get("filter", [DeliveryController::class, "filter"]);
     Route::get("clients/{clientId}", [DeliveryController::class, "latestByClient"]);
     Route::get("couriers/{courierId}", [DeliveryController::class, "latestByCourier"]);
     Route::put("{delivery}/status", [DeliveryController::class, "updateStatus"]);
-    Route::put("{delivery}/cancel", [DeliveryController::class, "cancelDelivery"]); // Nueva ruta
+    Route::put("{delivery}/cancel", [DeliveryController::class, "cancelDelivery"]);
     Route::post("{delivery}/client-payments", [DeliveryController::class, "storeClientPayment"]);
 
     Route::get("status/received", [DeliveryController::class, "getReceived"]);
@@ -21,6 +22,6 @@ Route::prefix("deliveries")->group(function () {
 
     Route::get("with-debt", [DeliveryController::class, "getWithDebt"]);
     Route::get("with-debt/client/{clientId}", [DeliveryController::class, "getWithDebtByClient"]);
-    Route::get("{delivery}/ticket", [ReportController::class, "deliveryTicket"]);
+    Route::get("{delivery}/ticket", [DeliveryReportController::class, "deliveryTicket"]);
 });
 Route::apiResource("deliveries", DeliveryController::class);

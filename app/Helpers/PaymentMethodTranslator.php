@@ -31,6 +31,8 @@ class PaymentMethodTranslator
             'venmo' => 'Venmo',
             'zelle' => 'Zelle',
             'bizum' => 'Bizum',
+            'full' => 'Pago Completo',
+            'partial' => 'Pago Parcial',
             default => ucfirst(str_replace('_', ' ', $method)),
         };
     }

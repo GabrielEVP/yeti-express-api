@@ -19,9 +19,21 @@ class DebtPayment extends Model
     ];
 
     protected $casts = [
-        'date' => 'date',
+        'date' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
         'amount' => 'float',
     ];
+
+    /**
+     * Método personalizado para formatear la fecha en formato español d/m/Y
+     *
+     * @return string Fecha formateada
+     */
+    public function getFormattedDateAttribute(): string
+    {
+        return $this->date ? $this->date->format('Y-m-d') : '';
+    }
 
     public function debt()
     {

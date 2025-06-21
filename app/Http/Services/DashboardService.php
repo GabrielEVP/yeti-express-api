@@ -2,9 +2,9 @@
 
 namespace App\Http\Services;
 
-use App\Models\Delivery;
-use App\Models\DebtPayment;
 use App\Models\CompanyBill;
+use App\Models\DebtPayment;
+use App\Models\Delivery;
 use App\Utils\FormatDate;
 use Carbon\Carbon;
 
@@ -12,50 +12,112 @@ class DashboardService
 {
     public function __construct(private FormatDate $dateFormatter)
     {
+        Carbon::setLocale('es');
     }
 
-    public function getStatsByPeriod(int $userId, string $startDate, string $endDate): array
+    public function safeFormatDate($date, string $default = ''): string
     {
+        if (empty($date)) {
+            return $default;
+        }
+
+        if ($date instanceof Carbon) {
+            return $date->format('Y-m-d');
+        }
+
+        if (!Carbon::hasFormat($date, 'Y-m-d') && !Carbon::hasFormat($date, 'Y-m-d H:i:s')) {
+            \Log::warning("Invalid date format in safeFormatDate: {$date}");
+            return $default;
+        }
+
+        return Carbon::parse($date)->format('Y-m-d');
+    }
+
+    private function ensureDateFormat($date): string
+    {
+        if ($date instanceof Carbon) {
+            return $date->toDateTimeString();
+        }
+
+        if (is_string($date)) {
+            $date = trim($date);
+
+            if (strpos($date, '/') !== false) {
+                $parts = explode('/', $date);
+                if (count($parts) === 3) {
+                    $date = $parts[2] . '-' . $parts[1] . '-' . $parts[0];
+                }
+            }
+        }
+
+        if (!is_string($date) && !is_object($date) && !is_numeric($date)) {
+            \Log::error('Invalid date format: not convertible to date');
+            return Carbon::now()->toDateTimeString();
+        }
+
+        if (!Carbon::canBeCreatedFromFormat($date, 'Y-m-d') &&
+            !Carbon::canBeCreatedFromFormat($date, 'Y-m-d H:i:s')) {
+            \Log::error('Error formatting date: ' . (is_string($date) ? $date : 'not a string'));
+            return Carbon::now()->toDateTimeString();
+        }
+
+        return Carbon::parse($date)->toDateTimeString();
+    }
+
+    public function getStatsByPeriod(int $userId, $startDate, $endDate): array
+    {
+        $startFormatted = $this->ensureDateFormat($startDate);
+        $endFormatted = $this->ensureDateFormat($endDate);
+
         return [
-            'total_delivered' => $this->getTotalDelivered($userId, $startDate, $endDate),
-            'total_invoiced' => $this->getTotalInvoiced($userId, $startDate, $endDate),
-            'total_collected' => $this->getTotalCollected($userId, $startDate, $endDate)
+            'total_delivered' => $this->getTotalDelivered($userId, $startFormatted, $endFormatted),
+            'total_invoiced' => $this->getTotalInvoiced($userId, $startFormatted, $endFormatted),
+            'total_collected' => $this->getTotalCollected($userId, $startFormatted, $endFormatted)
         ];
     }
 
-    public function getTotalDelivered(int $userId, string $startDate, string $endDate): int
+    public function getTotalDelivered(int $userId, $startDate, $endDate): int
     {
+        $startFormatted = $this->ensureDateFormat($startDate);
+        $endFormatted = $this->ensureDateFormat($endDate);
+
         return Delivery::where('user_id', $userId)
             ->where('status', 'delivered')
-            ->whereBetween('date', [$startDate, $endDate])
+            ->whereBetween('date', [$startFormatted, $endFormatted])
             ->count();
     }
 
-    public function getTotalInvoiced(int $userId, string $startDate, string $endDate): float
+    public function getTotalInvoiced(int $userId, $startDate, $endDate): float
     {
-        return (float) Delivery::where('user_id', $userId)
+        $startFormatted = $this->ensureDateFormat($startDate);
+        $endFormatted = $this->ensureDateFormat($endDate);
+
+        return (float)Delivery::where('user_id', $userId)
             ->where('status', 'delivered')
-            ->whereBetween('date', [$startDate, $endDate])
+            ->whereBetween('date', [$startFormatted, $endFormatted])
             ->sum('amount');
     }
 
-    public function getTotalCollected(int $userId, string $startDate, string $endDate): float
+    public function getTotalCollected(int $userId, $startDate, $endDate): float
     {
+        $startFormatted = $this->ensureDateFormat($startDate);
+        $endFormatted = $this->ensureDateFormat($endDate);
+
         $fullPaymentsTotal = Delivery::query()
             ->where('user_id', $userId)
             ->where('payment_type', 'full')
             ->where('payment_status', 'paid')
-            ->whereBetween('date', [$startDate, $endDate])
+            ->whereBetween('date', [$startFormatted, $endFormatted])
             ->sum('amount');
 
         $partialPaymentsTotal = DebtPayment::query()
             ->join('debts', 'debt_payments.debt_id', '=', 'debts.id')
             ->join('deliveries', 'debts.delivery_id', '=', 'deliveries.id')
             ->where('deliveries.user_id', $userId)
-            ->whereBetween('debt_payments.created_at', [$startDate, $endDate])
+            ->whereBetween('debt_payments.created_at', [$startFormatted, $endFormatted])
             ->sum('debt_payments.amount');
 
-        return (float) $fullPaymentsTotal + (float) $partialPaymentsTotal;
+        return (float)$fullPaymentsTotal + (float)$partialPaymentsTotal;
     }
 
     public function getHistoricalDelivered(int $userId, string $period, string $date): array
@@ -81,7 +143,7 @@ class DashboardService
             ->whereBetween('date', [$startDate, $endDate])
             ->get()
             ->groupBy(fn($delivery) => $this->dateFormatter->formatDateLabel(Carbon::parse($delivery->date), $period, $requestDate))
-            ->map(fn($group, $date) => ['date' => $date, 'total' => (float) $group->sum('amount')])
+            ->map(fn($group, $date) => ['date' => $date, 'total' => (float)$group->sum('amount')])
             ->values()
             ->toArray();
     }
@@ -128,90 +190,191 @@ class DashboardService
 
             return [
                 'date' => $dateKey,
-                'total_collected' => (float) $collected,
-                'total_expenses' => (float) $expenses,
-                'balance' => (float) $balance
+                'total_collected' => (float)$collected,
+                'total_expenses' => (float)$expenses,
+                'balance' => (float)$balance
             ];
         })->values()->toArray();
     }
 
     public function getCashRegisterDeliveries(int $userId, string $startDate, string $endDate): array
     {
-        $deliveries = Delivery::with(['client', 'courier', 'service'])
+        $deliveries = Delivery::with(['client:id,legal_name', 'courier:id,first_name,last_name', 'service:id,name', 'debt.payments'])
             ->where('user_id', $userId)
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
 
         return $deliveries->map(function ($delivery) {
+            $paidAmount = 0;
+            $pendingAmount = $delivery->amount;
+            $paymentDetails = [];
+
+            if ($delivery->payment_status === 'paid' && $delivery->payment_type === 'full') {
+                // Pago completo
+                $paidAmount = $delivery->amount;
+                $pendingAmount = 0;
+
+                // Agregar un detalle de pago para pagos completos
+                $paymentDetails[] = [
+                    'date' => $delivery->updated_at->format('Y-m-d'),
+                    'amount' => (float)$delivery->amount,
+                    'payment_method' => 'Efectivo',  // Default para pagos completos
+                    'notes' => 'Pago completo'
+                ];
+            } elseif ($delivery->debt) {
+                // Tiene deuda con pagos parciales
+                if ($delivery->debt->payments && $delivery->debt->payments->count() > 0) {
+                    $paidAmount = $delivery->debt->payments->sum('amount');
+                    $pendingAmount = max(0, $delivery->amount - $paidAmount);
+
+                    // Asegurarse de incluir TODOS los pagos ordenados por fecha
+                    $paymentDetails = $delivery->debt->payments
+                        ->sortBy(function ($payment) {
+                            return $payment->date ?? $payment->created_at;
+                        })
+                        ->map(function ($payment) {
+                            return [
+                                'date' => $payment->date ? $payment->date->format('Y-m-d') : $payment->created_at->format('Y-m-d'),
+                                'amount' => (float)$payment->amount,
+                                'payment_method' => $payment->method ?? 'Efectivo',
+                                'notes' => $payment->notes ?? ''
+                            ];
+                        })->values()->toArray();
+                }
+            }
+
             return [
                 'number' => $delivery->number,
-                'date' => $delivery->date->format('Y-m-d'),
-                'client' => $delivery->client->name ?? 'N/A',
-                'courier' => $delivery->courier->name ?? 'N/A',
-                'service' => $delivery->service->name ?? 'N/A',
-                'amount' => (float) $delivery->amount,
+                'date' => $this->safeFormatDate($delivery->date, 'N/A'),
+                'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
+                'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
+                'service' => $delivery->service ? $delivery->service->name : 'Sin servicio',
+                'total_amount' => (float)$delivery->amount,
+                'amount' => (float)$delivery->amount,  // Mantener para compatibilidad con vistas existentes
+                'paid_amount' => (float)$paidAmount,
+                'pending_amount' => (float)$pendingAmount,
                 'status' => $delivery->status,
                 'payment_status' => $delivery->payment_status,
-                'payment_type' => $delivery->payment_type
+                'payment_type' => $delivery->payment_type,
+                'payment_details' => $paymentDetails
             ];
         })->toArray();
     }
 
     public function getDeliveriesByStatus(int $userId, string $startDate, string $endDate): array
     {
-        $deliveries = Delivery::with(['client', 'courier', 'service'])
+        $deliveries = Delivery::with(['client:id,legal_name', 'courier:id,first_name,last_name', 'service:id,name', 'debt.payments'])
             ->where('user_id', $userId)
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
 
+        // Procesamos las entregas para asegurarnos que cada una tenga información detallada de sus pagos
         $delivered = $deliveries->where('status', 'delivered')->values();
-        $canceled = $deliveries->where('status', 'canceled')->values();
+        $canceled = $deliveries->where('status', 'cancelled')->values();
         $collected = $deliveries->where('payment_status', 'paid')->values();
         $uncollected = $deliveries->whereIn('payment_status', ['pending', 'partial_paid'])->values();
 
         return [
             'delivered' => $delivered->map(function ($delivery) {
+                $paidAmount = 0;
+                $pendingAmount = $delivery->amount;
+
+                if ($delivery->payment_status === 'paid' && $delivery->payment_type === 'full') {
+                    $paidAmount = $delivery->amount;
+                    $pendingAmount = 0;
+                } elseif ($delivery->debt) {
+                    $paidAmount = $delivery->debt->payments->sum('amount');
+                    $pendingAmount = max(0, $delivery->amount - $paidAmount);
+                }
+
                 return [
                     'number' => $delivery->number,
                     'date' => $delivery->date->format('Y-m-d'),
-                    'client' => $delivery->client->name ?? 'N/A',
-                    'courier' => $delivery->courier->name ?? 'N/A',
-                    'service' => $delivery->service->name ?? 'N/A',
-                    'amount' => (float) $delivery->amount,
-                    'payment_status' => $delivery->payment_status
+                    'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
+                    'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
+                    'service' => $delivery->service ? $delivery->service->name : 'Sin servicio',
+                    'total_amount' => (float)$delivery->amount,
+                    'amount' => (float)$delivery->amount,  // Mantener para compatibilidad con vistas existentes
+                    'paid_amount' => (float)$paidAmount,
+                    'pending_amount' => (float)$pendingAmount,
+                    'payment_status' => $delivery->payment_status,
+                    'payment_type' => $delivery->payment_type
                 ];
             })->toArray(),
             'canceled' => $canceled->map(function ($delivery) {
                 return [
                     'number' => $delivery->number,
                     'date' => $delivery->date->format('Y-m-d'),
-                    'client' => $delivery->client->name ?? 'N/A',
-                    'courier' => $delivery->courier->name ?? 'N/A',
+                    'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
+                    'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
                     'service' => $delivery->service->name ?? 'N/A',
-                    'amount' => (float) $delivery->amount,
+                    'amount' => (float)$delivery->amount,
                     'cancellation_notes' => $delivery->cancellation_notes
                 ];
             })->toArray(),
             'collected' => $collected->map(function ($delivery) {
+                $paidAmount = 0;
+                $paymentDetails = [];
+
+                if ($delivery->payment_type === 'full') {
+                    $paidAmount = $delivery->amount;
+                } elseif ($delivery->debt) {
+                    $paidAmount = $delivery->debt->payments->sum('amount');
+
+                    $paymentDetails = $delivery->debt->payments->map(function ($payment) {
+                        return [
+                            'date' => $payment->date ? $payment->date->format('Y-m-d') : $payment->created_at->format('Y-m-d'),
+                            'amount' => (float)$payment->amount,
+                            'payment_method' => $payment->method ?? 'No especificado',
+                            'notes' => $payment->notes ?? ''
+                        ];
+                    })->toArray();
+                }
+
                 return [
                     'number' => $delivery->number,
                     'date' => $delivery->date->format('Y-m-d'),
-                    'client' => $delivery->client->name ?? 'N/A',
-                    'courier' => $delivery->courier->name ?? 'N/A',
+                    'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
+                    'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
                     'service' => $delivery->service->name ?? 'N/A',
-                    'amount' => (float) $delivery->amount,
-                    'payment_type' => $delivery->payment_type
+                    'total_amount' => (float)$delivery->amount,
+                    'amount' => (float)$delivery->amount,  // Mantener para compatibilidad con vistas existentes
+                    'paid_amount' => (float)$paidAmount,
+                    'payment_type' => $delivery->payment_type,
+                    'payment_details' => $paymentDetails
                 ];
             })->toArray(),
             'uncollected' => $uncollected->map(function ($delivery) {
+                $paidAmount = 0;
+                $pendingAmount = $delivery->amount;
+                $paymentDetails = [];
+
+                if ($delivery->debt) {
+                    $paidAmount = $delivery->debt->payments->sum('amount');
+                    $pendingAmount = max(0, $delivery->amount - $paidAmount);
+
+                    $paymentDetails = $delivery->debt->payments->map(function ($payment) {
+                        return [
+                            'date' => $payment->date ? $payment->date->format('Y-m-d') : $payment->created_at->format('Y-m-d'),
+                            'amount' => (float)$payment->amount,
+                            'payment_method' => $payment->method ?? 'No especificado',
+                            'notes' => $payment->notes ?? ''
+                        ];
+                    })->toArray();
+                }
+
                 return [
                     'number' => $delivery->number,
                     'date' => $delivery->date->format('Y-m-d'),
-                    'client' => $delivery->client->name ?? 'N/A',
-                    'courier' => $delivery->courier->name ?? 'N/A',
+                    'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
+                    'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
                     'service' => $delivery->service->name ?? 'N/A',
-                    'amount' => (float) $delivery->amount,
-                    'payment_status' => $delivery->payment_status
+                    'total_amount' => (float)$delivery->amount,
+                    'amount' => (float)$delivery->amount,  // Mantener para compatibilidad con vistas existentes
+                    'paid_amount' => (float)$paidAmount,
+                    'pending_amount' => (float)$pendingAmount,
+                    'payment_status' => $delivery->payment_status,
+                    'payment_details' => $paymentDetails
                 ];
             })->toArray()
         ];
@@ -230,22 +393,36 @@ class DashboardService
                 $courierName = $courier ? $courier->first_name . ' ' . $courier->last_name : 'Sin repartidor';
 
                 $delivered = $group->where('status', 'delivered');
-                $canceled = $group->where('status', 'canceled');
+                $canceled = $group->where('status', 'cancelled');
 
                 return [
                     'courier' => $courierName,
                     'total_deliveries' => $group->count(),
                     'delivered_count' => $delivered->count(),
-                    'delivered_amount' => (float) $delivered->sum('amount'),
+                    'delivered_amount' => (float)$delivered->sum('amount'),
                     'canceled_count' => $canceled->count(),
-                    'canceled_amount' => (float) $canceled->sum('amount'),
+                    'canceled_amount' => (float)$canceled->sum('amount'),
                     'deliveries' => [
                         'delivered' => $delivered->map(function ($delivery) {
+                            $paidAmount = 0;
+                            $pendingAmount = $delivery->amount;
+
+                            if ($delivery->payment_status === 'paid' && $delivery->payment_type === 'full') {
+                                $paidAmount = $delivery->amount;
+                                $pendingAmount = 0;
+                            } elseif ($delivery->debt) {
+                                $paidAmount = $delivery->debt->payments->sum('amount');
+                                $pendingAmount = max(0, $delivery->amount - $paidAmount);
+                            }
+
                             return [
                                 'number' => $delivery->number,
                                 'date' => $delivery->date->format('Y-m-d'),
                                 'client' => $delivery->client->legal_name ?? 'N/A',
-                                'amount' => (float) $delivery->amount,
+                                'total_amount' => (float)$delivery->amount,
+                                'amount' => (float)$delivery->amount,  // Mantener para compatibilidad con vistas existentes
+                                'paid_amount' => (float)$paidAmount,
+                                'pending_amount' => (float)$pendingAmount,
                                 'payment_status' => $delivery->payment_status
                             ];
                         })->values()->toArray(),
@@ -254,7 +431,7 @@ class DashboardService
                                 'number' => $delivery->number,
                                 'date' => $delivery->date->format('Y-m-d'),
                                 'client' => $delivery->client->legal_name ?? 'N/A',
-                                'amount' => (float) $delivery->amount,
+                                'amount' => (float)$delivery->amount,
                                 'cancellation_notes' => $delivery->cancellation_notes ?? 'N/A'
                             ];
                         })->values()->toArray()
@@ -289,7 +466,7 @@ class DashboardService
                 return [
                     'client' => $clientName,
                     'total_deliveries' => $group->count(),
-                    'total_debt' => (float) $totalDebt,
+                    'total_debt' => (float)$totalDebt,
                     'deliveries' => $group->map(function ($delivery) {
                         $pendingAmount = $delivery->amount;
                         $paidAmount = 0;
@@ -303,7 +480,7 @@ class DashboardService
                             $paymentDetails = $payments->map(function ($payment) {
                                 return [
                                     'date' => $payment->date->format('Y-m-d'),
-                                    'amount' => (float) $payment->amount,
+                                    'amount' => (float)$payment->amount,
                                     'payment_method' => $payment->payment_method,
                                     'notes' => $payment->notes
                                 ];
@@ -313,9 +490,9 @@ class DashboardService
                         return [
                             'number' => $delivery->number,
                             'date' => $delivery->date->format('Y-m-d'),
-                            'amount' => (float) $delivery->amount,
-                            'paid_amount' => (float) $paidAmount,
-                            'pending_amount' => (float) $pendingAmount,
+                            'amount' => (float)$delivery->amount,
+                            'paid_amount' => (float)$paidAmount,
+                            'pending_amount' => (float)$pendingAmount,
                             'payment_status' => $delivery->payment_status,
                             'payment_details' => $paymentDetails
                         ];
@@ -326,39 +503,58 @@ class DashboardService
 
     public function getClientPaymentSummary(int $userId, string $startDate, string $endDate): array
     {
-        // Obtener todos los deliveries pagados en el período
         $paidDeliveries = Delivery::with(['client', 'debt.payments'])
             ->where('user_id', $userId)
-            ->where('payment_status', 'paid')
+            ->whereIn('payment_status', ['paid', 'partial_paid']) // Modificado para incluir pagos parciales
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
 
-        // Obtener pagos parciales realizados en el período
+        if (str_contains($startDate, '/')) {
+            $parts = explode('/', trim($startDate));
+            if (count($parts) === 3) {
+                $startDate = $parts[2] . '-' . $parts[1] . '-' . $parts[0];
+            }
+        }
+
+        if (str_contains($endDate, '/')) {
+            $parts = explode('/', trim($endDate));
+            if (count($parts) === 3) {
+                $endDate = $parts[2] . '-' . $parts[1] . '-' . $parts[0];
+            }
+        }
+
+        $startFormatted = $this->ensureDateFormat($startDate);
+        $endFormatted = $this->ensureDateFormat($endDate);
+        $startDateObj = Carbon::parse($startFormatted)->startOfDay();
+        $endDateObj = Carbon::parse($endFormatted)->endOfDay();
+
         $partialPayments = DebtPayment::with(['debt.delivery.client'])
             ->whereHas('debt.delivery', function ($query) use ($userId) {
                 $query->where('user_id', $userId);
             })
-            ->whereBetween('date', [$startDate, $endDate])
+            ->where(function ($query) use ($startDateObj, $endDateObj) {
+                $query->whereBetween('date', [$startDateObj, $endDateObj])
+                    ->orWhereBetween('created_at', [$startDateObj, $endDateObj]);
+            })
             ->get();
 
-        // Agrupar por cliente los deliveries completamente pagados
-        $paidByClient = $paidDeliveries->groupBy(function($delivery) {
+        $paidByClient = $paidDeliveries->groupBy(function ($delivery) {
             return $delivery->client_id;
         });
 
-        // Agrupar por cliente los pagos parciales
-        $partialByClient = $partialPayments->groupBy(function($payment) {
-            return $payment->debt->delivery->client_id;
+        $partialByClient = $partialPayments->groupBy(function ($payment) {
+            if ($payment->debt && $payment->debt->delivery && $payment->debt->delivery->client_id) {
+                return $payment->debt->delivery->client_id;
+            }
+            return 0;
         });
 
-        // Unir los IDs de clientes
         $clientIds = collect(array_merge(
             $paidByClient->keys()->toArray(),
             $partialByClient->keys()->toArray()
         ))->unique();
 
-        return $clientIds->map(function($clientId) use ($paidByClient, $partialByClient, $startDate, $endDate) {
-            // Determinar el nombre del cliente
+        return $clientIds->map(function ($clientId) use ($paidByClient, $partialByClient, $startDate, $endDate) {
             $clientName = 'Cliente desconocido';
 
             if ($paidByClient->has($clientId) && $paidByClient[$clientId]->first()->client) {
@@ -367,45 +563,47 @@ class DashboardService
                 $clientName = $partialByClient[$clientId]->first()->debt->delivery->client->legal_name;
             }
 
-            // Pagos completos
-            $fullPayments = $paidByClient->get($clientId, collect())->map(function($delivery) {
+            $fullPayments = $paidByClient->get($clientId, collect())->map(function ($delivery) {
+                // Determinamos si es un pago completo o parcial
+                $isFullPayment = $delivery->payment_status === 'paid';
+                $paidAmount = $isFullPayment ? $delivery->amount :
+                    ($delivery->debt ? $delivery->debt->payments->sum('amount') : 0);
+
                 return [
                     'number' => $delivery->number,
                     'date' => $delivery->date->format('Y-m-d'),
                     'payment_date' => $delivery->updated_at->format('Y-m-d'),
-                    'amount' => (float) $delivery->amount,
+                    'amount' => (float)$paidAmount,
                     'payment_type' => $delivery->payment_type,
-                    'payment_status' => 'paid',
-                    'is_full_payment' => true
+                    'payment_status' => $delivery->payment_status,
+                    'is_full_payment' => $isFullPayment
                 ];
             })->toArray();
 
-            // Pagos parciales
-            $partial = $partialByClient->get($clientId, collect())->map(function($payment) {
+            $partial = $partialByClient->get($clientId, collect())->map(function ($payment) {
                 $delivery = $payment->debt->delivery;
 
                 return [
                     'number' => $delivery->number,
                     'date' => $delivery->date->format('Y-m-d'),
                     'payment_date' => $payment->date->format('Y-m-d'),
-                    'amount' => (float) $payment->amount,
+                    'amount' => (float)$payment->amount,
                     'payment_method' => $payment->payment_method,
-                    'delivery_amount' => (float) $delivery->amount,
+                    'delivery_amount' => (float)$delivery->amount,
                     'payment_status' => $delivery->payment_status,
                     'notes' => $payment->notes,
                     'is_full_payment' => false
                 ];
             })->toArray();
 
-            // Total pagado (pagos completos + parciales)
             $totalFullPaid = collect($fullPayments)->sum('amount');
             $totalPartialPaid = collect($partial)->sum('amount');
 
             return [
                 'client' => $clientName,
-                'total_paid' => (float) ($totalFullPaid + $totalPartialPaid),
-                'full_payments_total' => (float) $totalFullPaid,
-                'partial_payments_total' => (float) $totalPartialPaid,
+                'total_paid' => (float)($totalFullPaid + $totalPartialPaid),
+                'full_payments_total' => (float)$totalFullPaid,
+                'partial_payments_total' => (float)$totalPartialPaid,
                 'full_payments_count' => count($fullPayments),
                 'partial_payments_count' => count($partial),
                 'full_payments' => $fullPayments,
@@ -413,5 +611,6 @@ class DashboardService
             ];
         })->values()->toArray();
     }
+
 
 }

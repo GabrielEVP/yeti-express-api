@@ -3,12 +3,27 @@
 namespace App\Utils;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class FormatDate
 {
     public function getPeriodDates(string $period, string $date): array
     {
-        $parsedDate = Carbon::parse($date);
+        try {
+            $date = trim($date);
+
+            if (strpos($date, '/') !== false) {
+                $parts = explode('/', $date);
+                if (count($parts) === 3) {
+                    $date = "{$parts[2]}-{$parts[1]}-{$parts[0]}";
+                }
+            }
+
+            $parsedDate = Carbon::parse($date);
+        } catch (\Exception $e) {
+            Log::warning("Error parsing date in getPeriodDates: {$date} - {$e->getMessage()}");
+            $parsedDate = Carbon::now();
+        }
 
         $startDate = match ($period) {
             'day' => $parsedDate->copy()->startOfDay(),
@@ -32,7 +47,23 @@ class FormatDate
         ];
     }
 
-    public function formatDateLabel($deliveryDate, $period, $requestDate): string
+    public function formatDateLabel(Carbon $date, string $period, Carbon $referenceDate): string
+    {
+        try {
+            return match ($period) {
+                'day' => $date->format('Y-m-d'),
+                'week' => 'Week ' . $date->weekOfYear . ' - ' . $date->year,
+                'month' => $date->format('Y-m'),
+                'year' => (string)$date->year,
+                default => $date->format('Y-m-d'),
+            };
+        } catch (\Exception $e) {
+            Log::error("Error formateando etiqueta de fecha: {$e->getMessage()}");
+            return $date->format('Y-m-d');
+        }
+    }
+
+    public function formatDateLabelDisplay(Carbon $deliveryDate, string $period, Carbon $requestDate): string
     {
         $today = Carbon::today();
         $deliveryDay = Carbon::parse($deliveryDate->toDateString());
@@ -46,7 +77,7 @@ class FormatDate
         };
     }
 
-    private function getSpanishDayName($dayCode): string
+    private function getSpanishDayName(string $dayCode): string
     {
         return match ($dayCode) {
             'Mon' => 'Lunes',
@@ -60,7 +91,7 @@ class FormatDate
         };
     }
 
-    private function getSpanishMonthName($monthCode): string
+    private function getSpanishMonthName(string $monthCode): string
     {
         return match ($monthCode) {
             'Jan' => 'Enero',

@@ -3,14 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Services\DashboardService;
+use App\Utils\FormatDate;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Utils\FormatDate;
-use App\Http\Services\DashboardService;
-use App\Http\Services\PDFService;
-use Illuminate\Http\Response;
-use Carbon\Carbon;
 
 class HomeController extends Controller
 {
@@ -27,7 +25,7 @@ class HomeController extends Controller
         $user = Auth::user();
         $stats = $this->dashboardService->getStatsByPeriod($user->id, $startDate, $endDate);
 
-        $companyBills = (float) $user->companyBills()
+        $companyBills = (float)$user->companyBills()
             ->whereBetween('date', [$startDate, $endDate])
             ->sum('amount');
 
@@ -55,9 +53,7 @@ class HomeController extends Controller
         $periodLabels = [];
         $periodData = [];
 
-        // Generar reportes separados por período
         if ($period === 'day') {
-            // Si el período es por día, podemos mostrar el reporte de ese día específico
             if ($request->has('date')) {
                 $dayStart = Carbon::parse($date)->startOfDay()->toDateTimeString();
                 $dayEnd = Carbon::parse($date)->endOfDay()->toDateTimeString();
@@ -66,7 +62,6 @@ class HomeController extends Controller
                 $periodLabels[] = "Caja del día {$dayLabel}";
                 $periodData[] = $this->generatePeriodData($user->id, $dayStart, $dayEnd);
             } else {
-                // Para el período actual, mostrar el día de hoy
                 $today = Carbon::today();
                 $dayStart = $today->copy()->startOfDay()->toDateTimeString();
                 $dayEnd = $today->copy()->endOfDay()->toDateTimeString();
@@ -75,7 +70,6 @@ class HomeController extends Controller
                 $periodData[] = $this->generatePeriodData($user->id, $dayStart, $dayEnd);
             }
         } elseif ($period === 'week') {
-            // Si es semana, generar reporte para cada día de la semana
             $currentDate = Carbon::parse($startDate);
             $endDateTime = Carbon::parse($endDate);
 
@@ -90,7 +84,6 @@ class HomeController extends Controller
                 $currentDate->addDay();
             }
         } elseif ($period === 'month') {
-            // Si es mes, generar reporte para cada semana
             $currentDate = Carbon::parse($startDate);
             $endDateTime = Carbon::parse($endDate);
             $weekNumber = 1;
@@ -106,7 +99,6 @@ class HomeController extends Controller
                 $weekNumber++;
             }
         } elseif ($period === 'year') {
-            // Si es año, generar reporte para cada mes
             $currentDate = Carbon::parse($startDate);
             $endDateTime = Carbon::parse($endDate);
 
@@ -121,7 +113,6 @@ class HomeController extends Controller
                 $currentDate->addMonth();
             }
         } else {
-            // Para cualquier otro período, usar el rango completo
             $periodLabels[] = "Caja del período {$period} ({$startDate} - {$endDate})";
             $periodData[] = $this->generatePeriodData($user->id, $startDate, $endDate);
         }
@@ -147,32 +138,24 @@ class HomeController extends Controller
         return $pdf->download("{$filename}.pdf");
     }
 
-    /**
-     * Genera los datos para un período específico
-     */
     private function generatePeriodData(int $userId, string $startDate, string $endDate): array
     {
         $stats = $this->dashboardService->getStatsByPeriod($userId, $startDate, $endDate);
 
-        $totalExpenses = (float) Auth::user()->companyBills()
+        $totalExpenses = (float)Auth::user()->companyBills()
             ->whereBetween('date', [$startDate, $endDate])
             ->sum('amount');
 
         $balance = $stats['total_collected'] - $totalExpenses;
 
-        // Get all deliveries
         $deliveries = $this->dashboardService->getCashRegisterDeliveries($userId, $startDate, $endDate);
 
-        // Get deliveries categorized by status
         $deliveriesByStatus = $this->dashboardService->getDeliveriesByStatus($userId, $startDate, $endDate);
 
-        // Get courier summary with detailed deliveries
         $courierSummary = $this->dashboardService->getCourierDeliverySummary($userId, $startDate, $endDate);
 
-        // Get client debt summary
         $clientDebtSummary = $this->dashboardService->getClientDebtSummary($userId, $startDate, $endDate);
 
-        // Get client payment summary
         $clientPaymentSummary = $this->dashboardService->getClientPaymentSummary($userId, $startDate, $endDate);
 
         return [

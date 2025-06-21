@@ -1,330 +1,366 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>Reporte de Caja</title>
+    <meta charset="utf-8">
+    <title>Reporte Detallado de Caja</title>
     <style>
         body {
-            font-family: sans-serif;
+            font-family: Arial, sans-serif;
             font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin-bottom: 0;
+        }
+
+        h2 {
+            font-size: 16px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        h3 {
+            font-size: 14px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            background-color: #f4f4f4;
+            padding: 5px;
+            border-radius: 4px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
-        th,
-        td {
-            border: 1px solid #333;
-            padding: 5px;
+        th, td {
+            border: 1px solid #ddd;
+            padding: 6px;
             text-align: left;
         }
 
         th {
-            background-color: #f0f0f0;
-        }
-
-        .summary-table {
-            margin-bottom: 20px;
-        }
-
-        .section-title {
-            background-color: #f8f8f8;
-            padding: 5px;
-            margin-top: 20px;
-            border-bottom: 2px solid #333;
-        }
-
-        .subsection {
-            margin-top: 15px;
-            margin-bottom: 25px;
-        }
-
-        .cash-register-box {
-            border: 2px solid #333;
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 30px;
-            background-color: #ffffff;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .cash-register-title {
-            background-color: #f0f0f0;
-            padding: 8px;
-            margin: -15px -15px 15px -15px;
-            border-bottom: 2px solid #333;
-            font-size: 16px;
+            background-color: #f4f4f4;
             font-weight: bold;
+        }
+
+        .summary-box {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        .day-separator {
+            page-break-before: always;
+            margin-top: 20px;
+        }
+
+        .general-summary {
+            background-color: #ffffff;
+            padding: 10px;
+            margin: 20px 0;
+            border: 1px solid #505050;
+            border-radius: 4px;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
             text-align: center;
         }
 
-        .page-break {
-            page-break-before: always;
+        .text-success {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .text-danger {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .text-warning {
+            color: #ffc107;
+        }
+
+        .text-paid {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .text-pending {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .text-partial {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10px;
+            color: #777;
         }
     </style>
 </head>
-
 <body>
+<div class="header">
+    <h1>Reporte Detallado de Caja</h1>
+    <h2>Período: {{ $start_date }} - {{ $end_date }}</h2>
+    <p>Generado el: {{ \Carbon\Carbon::now()->format('Y-m-d H:i:s') }}</p>
+</div>
 
+<div class="general-summary">
+    <h3>Resumen General del Período</h3>
+    <table>
+        <tr>
+            <th>Total Entregas</th>
+            <th>Total Facturado</th>
+            <th>Total Cobrado</th>
+            <th>Total Gastos</th>
+            <th>Balance Final</th>
+        </tr>
+        <tr>
+            <td class="text-center">{{ $general_summary['total_delivered'] }}</td>
+            <td class="text-right">${{ number_format($general_summary['total_invoiced'], 2) }}</td>
+            <td class="text-right">${{ number_format($general_summary['total_collected'], 2) }}</td>
+            <td class="text-right">${{ number_format($general_summary['total_expenses'], 2) }}</td>
+            <td class="text-right @if($general_summary['balance'] >= 0) text-success @else text-danger @endif">
+                ${{ number_format($general_summary['balance'], 2) }}
+            </td>
+        </tr>
+    </table>
+</div>
 
-@foreach($period_labels as $index => $label)
-    <div class="cash-register-box">
-        <div class="cash-register-title">{{ $label }}</div>
+@foreach($period_data as $index => $data)
+    <div class="@if($index > 0) day-separator @endif">
+        <h3>{{ $period_labels[$index] }}</h3>
 
-        <h3 class="section-title">Resumen General</h3>
-        <table class="summary-table">
-            <tr>
-                <th>Total Entregados</th>
-                <td>{{ $period_data[$index]['summary']['total_delivered'] }}</td>
-            </tr>
-            <tr>
-                <th>Total Facturado</th>
-                <td>${{ number_format($period_data[$index]['summary']['total_invoiced'], 2) }}</td>
-            </tr>
-            <tr>
-                <th>Total Cobrado</th>
-                <td>${{ number_format($period_data[$index]['summary']['total_collected'], 2) }}</td>
-            </tr>
-            <tr>
-                <th>Total Gastos</th>
-                <td>${{ number_format($period_data[$index]['summary']['total_expenses'], 2) }}</td>
-            </tr>
-            <tr>
-                <th>Balance</th>
-                <td><strong>${{ number_format($period_data[$index]['summary']['balance'], 2) }}</strong></td>
-            </tr>
-        </table>
+        <div class="summary-box">
+            <table>
+                <tr>
+                    <th>Entregas</th>
+                    <th>Facturado</th>
+                    <th>Cobrado</th>
+                    <th>Gastos</th>
+                    <th>Balance</th>
+                </tr>
+                <tr>
+                    <td class="text-center">{{ $data['summary']['total_delivered'] }}</td>
+                    <td class="text-right">${{ number_format($data['summary']['total_invoiced'], 2) }}</td>
+                    <td class="text-right">${{ number_format($data['summary']['total_collected'], 2) }}</td>
+                    <td class="text-right">${{ number_format($data['summary']['total_expenses'], 2) }}</td>
+                    <td class="text-right @if($data['summary']['balance'] >= 0) text-success @else text-danger @endif">
+                        ${{ number_format($data['summary']['balance'], 2) }}
+                    </td>
+                </tr>
+            </table>
+        </div>
 
-        <!-- Resumen por Repartidor -->
-        <h3 class="section-title">Resumen por Repartidor</h3>
-        @if(count($period_data[$index]['courierSummary']) > 0)
-            <div class="subsection">
-                <table>
-                    <thead>
+        @if(isset($data['deliveriesByStatus']['delivered']) && count($data['deliveriesByStatus']['delivered']) > 0)
+            <h3>Entregas Realizadas ({{ count($data['deliveriesByStatus']['delivered']) }})</h3>
+            <table>
+                <thead>
+                <tr>
+                    <th>Número</th>
+                    <th>Cliente</th>
+                    <th>Repartidor</th>
+                    <th>Servicio</th>
+                    <th>Monto</th>
+                    <th>Pagado</th>
+                    <th>Pendiente</th>
+                    <th>Estado Pago</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach($data['deliveriesByStatus']['delivered'] as $delivery)
+                    @php
+                        $statusClass = match($delivery['payment_status']) {
+                            'paid' => 'text-paid',
+                            'pending' => 'text-pending',
+                            'partial_paid' => 'text-partial',
+                            default => ''
+                        };
+                    @endphp
                     <tr>
-                        <th>Repartidor</th>
-                        <th>Total Deliveries</th>
-                        <th>Entregados</th>
-                        <th>Monto Entregados</th>
-                        <th>Cancelados</th>
-                        <th>Monto Cancelados</th>
+                        <td>{{ $delivery['number'] }}</td>
+                        <td>{{ $delivery['client'] === 'N/A' ? 'Sin cliente' : $delivery['client'] }}</td>
+                        <td>{{ $delivery['courier'] === 'N/A' ? 'Sin repartidor' : $delivery['courier'] }}</td>
+                        <td>{{ $delivery['service'] }}</td>
+                        <td class="text-right">
+                            ${{ number_format($delivery['total_amount'] ?? $delivery['amount'] ?? 0, 2) }}</td>
+                        <td class="text-right text-paid">${{ number_format($delivery['paid_amount'] ?? 0, 2) }}</td>
+                        <td class="text-right @if(($delivery['pending_amount'] ?? 0) > 0) text-pending @endif">
+                            ${{ number_format($delivery['pending_amount'] ?? 0, 2) }}
+                        </td>
+                        <td class="{{ $statusClass }}">
+                            {{ \App\Helpers\DeliveryStatusTranslator::toSpanish($delivery['payment_status']) }}
+                        </td>
+                    </tr>
+                    @if(isset($delivery['payment_details']) && count($delivery['payment_details']) > 0)
+                        <tr>
+                            <td colspan="8" style="padding: 0;">
+                                <table style="margin-bottom: 0; border-top: none;">
+                                    <tr>
+                                        <td colspan="8"
+                                            style="background-color: #f9f9f9; font-weight: bold; text-align: center;">
+                                            Detalle de Pagos
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Monto</th>
+                                        <th>Método</th>
+                                        <th colspan="4">Notas</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                    @foreach($delivery['payment_details'] as $paymentDetail)
+                                        <tr>
+                                            <td>{{ $paymentDetail['date'] }}</td>
+                                            <td class="text-right text-paid">
+                                                ${{ number_format($paymentDetail['amount'], 2) }}</td>
+                                            <td>{{ $paymentDetail['payment_method'] }}</td>
+                                            <td colspan="4">{{ $paymentDetail['notes'] }}</td>
+                                            <td class="text-paid">Registrado</td>
+                                        </tr>
+                                    @endforeach
+                                </table>
+                            </td>
+                        </tr>
+                    @endif
+                @endforeach
+                </tbody>
+            </table>
+        @else
+            <p>No hay entregas realizadas en este período</p>
+        @endif
+
+        @if(isset($data['deliveriesByStatus']['canceled']) && count($data['deliveriesByStatus']['canceled']) > 0)
+            <h3>Entregas Canceladas ({{ count($data['deliveriesByStatus']['canceled']) }})</h3>
+            <table>
+                <thead>
+                <tr>
+                    <th>Número</th>
+                    <th>Cliente</th>
+                    <th>Repartidor</th>
+                    <th>Monto</th>
+                    <th>Motivo de Cancelación</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach($data['deliveriesByStatus']['canceled'] as $delivery)
+                    <tr>
+                        <td>{{ $delivery['number'] }}</td>
+                        <td>{{ $delivery['client'] === 'N/A' ? 'Sin cliente' : $delivery['client'] }}</td>
+                        <td>{{ $delivery['courier'] === 'N/A' ? 'Sin repartidor' : $delivery['courier'] }}</td>
+                        <td class="text-right">
+                            ${{ number_format($delivery['total_amount'] ?? $delivery['amount'] ?? 0, 2) }}</td>
+                        <td>{{ $delivery['cancellation_notes'] }}</td>
+                    </tr>
+                @endforeach
+                </tbody>
+            </table>
+        @else
+            <p>No hay entregas canceladas en este período</p>
+        @endif
+
+        @if(isset($data['previousDayPayments']) && count($data['previousDayPayments']) > 0)
+            <h3>Pagos Recibidos de Entregas Anteriores - Desglosado por Entrega</h3>
+            @foreach($data['previousDayPayments'] as $payment)
+                @php
+                    $totalAmount = $payment['total_amount'] ?? $payment['delivery_amount'] ?? $payment['amount'] ?? 0;
+                    $totalPaid = $payment['paid_amount'] ?? 0;
+                    $pendingAmount = $payment['pending_amount'] ?? 0;
+                @endphp
+                <table style="margin-bottom: 20px; border: 2px solid #007bff;">
+                    <thead>
+                    <tr style="background-color: #e6f2ff;">
+                        <th colspan="5">
+                            Delivery #{{ $payment['number'] }} -
+                            Fecha Original: {{ $payment['date'] }} -
+                            Total Entrega: ${{ number_format($totalAmount, 2) }} -
+                            @if($pendingAmount > 0)
+                                <span
+                                    class="text-pending">Saldo Pendiente: ${{ number_format($pendingAmount, 2) }}</span>
+                            @else
+                                <span class="text-paid">Pagado Completamente</span>
+                            @endif
+                        </th>
+                    </tr>
+                    <tr>
+                        <th>Fecha de Pago</th>
+                        <th>Monto Pagado</th>
+                        <th>Método de Pago</th>
+                        <th>Notas</th>
+                        <th>Estado</th>
                     </tr>
                     </thead>
                     <tbody>
-                    @foreach ($period_data[$index]['courierSummary'] as $summary)
-                        <tr>
-                            <td>{{ $summary['courier'] }}</td>
-                            <td>{{ $summary['total_deliveries'] }}</td>
-                            <td>{{ $summary['delivered_count'] }}</td>
-                            <td>${{ number_format($summary['delivered_amount'], 2) }}</td>
-                            <td>{{ $summary['canceled_count'] }}</td>
-                            <td>${{ number_format($summary['canceled_amount'], 2) }}</td>
-                        </tr>
-                    @endforeach
-                    </tbody>
-                </table>
-
-                @foreach ($period_data[$index]['courierSummary'] as $summary)
-                    <div class="subsection">
-                        <h4>Detalle de {{ $summary['courier'] }}</h4>
-
-                        @if(count($summary['deliveries']['delivered']) > 0)
-                            <h5>Entregados ({{ count($summary['deliveries']['delivered']) }})</h5>
-                            <table>
-                                <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Fecha</th>
-                                    <th>Cliente</th>
-                                    <th>Monto</th>
-                                    <th>Estado de Pago</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                @foreach ($summary['deliveries']['delivered'] as $delivery)
-                                    <tr>
-                                        <td>{{ $delivery['number'] }}</td>
-                                        <td>{{ $delivery['date'] }}</td>
-                                        <td>{{ $delivery['client'] }}</td>
-                                        <td>${{ number_format($delivery['amount'], 2) }}</td>
-                                        <td>{{ \App\Helpers\PaymentStatusTranslator::toSpanish($delivery['payment_status']) }}</td>
-                                    </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
-                        @endif
-
-                        @if(count($summary['deliveries']['canceled']) > 0)
-                            <h5>Cancelados ({{ count($summary['deliveries']['canceled']) }})</h5>
-                            <table>
-                                <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Fecha</th>
-                                    <th>Cliente</th>
-                                    <th>Monto</th>
-                                    <th>Motivo de Cancelación</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                @foreach ($summary['deliveries']['canceled'] as $delivery)
-                                    <tr>
-                                        <td>{{ $delivery['number'] }}</td>
-                                        <td>{{ $delivery['date'] }}</td>
-                                        <td>{{ $delivery['client'] }}</td>
-                                        <td>${{ number_format($delivery['amount'], 2) }}</td>
-                                        <td>{{ $delivery['cancellation_notes'] }}</td>
-                                    </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
-                        @endif
-                    </div>
-                @endforeach
-            </div>
-        @else
-            <p>No hay información de repartidores para este período.</p>
-        @endif
-
-        <!-- Resumen de Deudas por Cliente -->
-        <h3 class="section-title">Resumen de Deudas por Cliente</h3>
-        @if(count($period_data[$index]['clientDebtSummary']) > 0)
-            <div class="subsection">
-                @foreach ($period_data[$index]['clientDebtSummary'] as $clientSummary)
-                    <h4>{{ $clientSummary['client'] }} - Deuda Total:
-                        ${{ number_format($clientSummary['total_debt'], 2) }}</h4>
-                    <table>
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Fecha</th>
-                            <th>Monto Total</th>
-                            <th>Monto Pagado</th>
-                            <th>Monto Pendiente</th>
-                            <th>Estado de Pago</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        @foreach ($clientSummary['deliveries'] as $delivery)
+                    @if(isset($payment['payment_details']) && count($payment['payment_details']) > 0)
+                        @foreach($payment['payment_details'] as $detail)
                             <tr>
-                                <td>{{ $delivery['number'] }}</td>
-                                <td>{{ $delivery['date'] }}</td>
-                                <td>${{ number_format($delivery['amount'], 2) }}</td>
-                                <td>${{ number_format($delivery['paid_amount'], 2) }}</td>
-                                <td>${{ number_format($delivery['pending_amount'], 2) }}</td>
-                                <td>{{ ucfirst($delivery['payment_status']) }}</td>
+                                <td>{{ $detail['date'] }}</td>
+                                <td class="text-right text-paid">${{ number_format($detail['amount'], 2) }}</td>
+                                <td>{{ $detail['payment_method'] ?? 'Efectivo' }}</td>
+                                <td>{{ $detail['notes'] ?? '' }}</td>
+                                <td class="text-paid">Registrado</td>
                             </tr>
-                            @if(count($delivery['payment_details']) > 0)
-                                <tr>
-                                    <td colspan="6">
-                                        <strong>Historial de pagos:</strong>
-                                        <ul style="margin: 0; padding-left: 20px;">
-                                            @foreach ($delivery['payment_details'] as $payment)
-                                                <li>
-                                                    {{ $payment['date'] }} - ${{ number_format($payment['amount'], 2) }}
-                                                    ({{ \App\Helpers\PaymentMethodTranslator::toSpanish($payment['payment_method']) }}
-                                                    )
-                                                    @if($payment['notes'])
-                                                        - {{ $payment['notes'] }}
-                                                    @endif
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    </td>
-                                </tr>
-                            @endif
                         @endforeach
-                        </tbody>
-                    </table>
-                @endforeach
-            </div>
-        @else
-            <p>No hay clientes con deudas pendientes en este período.</p>
-        @endif
-
-        <!-- Resumen de Pagos por Cliente -->
-        <h3 class="section-title">Resumen de Pagos por Cliente</h3>
-        @if(isset($period_data[$index]['clientPaymentSummary']) && count($period_data[$index]['clientPaymentSummary']) > 0)
-            <div class="subsection">
-                @foreach ($period_data[$index]['clientPaymentSummary'] as $clientSummary)
-                    <h4>{{ $clientSummary['client'] }} - Total Pagado:
-                        ${{ number_format($clientSummary['total_paid'], 2) }}</h4>
-
-                    @if(count($clientSummary['full_payments']) > 0)
-                        <h5>Pagos Completos ({{ $clientSummary['full_payments_count'] }}) -
-                            ${{ number_format($clientSummary['full_payments_total'], 2) }}</h5>
-                        <table>
-                            <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Fecha Delivery</th>
-                                <th>Fecha Pago</th>
-                                <th>Monto</th>
-                                <th>Tipo de Pago</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            @foreach ($clientSummary['full_payments'] as $payment)
-                                <tr>
-                                    <td>{{ $payment['number'] }}</td>
-                                    <td>{{ $payment['date'] }}</td>
-                                    <td>{{ $payment['payment_date'] }}</td>
-                                    <td>${{ number_format($payment['amount'], 2) }}</td>
-                                    <td>{{ \App\Helpers\PaymentMethodTranslator::toSpanish($payment['payment_type']) }}</td>
-                                </tr>
-                            @endforeach
-                            </tbody>
-                        </table>
+                    @else
+                        <tr>
+                            <td>{{ $payment['payment_date'] ?? date('Y-m-d') }}</td>
+                            <td class="text-right text-paid">
+                                ${{ number_format($payment['paid_amount'] ?? $payment['amount'] ?? 0, 2) }}
+                            </td>
+                            <td>{{ $payment['payment_method'] ?? 'Efectivo' }}</td>
+                            <td>{{ $payment['notes'] ?? '' }}</td>
+                            <td class="text-paid">Registrado</td>
+                        </tr>
                     @endif
-
-                    @if(count($clientSummary['partial_payments']) > 0)
-                        <h5>Pagos Parciales ({{ $clientSummary['partial_payments_count'] }}) -
-                            ${{ number_format($clientSummary['partial_payments_total'], 2) }}</h5>
-                        <table>
-                            <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Fecha Delivery</th>
-                                <th>Fecha Pago</th>
-                                <th>Monto Pagado</th>
-                                <th>Monto Total</th>
-                                <th>Método</th>
-                                <th>Notas</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            @foreach ($clientSummary['partial_payments'] as $payment)
-                                <tr>
-                                    <td>{{ $payment['number'] }}</td>
-                                    <td>{{ $payment['date'] }}</td>
-                                    <td>{{ $payment['payment_date'] }}</td>
-                                    <td>${{ number_format($payment['amount'], 2) }}</td>
-                                    <td>${{ number_format($payment['delivery_amount'], 2) }}</td>
-                                    <td>{{ \App\Helpers\PaymentMethodTranslator::toSpanish($payment['payment_method']) }}</td>
-                                    <td>{{ $payment['notes'] ?? '' }}</td>
-                                </tr>
-                            @endforeach
-                            </tbody>
-                        </table>
-                    @endif
-                @endforeach
-            </div>
+                    </tbody>
+                    <tfoot>
+                    <tr style="background-color: #f5f5f5;">
+                        <td><strong>Resumen:</strong></td>
+                        <td class="text-right text-paid"><strong>${{ number_format($totalPaid, 2) }}</strong></td>
+                        <td colspan="2"></td>
+                        <td class="@if($pendingAmount > 0) text-pending @else text-paid @endif">
+                            <strong>
+                                @if($pendingAmount > 0)
+                                    Pendiente: ${{ number_format($pendingAmount, 2) }}
+                                @else
+                                    Completado
+                                @endif
+                            </strong>
+                        </td>
+                    </tr>
+                    </tfoot>
+                </table>
+            @endforeach
         @else
-            <p>No hay pagos de clientes registrados en este período.</p>
+            <p>No hay pagos de entregas anteriores en este período</p>
         @endif
-
-    </div> <!-- Cierre de cash-register-box -->
-
-    @if(!$loop->last)
-        <div class="page-break"></div>
-    @endif
-
+    </div>
 @endforeach
 
+<div class="footer">
+    <p>Reporte de caja generado automáticamente. Página {{ "[page]" }} de {{ "[topage]" }}</p>
+</div>
 </body>
-
 </html>

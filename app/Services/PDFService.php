@@ -73,7 +73,20 @@ class PDFService
 
     public function generateCashRegisterReport(array $reportData): \Barryvdh\DomPDF\PDF
     {
+        // Establecer la configuración para permitir más memoria y tiempo de procesamiento para reportes grandes
+        ini_set('memory_limit', '256M');
+        set_time_limit(120);
+
         $pdf = PDF::loadView('pdfs.cash-register-report', $reportData);
+
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf;
+    }
+
+    public function generateSimplifiedCashRegisterReport(array $reportData): \Barryvdh\DomPDF\PDF
+    {
+        $pdf = PDF::loadView('pdfs.simplified-cash-register-report', $reportData);
 
         $pdf->setPaper('a4', 'portrait');
 
@@ -82,6 +95,8 @@ class PDFService
 
     public function generateUnpaidDebtsReport($clients): \Barryvdh\DomPDF\PDF
     {
+        // Las fechas ya vienen formateadas, no es necesario parsearlas
+        // Las fechas ya vienen formateadas, no es necesario parsearlas
         $pdf = PDF::loadView('pdfs.unpaid-debts-report', [
             'clients' => $clients,
             'generatedAt' => now()

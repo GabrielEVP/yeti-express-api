@@ -160,14 +160,12 @@
                                                 <th>Fecha</th>
                                                 <th>Método</th>
                                                 <th>Monto</th>
-                                                <th>Notas</th>
                                             </tr>
                                             @foreach($debt->payments as $payment)
                                                 <tr>
                                                     <td>{{ $payment->date->format('d/m/Y') }}</td>
-                                                    <td>{{ $payment->payment_method }}</td>
+                                                    <td>{{ \App\Helpers\PaymentMethodTranslator::toSpanish($payment->method) }}</td>
                                                     <td class="amount">{{ number_format($payment->amount, 2) }}</td>
-                                                    <td>{{ $payment->notes }}</td>
                                                 </tr>
                                             @endforeach
                                         </table>

@@ -13,6 +13,7 @@ class DebtPayment extends Model
         'date',
         'amount',
         'method',
+        'notes',
         'debt_id',
         'user_id',
     ];

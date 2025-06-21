@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
 use App\Models\Debt;
 use App\Models\Delivery;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+
 class DebtController extends Controller
 {
     public function clientsWithDebt(): JsonResponse
@@ -17,6 +17,12 @@ class DebtController extends Controller
         $clients = Auth::user()->clients()->whereHas('debts', function ($query) {
             $query->where('user_id', Auth::id());
         })
+            ->with([
+                'debts' => function ($query) {
+                    $query->where('user_id', Auth::id())
+                        ->with('payments');
+                }
+            ])
             ->withCount([
                 'debts' => function ($query) {
                     $query->where('user_id', Auth::id());
@@ -24,27 +30,32 @@ class DebtController extends Controller
             ])
             ->get();
 
+        $clients->each(function ($client) {
+            $totalDebt = 0;
+
+            foreach ($client->debts as $debt) {
+                $totalPaid = $debt->payments->sum('amount');
+                $remainingAmount = $debt->amount - $totalPaid;
+                $totalDebt += max(0, $remainingAmount);
+            }
+            $client->total_debt_amount = $totalDebt;
+            unset($client->debts);
+        });
+
         return response()->json($clients, 200);
     }
-    public function stats(): JsonResponse
+
+    public function stats(string $clientId): JsonResponse
     {
-        $userId = Auth::id();
+        $totalDeliveriesWithDebt = Delivery::where('client_id', $clientId)
+            ->where('payment_status', '!=', 'PAID')
+            ->whereHas('debt')
+            ->distinct('id')
+            ->count('id');
 
-        $totalDeliveriesWithDebt = Debt::where('user_id', $userId)
-            ->distinct('delivery_id')
-            ->count('delivery_id');
-
-        $totalInvoiced = Debt::where('debts.user_id', $userId)
-            ->join('deliveries', 'debts.delivery_id', '=', 'deliveries.id')
-            ->sum('deliveries.amount');
-
-        $totalPaid = DB::table('debt_payments')
-            ->join('debts', 'debt_payments.debt_id', '=', 'debts.id')
-            ->where('debts.user_id', $userId)
-            ->sum('debt_payments.amount');
-
-        $totalPending = Debt::where('debts.user_id', $userId)
-            ->whereIn('debts.status', ['pending', 'partial_paid'])
+        $totalPending = Debt::where('client_id', $clientId)
+            ->where('user_id', Auth::id())
+            ->whereIn('status', ['pending', 'partial_paid'])
             ->leftJoin(
                 DB::raw('(SELECT debt_id, SUM(amount) as total_paid FROM debt_payments GROUP BY debt_id) as debt_payments_sum'),
                 'debts.id',
@@ -56,9 +67,7 @@ class DebtController extends Controller
 
         return response()->json([
             'total_deliveries_with_debt' => $totalDeliveriesWithDebt,
-            'total_invoiced' => $totalInvoiced,
-            'total_paid' => $totalPaid,
-            'total_pending' => $totalPending,
+            'total_pending' => (float)$totalPending,
         ]);
     }
 
@@ -81,7 +90,6 @@ class DebtController extends Controller
                 $delivery->debt_id = $debt->id;
                 $delivery->debt_remaining_amount = max(0, $remainingAmount);
 
-                // Puedes usar esto como indicador de estado
                 $delivery->debt_status = $remainingAmount > 0 ? 'pending' : 'paid';
             } else {
                 $delivery->debt_status = 'no_debt';
@@ -92,14 +100,13 @@ class DebtController extends Controller
             return $delivery;
         });
 
-        // Ordenamos: primero por estado (pendiente > pagado > sin deuda), luego por fecha (si lo deseas)
         $deliveries = $deliveries->sortBy(function ($delivery) {
             return match ($delivery->debt_status) {
                 'pending' => 0,
                 'paid' => 1,
                 'no_debt' => 2,
             };
-        })->values(); // `values()` para resetear los índices del array
+        })->values();
 
         return response()->json($deliveries, 200);
     }
@@ -107,7 +114,7 @@ class DebtController extends Controller
     public function filterDeliveryWithDebtByStatusByClient(Request $request): JsonResponse
     {
         $status = $request->query('status');
-        $client_id = $request->query('client_id');
+        $client_id = $request->route('client');
 
         if (!$client_id) {
             return response()->json(['message' => 'Client ID is required'], 422);

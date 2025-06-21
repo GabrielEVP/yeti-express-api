@@ -17,10 +17,26 @@ class PDFService
         return $pdf;
     }
 
-    public function generateClientDebtReport($client): \Barryvdh\DomPDF\PDF
+    public function generateClientDebtReport($client, $deliveries, $startDate, $endDate): \Barryvdh\DomPDF\PDF
     {
         $pdf = PDF::loadView('pdfs.client-debt-report', [
-            'client' => $client
+            'client' => $client,
+            'deliveries' => $deliveries,
+            'startDate' => $startDate,
+            'endDate' => $endDate
+        ]);
+
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf;
+    }
+
+    public function generateAllClientsDebtReport($clients, $startDate, $endDate): \Barryvdh\DomPDF\PDF
+    {
+        $pdf = PDF::loadView('pdfs.all-clients-debt-report', [
+            'clients' => $clients,
+            'startDate' => $startDate,
+            'endDate' => $endDate
         ]);
 
         $pdf->setPaper('a4', 'portrait');
@@ -58,6 +74,18 @@ class PDFService
     public function generateCashRegisterReport(array $reportData): \Barryvdh\DomPDF\PDF
     {
         $pdf = PDF::loadView('pdfs.cash-register-report', $reportData);
+
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf;
+    }
+
+    public function generateUnpaidDebtsReport($clients): \Barryvdh\DomPDF\PDF
+    {
+        $pdf = PDF::loadView('pdfs.unpaid-debts-report', [
+            'clients' => $clients,
+            'generatedAt' => now()
+        ]);
 
         $pdf->setPaper('a4', 'portrait');
 

@@ -3,52 +3,18 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Delivery;
-use App\Models\Client;
 use App\Models\Courier;
 use App\Services\PDFService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class ReportController extends Controller
+class CourierReportController extends Controller
 {
     protected PDFService $pdfService;
 
     public function __construct(PDFService $pdfService)
     {
         $this->pdfService = $pdfService;
-    }
-
-    public function deliveryTicket(Delivery $delivery): \Illuminate\Http\Response
-    {
-        $this->authorizeOwner($delivery);
-
-        $delivery->load([
-            'service',
-            'client',
-            'courier',
-            'receipt'
-        ]);
-
-        $pdf = $this->pdfService->generateDeliveryTicket($delivery);
-
-        return $pdf->stream("delivery-ticket-{$delivery->number}.pdf");
-    }
-
-    public function clientDebtReport(Client $client): \Illuminate\Http\Response
-    {
-        $this->authorizeOwner($client);
-
-        $client->load([
-            'debts',
-            'debts.payments',
-            'debts.delivery',
-            'debts.delivery.service'
-        ]);
-
-        $pdf = $this->pdfService->generateClientDebtReport($client);
-
-        return $pdf->stream("client-debt-report-{$client->id}.pdf");
     }
 
     public function courierDeliveriesReport(Courier $courier, Request $request): \Illuminate\Http\Response

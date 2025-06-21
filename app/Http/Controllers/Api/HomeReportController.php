@@ -147,7 +147,7 @@ class HomeReportController extends Controller
 
             $stats = $this->dashboardService->getStatsByPeriod($userId, $dayStart, $dayEnd);
 
-            $expenses = (float)auth()->user()->companyBills()
+            $expenses = (float) auth()->user()->companyBills()
                 ->whereBetween('date', [$dayStart, $dayEnd])
                 ->sum('amount');
 
@@ -207,7 +207,7 @@ class HomeReportController extends Controller
     {
         $stats = $this->dashboardService->getStatsByPeriod($userId, $startDate, $endDate);
 
-        $totalExpenses = (float)auth()->user()->companyBills()
+        $totalExpenses = (float) auth()->user()->companyBills()
             ->whereBetween('date', [$startDate, $endDate])
             ->sum('amount');
 
@@ -240,8 +240,8 @@ class HomeReportController extends Controller
                     'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
                     'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
                     'service' => $delivery->service->name ?? 'N/A',
-                    'amount' => (float)$delivery->amount,
-                    'delivery_amount' => (float)$delivery->amount,
+                    'amount' => (float) $delivery->amount,
+                    'delivery_amount' => (float) $delivery->amount,
                     'payment_date' => $delivery->updated_at->format('Y-m-d'),
                     'payment_type' => 'full'
                 ];
@@ -292,7 +292,7 @@ class HomeReportController extends Controller
             $paymentDetails = $allPaymentsForDelivery->map(function ($paymentDetail) {
                 return [
                     'date' => $paymentDetail->date ? $paymentDetail->date->format('Y-m-d') : $paymentDetail->created_at->format('Y-m-d'),
-                    'amount' => (float)$paymentDetail->amount,
+                    'amount' => (float) $paymentDetail->amount,
                     'payment_method' => $paymentDetail->method ?? 'Efectivo',
                     'notes' => $paymentDetail->notes ?? ''
                 ];
@@ -305,11 +305,11 @@ class HomeReportController extends Controller
                 'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
                 'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
                 'service' => $delivery->service->name ?? 'N/A',
-                'amount' => (float)$payment->amount, // Monto de este pago específico
-                'delivery_amount' => (float)$delivery->amount, // Monto total de la entrega
-                'total_amount' => (float)$delivery->amount, // Para compatibilidad
-                'paid_amount' => (float)$totalPaid, // Monto total pagado hasta ahora
-                'pending_amount' => (float)$pendingAmount, // Monto pendiente
+                'amount' => (float) $payment->amount, // Monto de este pago específico
+                'delivery_amount' => (float) $delivery->amount, // Monto total de la entrega
+                'total_amount' => (float) $delivery->amount, // Para compatibilidad
+                'paid_amount' => (float) $totalPaid, // Monto total pagado hasta ahora
+                'pending_amount' => (float) $pendingAmount, // Monto pendiente
                 'payment_date' => $payment->created_at->format('Y-m-d'),
                 'payment_type' => 'partial',
                 'payment_details' => $paymentDetails // Incluimos TODOS los pagos ordenados

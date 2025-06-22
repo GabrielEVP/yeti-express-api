@@ -14,33 +14,134 @@ class HomeController extends Controller
 {
     public function __construct(private readonly FormatDate $dateFormatter, private readonly DashboardService $dashboardService)
     {
+        // Configurar el idioma español para todas las instancias de Carbon
+        Carbon::setLocale('es');
+        setlocale(LC_TIME, 'es_ES.UTF-8', 'es_ES', 'es');
     }
 
     public function getDashboardStats(Request $request): JsonResponse
     {
-        $period = $request->input('period', 'day');
-        $date = $request->input('date', now()->toDateString());
-        [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
+        try {
+            Carbon::setLocale('es');
+            $period = $request->input('period', 'day');
+            $date = $request->input('date', now()->toDateString());
 
-        $user = Auth::user();
-        $stats = $this->dashboardService->getStatsByPeriod($user->id, $startDate, $endDate);
+            // Asegurar que la fecha tenga un formato válido
+            try {
+                if (!$date || !Carbon::canBeCreatedFromFormat($date, 'Y-m-d')) {
+                    $date = now()->toDateString();
+                }
+            } catch (\Exception $e) {
+                \Log::warning("Fecha inválida, usando fecha actual: {$e->getMessage()}");
+                $date = now()->toDateString();
+            }
 
-        $companyBills = (float)$user->companyBills()
-            ->whereBetween('date', [$startDate, $endDate])
-            ->sum('amount');
+            [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
 
-        return response()->json([
-            'period' => $period,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'total_delivered' => $stats['total_delivered'],
-            'total_invoiced' => $stats['total_invoiced'],
-            'total_collected' => $stats['total_collected'],
-            'total_company_bills' => $companyBills,
-            'historical_delivered' => $this->dashboardService->getHistoricalDelivered($user->id, $period, $date),
-            'historical_invoiced' => $this->dashboardService->getHistoricalInvoiced($user->id, $period, $date),
-            'historical_balance' => $this->dashboardService->getHistoricalBalance($user->id, $period, $date)
-        ]);
+            $user = Auth::user();
+
+            if (!$user) {
+                return response()->json(['error' => 'Usuario no autenticado'], 401);
+            }
+
+            $stats = $this->dashboardService->getStatsByPeriod($user->id, $startDate, $endDate);
+
+            $companyBills = (float)$user->companyBills()
+                ->whereBetween('date', [$startDate, $endDate])
+                ->sum('amount');
+
+            // Format period display label in Spanish
+            $periodLabel = match ($period) {
+                'day' => 'Día',
+                'week' => 'Semana',
+                'month' => 'Mes',
+                'year' => 'Año',
+                default => ucfirst($period),
+            };
+
+            // Format start and end dates in Spanish
+            $startDateObj = Carbon::parse($startDate);
+            $endDateObj = Carbon::parse($endDate);
+            $requestDateObj = Carbon::parse($date);
+
+            // Formatear fechas en español
+            $formattedStartDate = $startDateObj->isSameDay(Carbon::today())
+                ? 'Hoy'
+                : $startDateObj->locale('es')->isoFormat('dddd D [de] MMMM [de] YYYY');
+
+            $formattedEndDate = $endDateObj->isSameDay(Carbon::today())
+                ? 'Hoy'
+                : $endDateObj->locale('es')->isoFormat('dddd D [de] MMMM [de] YYYY');
+
+            // Mantener el periodo en inglés para la API pero traducir la etiqueta
+            // En español utilizar la versión española del periodo
+            $periodSpanish = match ($period) {
+                'day' => 'dia',
+                'week' => 'semana',
+                'month' => 'mes',
+                'year' => 'año',
+                default => $period,
+            };
+
+            // Obtener los datos históricos
+            $historicalDelivered = $this->dashboardService->getHistoricalDelivered($user->id, $period, $date);
+            $historicalInvoiced = $this->dashboardService->getHistoricalInvoiced($user->id, $period, $date);
+            $historicalBalance = $this->dashboardService->getHistoricalBalance($user->id, $period, $date);
+
+            // Reformatear las etiquetas de fecha según el periodo
+            if ($period === 'week') {
+                // Determinar el primer día de la semana
+                $weekStart = Carbon::parse($startDate);
+                $dayNames = [];
+
+                // Crear un array con los nombres de los días en español
+                for ($i = 0; $i < 7; $i++) {
+                    $currentDay = $weekStart->copy()->addDays($i);
+                    $dayNames[] = ucfirst($currentDay->locale('es')->dayName);
+                }
+
+                // Asignar nombres de días a los datos históricos
+                if (count($historicalDelivered) > 0 && count($dayNames) >= count($historicalDelivered)) {
+                    foreach ($historicalDelivered as $key => $item) {
+                        $historicalDelivered[$key]['date'] = $dayNames[$key % 7];
+                    }
+                }
+
+                if (count($historicalInvoiced) > 0 && count($dayNames) >= count($historicalInvoiced)) {
+                    foreach ($historicalInvoiced as $key => $item) {
+                        $historicalInvoiced[$key]['date'] = $dayNames[$key % 7];
+                    }
+                }
+
+                if (count($historicalBalance) > 0 && count($dayNames) >= count($historicalBalance)) {
+                    foreach ($historicalBalance as $key => $item) {
+                        $historicalBalance[$key]['date'] = $dayNames[$key % 7];
+                    }
+                }
+            }
+
+            return response()->json([
+                'period' => $periodSpanish,
+                'period_label' => $periodLabel,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'formatted_start_date' => $formattedStartDate,
+                'formatted_end_date' => $formattedEndDate,
+                'total_delivered' => $stats['total_delivered'],
+                'total_invoiced' => $stats['total_invoiced'],
+                'total_collected' => $stats['total_collected'],
+                'total_company_bills' => $companyBills,
+                'historical_delivered' => $historicalDelivered,
+                'historical_invoiced' => $historicalInvoiced,
+                'historical_balance' => $historicalBalance
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al cargar los datos del dashboard',
+                'message' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
+            ], 500);
+        }
     }
 
     public function getCashRegisterReport(Request $request)
@@ -54,21 +155,12 @@ class HomeController extends Controller
         $periodData = [];
 
         if ($period === 'day') {
-            if ($request->has('date')) {
-                $dayStart = Carbon::parse($date)->startOfDay()->toDateTimeString();
-                $dayEnd = Carbon::parse($date)->endOfDay()->toDateTimeString();
-                $dayLabel = Carbon::parse($date)->format('d/m/Y');
+            // Para período diario, simplemente mostrar 'Hoy'
+            $dayStart = Carbon::parse($date)->startOfDay()->toDateTimeString();
+            $dayEnd = Carbon::parse($date)->endOfDay()->toDateTimeString();
 
-                $periodLabels[] = "Caja del día {$dayLabel}";
-                $periodData[] = $this->generatePeriodData($user->id, $dayStart, $dayEnd);
-            } else {
-                $today = Carbon::today();
-                $dayStart = $today->copy()->startOfDay()->toDateTimeString();
-                $dayEnd = $today->copy()->endOfDay()->toDateTimeString();
-
-                $periodLabels[] = "Caja de hoy " . $today->format('d/m/Y');
-                $periodData[] = $this->generatePeriodData($user->id, $dayStart, $dayEnd);
-            }
+            $periodLabels[] = "Hoy";
+            $periodData[] = $this->generatePeriodData($user->id, $dayStart, $dayEnd);
         } elseif ($period === 'week') {
             $currentDate = Carbon::parse($startDate);
             $endDateTime = Carbon::parse($endDate);
@@ -76,9 +168,12 @@ class HomeController extends Controller
             while ($currentDate->lte($endDateTime)) {
                 $dayStart = $currentDate->copy()->startOfDay()->toDateTimeString();
                 $dayEnd = $currentDate->copy()->endOfDay()->toDateTimeString();
-                $dayLabel = $currentDate->format('l d/m/Y'); // Lunes 01/01/2025
 
-                $periodLabels[] = "Caja {$dayLabel}";
+                // Mostrar solo el nombre del día en español sin prefijo
+                Carbon::setLocale('es');
+                $dayLabel = ucfirst($currentDate->locale('es')->dayName); // Lunes, Martes, etc.
+
+                $periodLabels[] = $dayLabel;
                 $periodData[] = $this->generatePeriodData($user->id, $dayStart, $dayEnd);
 
                 $currentDate->addDay();
@@ -92,7 +187,8 @@ class HomeController extends Controller
                 $weekStart = $currentDate->copy()->toDateTimeString();
                 $weekEnd = min($currentDate->copy()->addDays(6), $endDateTime)->endOfDay()->toDateTimeString();
 
-                $periodLabels[] = "Caja Semana {$weekNumber} ({$currentDate->format('d/m/Y')} - {$currentDate->copy()->addDays(6)->format('d/m/Y')})";
+                // Usar exactamente 'Semana 1', 'Semana 2', etc.
+                $periodLabels[] = "Semana {$weekNumber}";
                 $periodData[] = $this->generatePeriodData($user->id, $weekStart, $weekEnd);
 
                 $currentDate->addDays(7);
@@ -105,9 +201,12 @@ class HomeController extends Controller
             while ($currentDate->lte($endDateTime) && $currentDate->year == Carbon::parse($startDate)->year) {
                 $monthStart = $currentDate->copy()->startOfMonth()->toDateTimeString();
                 $monthEnd = $currentDate->copy()->endOfMonth()->toDateTimeString();
-                $monthLabel = $currentDate->format('F Y'); // Enero 2025
 
-                $periodLabels[] = "Caja de {$monthLabel}";
+                // Mostrar solo el nombre del mes en español
+                Carbon::setLocale('es');
+                $monthLabel = ucfirst($currentDate->locale('es')->monthName); // Enero, Febrero, etc.
+
+                $periodLabels[] = $monthLabel;
                 $periodData[] = $this->generatePeriodData($user->id, $monthStart, $monthEnd);
 
                 $currentDate->addMonth();
@@ -117,8 +216,16 @@ class HomeController extends Controller
             $periodData[] = $this->generatePeriodData($user->id, $startDate, $endDate);
         }
 
+        $periodSpanish = match ($period) {
+            'day' => 'dia',
+            'week' => 'semana',
+            'month' => 'mes',
+            'year' => 'año',
+            default => $period,
+        };
+
         $reportData = [
-            'period' => $period,
+            'period' => $periodSpanish,
             'date' => $date,
             'start_date' => $startDate,
             'end_date' => $endDate,
@@ -132,7 +239,7 @@ class HomeController extends Controller
         if ($period === 'day') {
             $filename .= "_" . Carbon::parse($date)->format('Y-m-d');
         } else {
-            $filename .= "_{$period}_" . Carbon::parse($date)->format('Y-m-d');
+            $filename .= "_{$periodSpanish}_" . Carbon::parse($date)->format('Y-m-d');
         }
 
         return $pdf->download("{$filename}.pdf");

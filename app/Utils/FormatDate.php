@@ -25,19 +25,20 @@ class FormatDate
             $parsedDate = Carbon::now();
         }
 
+        // Soportar tanto períodos en inglés como en español
         $startDate = match ($period) {
-            'day' => $parsedDate->copy()->startOfDay(),
-            'week' => $parsedDate->copy()->startOfWeek(),
-            'month' => $parsedDate->copy()->startOfMonth(),
-            'year' => $parsedDate->copy()->startOfYear(),
+            'day', 'dia' => $parsedDate->copy()->startOfDay(),
+            'week', 'semana' => $parsedDate->copy()->startOfWeek(),
+            'month', 'mes' => $parsedDate->copy()->startOfMonth(),
+            'year', 'año' => $parsedDate->copy()->startOfYear(),
             default => $parsedDate->copy()->startOfDay(),
         };
 
         $endDate = match ($period) {
-            'day' => $parsedDate->copy()->endOfDay(),
-            'week' => $parsedDate->copy()->endOfWeek(),
-            'month' => $parsedDate->copy()->endOfMonth(),
-            'year' => $parsedDate->copy()->endOfYear(),
+            'day', 'dia' => $parsedDate->copy()->endOfDay(),
+            'week', 'semana' => $parsedDate->copy()->endOfWeek(),
+            'month', 'mes' => $parsedDate->copy()->endOfMonth(),
+            'year', 'año' => $parsedDate->copy()->endOfYear(),
             default => $parsedDate->copy()->endOfDay(),
         };
 
@@ -50,11 +51,12 @@ class FormatDate
     public function formatDateLabel(Carbon $date, string $period, Carbon $referenceDate): string
     {
         try {
+            // Traducir etiquetas al español correctamente según el periodo
             return match ($period) {
-                'day' => $date->format('Y-m-d'),
-                'week' => 'Week ' . $date->weekOfYear . ' - ' . $date->year,
-                'month' => $date->format('Y-m'),
-                'year' => (string)$date->year,
+                'day', 'dia' => $date->isToday() ? 'Hoy' : $date->format('Y-m-d'),
+                'week', 'semana' => ucfirst($date->locale('es')->dayName),  // Lunes, Martes, etc.
+                'month', 'mes' => 'Semana ' . $date->weekOfMonth,  // 'Semana 1', 'Semana 2', etc.
+                'year', 'año' => ucfirst($date->locale('es')->monthName),  // Enero, Febrero, etc.
                 default => $date->format('Y-m-d'),
             };
         } catch (\Exception $e) {
@@ -68,12 +70,13 @@ class FormatDate
         $today = Carbon::today();
         $deliveryDay = Carbon::parse($deliveryDate->toDateString());
 
+        // Definir etiquetas exactamente como se requiere
         return match ($period) {
-            'day' => $deliveryDay->isSameDay($today) ? 'Hoy' : $deliveryDay->format('d/m'),
-            'week' => $this->getSpanishDayName($deliveryDate->format('D')),
-            'month' => 'Semana ' . $deliveryDate->weekOfMonth,
-            'year' => $this->getSpanishMonthName($deliveryDate->format('M')),
-            default => $deliveryDay->isSameDay($today) ? 'Hoy' : $deliveryDay->format('d/m'),
+            'day', 'dia' => 'Hoy',
+            'week', 'semana' => ucfirst($deliveryDate->locale('es')->dayName), // Lunes, Martes, etc.
+            'month', 'mes' => 'Semana ' . $deliveryDate->weekOfMonth,
+            'year', 'año' => ucfirst($deliveryDate->locale('es')->monthName), // Enero, Febrero, etc.
+            default => 'Hoy',
         };
     }
 

@@ -65,7 +65,7 @@ class DebtReportController extends Controller
                                 ->whereDate('date', '<=', $endDate);
                         });
                 })->with(['payments', 'delivery.service']);
-            }
+            }z
         ]);
         $pdf = $this->pdfService->generateClientDebtReport($client, $startDate, $endDate);
         return $pdf->stream("client-debt-report-{$client->id}.pdf");

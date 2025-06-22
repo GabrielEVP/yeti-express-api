@@ -25,7 +25,7 @@ class DebtController extends Controller
             ])
             ->withCount([
                 'debts' => function ($query) {
-                    $query->where('user_id', Auth::id());
+                    $query->where('user_id', Auth::id())->WhereNot('status', 'paid');
                 }
             ])
             ->get();

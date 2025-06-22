@@ -94,7 +94,7 @@ class DashboardService
         $startFormatted = $this->ensureDateFormat($startDate);
         $endFormatted = $this->ensureDateFormat($endDate);
 
-        return (float) Delivery::where('user_id', $userId)
+        return (float)Delivery::where('user_id', $userId)
             ->where('status', 'delivered')
             ->whereBetween('date', [$startFormatted, $endFormatted])
             ->sum('amount');
@@ -106,6 +106,7 @@ class DashboardService
         $endFormatted = $this->ensureDateFormat($endDate);
 
         $fullPaymentsTotal = Delivery::query()
+            ->where('status', 'delivered')
             ->where('user_id', $userId)
             ->where('payment_type', 'full')
             ->where('payment_status', 'paid')
@@ -119,7 +120,7 @@ class DashboardService
             ->whereBetween('debt_payments.created_at', [$startFormatted, $endFormatted])
             ->sum('debt_payments.amount');
 
-        return (float) $fullPaymentsTotal + (float) $partialPaymentsTotal;
+        return (float)$fullPaymentsTotal + (float)$partialPaymentsTotal;
     }
 
     public function getHistoricalDelivered(int $userId, string $period, string $date): array
@@ -129,6 +130,7 @@ class DashboardService
 
         return Delivery::where('user_id', $userId)
             ->whereBetween('date', [$startDate, $endDate])
+            ->where('status', 'delivered')
             ->get()
             ->groupBy(fn($delivery) => $this->dateFormatter->formatDateLabel(Carbon::parse($delivery->date), $period, $requestDate))
             ->map(fn($group, $date) => ['date' => $date, 'total' => $group->count()])
@@ -143,9 +145,10 @@ class DashboardService
 
         return Delivery::where('user_id', $userId)
             ->whereBetween('date', [$startDate, $endDate])
+            ->where('status', 'delivered')
             ->get()
             ->groupBy(fn($delivery) => $this->dateFormatter->formatDateLabel(Carbon::parse($delivery->date), $period, $requestDate))
-            ->map(fn($group, $date) => ['date' => $date, 'total' => (float) $group->sum('amount')])
+            ->map(fn($group, $date) => ['date' => $date, 'total' => (float)$group->sum('amount')])
             ->values()
             ->toArray();
     }
@@ -192,9 +195,9 @@ class DashboardService
 
             return [
                 'date' => $dateKey,
-                'total_collected' => (float) $collected,
-                'total_expenses' => (float) $expenses,
-                'balance' => (float) $balance
+                'total_collected' => (float)$collected,
+                'total_expenses' => (float)$expenses,
+                'balance' => (float)$balance
             ];
         })->values()->toArray();
     }
@@ -219,7 +222,7 @@ class DashboardService
                 // Agregar un detalle de pago para pagos completos
                 $paymentDetails[] = [
                     'date' => $delivery->updated_at->format('Y-m-d'),
-                    'amount' => (float) $delivery->amount,
+                    'amount' => (float)$delivery->amount,
                     'payment_method' => 'Efectivo',  // Default para pagos completos
                     'notes' => 'Pago completo'
                 ];
@@ -237,7 +240,7 @@ class DashboardService
                         ->map(function ($payment) {
                             return [
                                 'date' => $payment->date ? $payment->date->format('Y-m-d') : $payment->created_at->format('Y-m-d'),
-                                'amount' => (float) $payment->amount,
+                                'amount' => (float)$payment->amount,
                                 'payment_method' => $payment->method ?? 'Efectivo',
                                 'notes' => $payment->notes ?? ''
                             ];
@@ -251,10 +254,10 @@ class DashboardService
                 'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
                 'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
                 'service' => $delivery->service ? $delivery->service->name : 'Sin servicio',
-                'total_amount' => (float) $delivery->amount,
-                'amount' => (float) $delivery->amount,  // Mantener para compatibilidad con vistas existentes
-                'paid_amount' => (float) $paidAmount,
-                'pending_amount' => (float) $pendingAmount,
+                'total_amount' => (float)$delivery->amount,
+                'amount' => (float)$delivery->amount,  // Mantener para compatibilidad con vistas existentes
+                'paid_amount' => (float)$paidAmount,
+                'pending_amount' => (float)$pendingAmount,
                 'status' => $delivery->status,
                 'payment_status' => $delivery->payment_status,
                 'payment_type' => $delivery->payment_type,
@@ -295,10 +298,10 @@ class DashboardService
                     'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
                     'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
                     'service' => $delivery->service ? $delivery->service->name : 'Sin servicio',
-                    'total_amount' => (float) $delivery->amount,
-                    'amount' => (float) $delivery->amount,  // Mantener para compatibilidad con vistas existentes
-                    'paid_amount' => (float) $paidAmount,
-                    'pending_amount' => (float) $pendingAmount,
+                    'total_amount' => (float)$delivery->amount,
+                    'amount' => (float)$delivery->amount,  // Mantener para compatibilidad con vistas existentes
+                    'paid_amount' => (float)$paidAmount,
+                    'pending_amount' => (float)$pendingAmount,
                     'payment_status' => $delivery->payment_status,
                     'payment_type' => $delivery->payment_type
                 ];
@@ -310,7 +313,7 @@ class DashboardService
                     'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
                     'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
                     'service' => $delivery->service->name ?? 'N/A',
-                    'amount' => (float) $delivery->amount,
+                    'amount' => (float)$delivery->amount,
                     'cancellation_notes' => $delivery->cancellation_notes
                 ];
             })->toArray(),
@@ -326,7 +329,7 @@ class DashboardService
                     $paymentDetails = $delivery->debt->payments->map(function ($payment) {
                         return [
                             'date' => $payment->date ? $payment->date->format('Y-m-d') : $payment->created_at->format('Y-m-d'),
-                            'amount' => (float) $payment->amount,
+                            'amount' => (float)$payment->amount,
                             'payment_method' => $payment->method ?? 'No especificado',
                             'notes' => $payment->notes ?? ''
                         ];
@@ -339,9 +342,9 @@ class DashboardService
                     'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
                     'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
                     'service' => $delivery->service->name ?? 'N/A',
-                    'total_amount' => (float) $delivery->amount,
-                    'amount' => (float) $delivery->amount,  // Mantener para compatibilidad con vistas existentes
-                    'paid_amount' => (float) $paidAmount,
+                    'total_amount' => (float)$delivery->amount,
+                    'amount' => (float)$delivery->amount,  // Mantener para compatibilidad con vistas existentes
+                    'paid_amount' => (float)$paidAmount,
                     'payment_type' => $delivery->payment_type,
                     'payment_details' => $paymentDetails
                 ];
@@ -358,7 +361,7 @@ class DashboardService
                     $paymentDetails = $delivery->debt->payments->map(function ($payment) {
                         return [
                             'date' => $payment->date ? $payment->date->format('Y-m-d') : $payment->created_at->format('Y-m-d'),
-                            'amount' => (float) $payment->amount,
+                            'amount' => (float)$payment->amount,
                             'payment_method' => $payment->method ?? 'No especificado',
                             'notes' => $payment->notes ?? ''
                         ];
@@ -371,10 +374,10 @@ class DashboardService
                     'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
                     'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
                     'service' => $delivery->service->name ?? 'N/A',
-                    'total_amount' => (float) $delivery->amount,
-                    'amount' => (float) $delivery->amount,  // Mantener para compatibilidad con vistas existentes
-                    'paid_amount' => (float) $paidAmount,
-                    'pending_amount' => (float) $pendingAmount,
+                    'total_amount' => (float)$delivery->amount,
+                    'amount' => (float)$delivery->amount,  // Mantener para compatibilidad con vistas existentes
+                    'paid_amount' => (float)$paidAmount,
+                    'pending_amount' => (float)$pendingAmount,
                     'payment_status' => $delivery->payment_status,
                     'payment_details' => $paymentDetails
                 ];
@@ -401,9 +404,9 @@ class DashboardService
                     'courier' => $courierName,
                     'total_deliveries' => $group->count(),
                     'delivered_count' => $delivered->count(),
-                    'delivered_amount' => (float) $delivered->sum('amount'),
+                    'delivered_amount' => (float)$delivered->sum('amount'),
                     'canceled_count' => $canceled->count(),
-                    'canceled_amount' => (float) $canceled->sum('amount'),
+                    'canceled_amount' => (float)$canceled->sum('amount'),
                     'deliveries' => [
                         'delivered' => $delivered->map(function ($delivery) {
                             $paidAmount = 0;
@@ -421,10 +424,10 @@ class DashboardService
                                 'number' => $delivery->number,
                                 'date' => $delivery->date->format('Y-m-d'),
                                 'client' => $delivery->client->legal_name ?? 'N/A',
-                                'total_amount' => (float) $delivery->amount,
-                                'amount' => (float) $delivery->amount,  // Mantener para compatibilidad con vistas existentes
-                                'paid_amount' => (float) $paidAmount,
-                                'pending_amount' => (float) $pendingAmount,
+                                'total_amount' => (float)$delivery->amount,
+                                'amount' => (float)$delivery->amount,  // Mantener para compatibilidad con vistas existentes
+                                'paid_amount' => (float)$paidAmount,
+                                'pending_amount' => (float)$pendingAmount,
                                 'payment_status' => $delivery->payment_status
                             ];
                         })->values()->toArray(),
@@ -433,7 +436,7 @@ class DashboardService
                                 'number' => $delivery->number,
                                 'date' => $delivery->date->format('Y-m-d'),
                                 'client' => $delivery->client->legal_name ?? 'N/A',
-                                'amount' => (float) $delivery->amount,
+                                'amount' => (float)$delivery->amount,
                                 'cancellation_notes' => $delivery->cancellation_notes ?? 'N/A'
                             ];
                         })->values()->toArray()
@@ -468,7 +471,7 @@ class DashboardService
                 return [
                     'client' => $clientName,
                     'total_deliveries' => $group->count(),
-                    'total_debt' => (float) $totalDebt,
+                    'total_debt' => (float)$totalDebt,
                     'deliveries' => $group->map(function ($delivery) {
                         $pendingAmount = $delivery->amount;
                         $paidAmount = 0;
@@ -482,7 +485,7 @@ class DashboardService
                             $paymentDetails = $payments->map(function ($payment) {
                                 return [
                                     'date' => $payment->date->format('Y-m-d'),
-                                    'amount' => (float) $payment->amount,
+                                    'amount' => (float)$payment->amount,
                                     'payment_method' => $payment->payment_method,
                                     'notes' => $payment->notes
                                 ];
@@ -492,9 +495,9 @@ class DashboardService
                         return [
                             'number' => $delivery->number,
                             'date' => $delivery->date->format('Y-m-d'),
-                            'amount' => (float) $delivery->amount,
-                            'paid_amount' => (float) $paidAmount,
-                            'pending_amount' => (float) $pendingAmount,
+                            'amount' => (float)$delivery->amount,
+                            'paid_amount' => (float)$paidAmount,
+                            'pending_amount' => (float)$pendingAmount,
                             'payment_status' => $delivery->payment_status,
                             'payment_details' => $paymentDetails
                         ];
@@ -533,7 +536,7 @@ class DashboardService
                 ? $delivery->debt->payments->map(function ($payment) {
                     return [
                         'date' => $payment->date->format('Y-m-d'),
-                        'amount' => (float) $payment->amount,
+                        'amount' => (float)$payment->amount,
                         'method' => $payment->payment_method,
                         'notes' => $payment->notes,
                     ];
@@ -543,7 +546,7 @@ class DashboardService
             return [
                 'delivery_number' => $delivery->number,
                 'delivery_date' => $delivery->date->format('Y-m-d'),
-                'delivery_amount' => (float) $delivery->amount,
+                'delivery_amount' => (float)$delivery->amount,
                 'payment_status' => $delivery->payment_status,
                 'payments' => $payments,
             ];

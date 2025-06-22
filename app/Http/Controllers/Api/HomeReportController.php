@@ -17,13 +17,19 @@ class HomeReportController extends Controller
     {
         $date = trim($date);
         Carbon::setLocale('es');
-        return Carbon::parse($date)->startOfDay();
+        $parsedDate = Carbon::parse($date)->startOfDay();
+        $parsedDate->locale('es');
+        return $parsedDate;
     }
 
     public function __construct(PDFService $pdfService, DashboardService $dashboardService)
     {
         $this->pdfService = $pdfService;
         $this->dashboardService = $dashboardService;
+
+        // Establecer locale español para todas las instancias de Carbon
+        Carbon::setLocale('es');
+        setlocale(LC_TIME, 'es_ES.UTF-8', 'es_ES', 'es');
     }
 
     /**
@@ -78,7 +84,10 @@ class HomeReportController extends Controller
         while ($currentDate->lte($endDateTime)) {
             $dayStart = $currentDate->copy()->startOfDay()->toDateTimeString();
             $dayEnd = $currentDate->copy()->endOfDay()->toDateTimeString();
-            $dayLabel = $currentDate->format('d/m/Y');
+
+            // Simplificar etiqueta para reportes - usar solo 'Hoy' si es el día actual
+            Carbon::setLocale('es');
+            $dayLabel = $currentDate->isToday() ? 'Hoy' : $currentDate->locale('es')->dayName;
 
             $dailyData = $this->generateReportData($userId, $dayStart, $dayEnd);
 
@@ -107,16 +116,21 @@ class HomeReportController extends Controller
         }
 
         if (!$hasData && $generalSummary['total_delivered'] == 0 && $generalSummary['total_collected'] == 0) {
+            // Formatear fechas en español para el mensaje
+            Carbon::setLocale('es');
+            $formattedStartDate = $startDateTime->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
+            $formattedEndDate = $endDateTime->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
+
             return response()->view('pdfs.empty-report', [
-                'message' => "No hay datos de caja disponibles para el período {$startDateTime->format('Y-m-d')} - {$endDateTime->format('Y-m-d')}",
+                'message' => "No hay datos de caja disponibles para el período {$formattedStartDate} - {$formattedEndDate}",
                 'start_date' => $startDateTime->format('Y-m-d'),
                 'end_date' => $endDateTime->format('Y-m-d')
             ]);
         }
 
         $reportData = [
-            'period' => 'custom',
-            'date' => now()->format('d-m-Y'),
+            'period' => 'personalizado',
+            'date' => now()->format('d-m-Yp'),
             'start_date' => $startDateTime->format('d-m-Y'),
             'end_date' => $endDateTime->format('d-m-Y'),
             'period_labels' => $periodLabels,
@@ -161,7 +175,10 @@ class HomeReportController extends Controller
         while ($currentDate->lte($endDateTime)) {
             $dayStart = $currentDate->copy()->startOfDay()->toDateTimeString();
             $dayEnd = $currentDate->copy()->endOfDay()->toDateTimeString();
-            $dayLabel = $currentDate->format('Y-m-d');
+
+            // Usar formato simplificado de fecha
+            Carbon::setLocale('es');
+            $dayLabel = $currentDate->isToday() ? 'Hoy' : $currentDate->locale('es')->dayName;
 
             $stats = $this->dashboardService->getStatsByPeriod($userId, $dayStart, $dayEnd);
 
@@ -202,8 +219,13 @@ class HomeReportController extends Controller
         }
 
         if (!$hasData && $totalSummary['total_delivered'] == 0 && $totalSummary['total_collected'] == 0) {
+            // Formatear fechas en español para el mensaje
+            Carbon::setLocale('es');
+            $formattedStartDate = $startDateTime->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
+            $formattedEndDate = $endDateTime->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
+
             return response()->view('pdfs.empty-report', [
-                'message' => "No hay datos de caja disponibles para el período {$startDateTime->format('Y-m-d')} - {$endDateTime->format('Y-m-d')}",
+                'message' => "No hay datos de caja disponibles para el período {$formattedStartDate} - {$formattedEndDate}",
                 'start_date' => $startDateTime->format('Y-m-d'),
                 'end_date' => $endDateTime->format('Y-m-d')
             ]);

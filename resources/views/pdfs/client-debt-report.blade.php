@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="utf-8">
     <title>Reporte de Deudas del Cliente</title>
@@ -63,7 +62,6 @@
         }
     </style>
 </head>
-
 <body>
 <div class="header">
     <h1>Reporte de Deudas del Cliente</h1>
@@ -96,51 +94,53 @@
     </tr>
     </thead>
     <tbody>
-    @foreach($client->debts as $debt)
-        @if($debt->status === 'pending' || $debt->status === 'partial_paid')
-            <tr>
-                <td>{{ $debt->delivery->number }}</td>
-                <td>{{ $debt->delivery->date->format('d/m/Y') }}</td>
-                <td>${{ number_format($debt->amount, 2) }}</td>
-                <td class="status-{{ $debt->status }}">
-                    @if($debt->status === 'pending')
-                        Pendiente
-                    @elseif($debt->status === 'partial_paid')
-                        Parcialmente Pagado
-                    @else
-                        Pagado
-                    @endif
-                </td>
-                <td>
-                    @foreach($debt->payments as $payment)
-                        <div>
-                            {{ $payment->date->format('d/m/Y') }} -
-                            ${{ number_format($payment->amount, 2)  }}
-                        </div>
-                    @endforeach
-                </td>
-                <td>
-                    ${{ number_format($debt->amount - $debt->payments->sum('amount'), 2) }}
-                </td>
-            </tr>
-        @endif
-    @endforeach
+    @forelse($client->debts as $debt)
+        <tr>
+            <td>{{ $debt->delivery->number }}</td>
+            <td>{{ $debt->delivery->date->format('d/m/Y') }}</td>
+            <td>${{ number_format($debt->amount, 2) }}</td>
+            <td class="status-{{ str_replace('_', '-', $debt->status) }}">
+                @if($debt->status === 'pending')
+                    Pendiente
+                @elseif($debt->status === 'partial_paid')
+                    Parcialmente Pagado
+                @else
+                    Pagado
+                @endif
+            </td>
+            <td>
+                @forelse($debt->payments as $payment)
+                    <div>
+                        {{ $payment->date->format('d/m/Y') }} -
+                        ${{ number_format($payment->amount, 2) }}
+                    </div>
+                @empty
+                    <div>Sin pagos</div>
+                @endforelse
+            </td>
+            <td>
+                ${{ number_format($debt->amount - $debt->payments->sum('amount'), 2) }}
+            </td>
+        </tr>
+    @empty
+        <tr>
+            <td colspan="6" style="text-align: center;">No hay deudas pendientes en el período seleccionado</td>
+        </tr>
+    @endforelse
     </tbody>
 </table>
 
 <div class="summary">
     <h3>Resumen</h3>
     <p><strong>Total de Deudas:</strong>
-        ${{ number_format($client->debts->where(function($debt) { return $debt->status === 'pending' || $debt->status === 'partial_paid'; })->sum('amount'), 2) }}
+        ${{ number_format($client->debts->sum('amount'), 2) }}
     </p>
     <p><strong>Total Pagado en Deudas Parciales:</strong>
-        ${{ number_format($client->debts->where('status', 'partial_paid')->sum(function ($debt) {
-    return $debt->payments->sum('amount'); }), 2) }}</p>
+        ${{ number_format($client->debts->sum(function ($debt) { return $debt->payments->sum('amount'); }), 2) }}
+    </p>
     <p><strong>Saldo Total Pendiente:</strong>
-        ${{ number_format($client->debts->where(function($debt) { return $debt->status === 'pending' || $debt->status === 'partial_paid'; })->sum('amount') - $client->debts->where(function($debt) { return $debt->status === 'pending' || $debt->status === 'partial_paid'; })->sum(function ($debt) {
-    return $debt->payments->sum('amount'); }), 2) }}
+        ${{ number_format($client->debts->sum('amount') - $client->debts->sum(function ($debt) { return $debt->payments->sum('amount'); }), 2) }}
     </p>
 </div>
 </body>
-
 </html>

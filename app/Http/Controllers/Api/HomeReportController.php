@@ -26,6 +26,24 @@ class HomeReportController extends Controller
         $this->dashboardService = $dashboardService;
     }
 
+    /**
+     * Obtener y validar fechas de inicio y fin desde la solicitud
+     */
+    private function getDateRange(Request $request): array
+    {
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+
+        if (!$startDate || !$endDate) {
+            abort(400, 'Se requieren fechas de inicio y fin para generar el reporte.');
+        }
+
+        $startDateTime = $this->parseDate($startDate)->startOfDay();
+        $endDateTime = $this->parseDate($endDate)->endOfDay();
+
+        return [$startDateTime, $endDateTime];
+    }
+
     public function cashRegisterReport(Request $request): \Illuminate\Http\Response
     {
         $startDate = $request->get('start_date');
@@ -98,9 +116,9 @@ class HomeReportController extends Controller
 
         $reportData = [
             'period' => 'custom',
-            'date' => now()->format('Y-m-d'),
-            'start_date' => $startDateTime->format('Y-m-d'),
-            'end_date' => $endDateTime->format('Y-m-d'),
+            'date' => now()->format('d-m-Y'),
+            'start_date' => $startDateTime->format('d-m-Y'),
+            'end_date' => $endDateTime->format('d-m-Y'),
             'period_labels' => $periodLabels,
             'period_data' => $periodData,
             'general_summary' => $generalSummary
@@ -147,7 +165,7 @@ class HomeReportController extends Controller
 
             $stats = $this->dashboardService->getStatsByPeriod($userId, $dayStart, $dayEnd);
 
-            $expenses = (float) auth()->user()->companyBills()
+            $expenses = (float)auth()->user()->companyBills()
                 ->whereBetween('date', [$dayStart, $dayEnd])
                 ->sum('amount');
 
@@ -203,11 +221,12 @@ class HomeReportController extends Controller
         return $pdf->stream("reporte-cajas-simplificado.pdf");
     }
 
+
     private function generateReportData(int $userId, string $startDate, string $endDate): array
     {
         $stats = $this->dashboardService->getStatsByPeriod($userId, $startDate, $endDate);
 
-        $totalExpenses = (float) auth()->user()->companyBills()
+        $totalExpenses = (float)auth()->user()->companyBills()
             ->whereBetween('date', [$startDate, $endDate])
             ->sum('amount');
 
@@ -215,121 +234,47 @@ class HomeReportController extends Controller
         $deliveries = $this->dashboardService->getCashRegisterDeliveries($userId, $startDate, $endDate);
         $deliveriesByStatus = $this->dashboardService->getDeliveriesByStatus($userId, $startDate, $endDate);
 
-        // Asegurar que las fechas estén en el formato correcto para las consultas
         $startDateObj = Carbon::parse($startDate);
         $endDateObj = Carbon::parse($endDate);
         $formattedStartDate = $startDateObj->startOfDay()->toDateTimeString();
         $formattedEndDate = $endDateObj->endOfDay()->toDateTimeString();
 
-        // La fecha desde la que queremos buscar pagos (5 años antes)
-        $previousDateStart = $startDateObj->copy()->startOfDay()->subYears(5)->toDateTimeString();
-
-        $paidDeliveries = \App\Models\Delivery::with(['client', 'courier', 'service'])
+        $previousDayPayments = \App\Models\Delivery::with(['client', 'debt.payments'])
             ->where('user_id', $userId)
-            ->where('payment_status', 'paid')
-            ->where('payment_type', 'full')
-            ->where('date', '<', $formattedStartDate)
+            ->where('date', '<=', $formattedStartDate)
             ->where(function ($query) use ($formattedStartDate, $formattedEndDate) {
-                $query->whereBetween('updated_at', [$formattedStartDate, $formattedEndDate]);
+                $query->WhereHas('debt.payments', function ($q) use ($formattedStartDate, $formattedEndDate) {
+                    $q->whereBetween('created_at', [$formattedStartDate, $formattedEndDate]);
+                });
             })
             ->get()
             ->map(function ($delivery) {
+                $paidAmount = $delivery->debt->payments->sum('amount');
+                $pendingAmount = max(0, $delivery->amount - $paidAmount);
+
+                $paymentDetails = $delivery->debt->payments
+                    ->sortBy(function ($payment) {
+                        return $payment->created_at;
+                    })
+                    ->map(function ($payment) {
+                        return [
+                            'date' => $payment->date ? $payment->date->format('d/m/Y') : $payment->created_at->format('d/m/Y'),
+                            'amount' => (float)$payment->amount,
+                            'payment_method' => \App\Helpers\PaymentMethodTranslator::toSpanish($payment->method ?? 'Efectivo'),
+                        ];
+                    })->values()->toArray();
+
                 return [
                     'number' => $delivery->number,
-                    'date' => $delivery->date->format('Y-m-d'),
+                    'date' => $delivery->date->format('d/m/Y'),
                     'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
-                    'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
-                    'service' => $delivery->service->name ?? 'N/A',
-                    'amount' => (float) $delivery->amount,
-                    'delivery_amount' => (float) $delivery->amount,
-                    'payment_date' => $delivery->updated_at->format('Y-m-d'),
-                    'payment_type' => 'full'
-                ];
-            })
-            ->toArray();
-
-        // Primero obtenemos todas las deudas con pagos en el período
-        $debtsWithPayments = \App\Models\Debt::join('debt_payments', 'debts.id', '=', 'debt_payments.debt_id')
-            ->join('deliveries', 'debts.delivery_id', '=', 'deliveries.id')
-            ->where('deliveries.user_id', $userId)
-            ->where('deliveries.date', '<', $formattedStartDate)
-            ->where(function ($query) use ($formattedStartDate, $formattedEndDate) {
-                $query->whereBetween('debt_payments.created_at', [$formattedStartDate, $formattedEndDate])
-                    ->orWhereBetween('debt_payments.date', [$formattedStartDate, $formattedEndDate]);
-            })
-            ->select('debts.*', 'deliveries.id as delivery_id')
-            ->distinct('debts.id') // Obtenemos deudas únicas
-            ->with(['delivery.client', 'delivery.courier', 'delivery.service', 'payments'])
-            ->get();
-
-        // Ahora procesamos cada deuda para obtener todos sus pagos
-        $partialPayments = collect();
-        foreach ($debtsWithPayments as $debt) {
-            // Filtramos pagos del período
-            $paymentsInPeriod = $debt->payments->filter(function ($payment) use ($formattedStartDate, $formattedEndDate) {
-                $paymentDate = $payment->date ? $payment->date : $payment->created_at;
-                return $paymentDate->between($formattedStartDate, $formattedEndDate);
-            });
-
-            if ($paymentsInPeriod->isNotEmpty()) {
-                // Usamos el primer pago del período como representante
-                $payment = $paymentsInPeriod->first();
-                $partialPayments->push($payment);
-            }
-        }
-
-        $partialPayments = $partialPayments->map(function ($payment) {
-            $delivery = $payment->debt->delivery;
-            $totalPaid = $delivery->debt->payments->sum('amount');
-            $pendingAmount = $delivery->amount - $totalPaid;
-
-            // Obtener TODOS los pagos para este delivery de forma ordenada por fecha
-            $allPaymentsForDelivery = $delivery->debt->payments->sortByDesc(function ($paymentDetail) {
-                return $paymentDetail->date ? $paymentDetail->date->timestamp : $paymentDetail->created_at->timestamp;
-            });
-
-            // Crear detalles de pago completos para cada pago individual
-            $paymentDetails = $allPaymentsForDelivery->map(function ($paymentDetail) {
-                return [
-                    'date' => $paymentDetail->date ? $paymentDetail->date->format('Y-m-d') : $paymentDetail->created_at->format('Y-m-d'),
-                    'amount' => (float) $paymentDetail->amount,
-                    'payment_method' => $paymentDetail->method ?? 'Efectivo',
-                    'notes' => $paymentDetail->notes ?? ''
+                    'total_amount' => (float)$delivery->amount,
+                    'paid_amount' => (float)$paidAmount,
+                    'pending_amount' => (float)$pendingAmount,
+                    'payment_status' => $delivery->payment_status,
+                    'payment_details' => $paymentDetails
                 ];
             })->toArray();
-
-            return [
-                'id' => $delivery->id, // ID correcto para identificar entregas únicas
-                'number' => $delivery->number,
-                'date' => $delivery->date->format('Y-m-d'),
-                'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
-                'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
-                'service' => $delivery->service->name ?? 'N/A',
-                'amount' => (float) $payment->amount, // Monto de este pago específico
-                'delivery_amount' => (float) $delivery->amount, // Monto total de la entrega
-                'total_amount' => (float) $delivery->amount, // Para compatibilidad
-                'paid_amount' => (float) $totalPaid, // Monto total pagado hasta ahora
-                'pending_amount' => (float) $pendingAmount, // Monto pendiente
-                'payment_date' => $payment->created_at->format('Y-m-d'),
-                'payment_type' => 'partial',
-                'payment_details' => $paymentDetails // Incluimos TODOS los pagos ordenados
-            ];
-        })
-            ->toArray();
-
-        $partialPaymentsByDelivery = [];
-        foreach ($partialPayments as $payment) {
-            $key = $payment['id'];
-            if (!isset($partialPaymentsByDelivery[$key])) {
-                $partialPaymentsByDelivery[$key] = $payment;
-            } else {
-                if (count($payment['payment_details']) > count($partialPaymentsByDelivery[$key]['payment_details'])) {
-                    $partialPaymentsByDelivery[$key] = $payment;
-                }
-            }
-        }
-
-        $previousDayPayments = array_merge($paidDeliveries, array_values($partialPaymentsByDelivery));
         $courierSummary = $this->dashboardService->getCourierDeliverySummary($userId, $startDate, $endDate);
 
         $clientDebtSummary = $this->dashboardService->getClientDebtSummary($userId, $startDate, $endDate) ?? [];

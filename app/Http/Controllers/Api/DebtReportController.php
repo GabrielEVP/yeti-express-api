@@ -53,11 +53,21 @@ class DebtReportController extends Controller
 
         $this->authorizeOwner($client);
 
-        $deliveryQuery = $client->deliveries();
-        $deliveryQuery->byPeriod($startDate, $endDate);
-        $delivery = $deliveryQuery->with(['debt', 'debt.payments', 'service'])->get();
-
-        $pdf = $this->pdfService->generateClientDebtReport($client, $delivery, $startDate, $endDate);
+        $client->load([
+            'debts' => function ($query) use ($startDate, $endDate) {
+                $query->where(function ($subQuery) use ($startDate, $endDate) {
+                    $subQuery->whereHas('payments', function ($paymentQuery) use ($startDate, $endDate) {
+                        $paymentQuery->whereDate('date', '>=', $startDate)
+                            ->whereDate('date', '<=', $endDate);
+                    })
+                        ->orWhereHas('delivery', function ($deliveryQuery) use ($startDate, $endDate) {
+                            $deliveryQuery->whereDate('date', '>=', $startDate)
+                                ->whereDate('date', '<=', $endDate);
+                        });
+                })->with(['payments', 'delivery.service']);
+            }
+        ]);
+        $pdf = $this->pdfService->generateClientDebtReport($client, $startDate, $endDate);
         return $pdf->stream("client-debt-report-{$client->id}.pdf");
     }
 
@@ -65,26 +75,35 @@ class DebtReportController extends Controller
     {
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
-
         if (!$startDate || !$endDate) {
             abort(400, 'Se requieren fechas de inicio y fin para generar el reporte.');
         }
-
-        $clients = Client::where(function ($query) use ($startDate, $endDate) {
-            $query->whereHas('debts')
-                ->orWhereHas('deliveries', function ($q) use ($startDate, $endDate) {
-                    $q->byPeriod($startDate, $endDate)
-                        ->whereHas('debt');
+        $clients = Client::whereHas('debts', function ($query) use ($startDate, $endDate) {
+            $query->whereHas('payments', function ($paymentQuery) use ($startDate, $endDate) {
+                $paymentQuery->whereDate('date', '>=', $startDate)
+                    ->whereDate('date', '<=', $endDate);
+            })
+                ->orWhereHas('delivery', function ($deliveryQuery) use ($startDate, $endDate) {
+                    $deliveryQuery->whereDate('date', '>=', $startDate)
+                        ->whereDate('date', '<=', $endDate);
                 });
         })
             ->with([
-                'debts',
-                'deliveries' => function ($query) use ($startDate, $endDate) {
-                    $query->byPeriod($startDate, $endDate)
-                        ->with(['debt', 'debt.payments', 'service']);
+                'debts' => function ($query) use ($startDate, $endDate) {
+                    $query->where(function ($subQuery) use ($startDate, $endDate) {
+                        $subQuery->whereHas('payments', function ($paymentQuery) use ($startDate, $endDate) {
+                            $paymentQuery->whereDate('date', '>=', $startDate)
+                                ->whereDate('date', '<=', $endDate);
+                        })
+                            ->orWhereHas('delivery', function ($deliveryQuery) use ($startDate, $endDate) {
+                                $deliveryQuery->whereDate('date', '>=', $startDate)
+                                    ->whereDate('date', '<=', $endDate);
+                            });
+                    })->with(['payments', 'delivery.service']);
                 }
             ])
             ->get();
+
 
         $pdf = $this->pdfService->generateAllClientsDebtReport($clients, $startDate, $endDate);
         return $pdf->stream("all-clients-debt-report.pdf");

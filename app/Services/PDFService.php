@@ -17,11 +17,10 @@ class PDFService
         return $pdf;
     }
 
-    public function generateClientDebtReport($client, $deliveries, $startDate, $endDate): \Barryvdh\DomPDF\PDF
+    public function generateClientDebtReport($client, $startDate, $endDate): \Barryvdh\DomPDF\PDF
     {
-        $pdf = PDF::loadView('pdfs.client-debt-report', [
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdfs.client-debt-report', [
             'client' => $client,
-            'deliveries' => $deliveries,
             'startDate' => $startDate,
             'endDate' => $endDate
         ]);
@@ -33,7 +32,7 @@ class PDFService
 
     public function generateAllClientsDebtReport($clients, $startDate, $endDate): \Barryvdh\DomPDF\PDF
     {
-        $pdf = PDF::loadView('pdfs.all-clients-debt-report', [
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdfs.all-clients-debt-report', [
             'clients' => $clients,
             'startDate' => $startDate,
             'endDate' => $endDate
@@ -86,10 +85,29 @@ class PDFService
 
     public function generateSimplifiedCashRegisterReport(array $reportData): \Barryvdh\DomPDF\PDF
     {
+        // Ordenar las entregas por fecha más reciente primero
+        if (isset($reportData['all_deliveries']) && !empty($reportData['all_deliveries'])) {
+            usort($reportData['all_deliveries'], function ($a, $b) {
+                return strtotime($b['date']) - strtotime($a['date']);
+            });
+        }
+
         $pdf = PDF::loadView('pdfs.simplified-cash-register-report', $reportData);
-
         $pdf->setPaper('a4', 'portrait');
+        return $pdf;
+    }
 
+    public function generatePreviousPaymentsReport(array $reportData): \Barryvdh\DomPDF\PDF
+    {
+        // Ordenar los pagos por número de entrega
+        if (isset($reportData['previousDayPayments']) && !empty($reportData['previousDayPayments'])) {
+            usort($reportData['previousDayPayments'], function ($a, $b) {
+                return $a['number'] <=> $b['number'];
+            });
+        }
+
+        $pdf = PDF::loadView('pdfs.previous-payments-report', $reportData);
+        $pdf->setPaper('a4', 'portrait');
         return $pdf;
     }
 

@@ -85,9 +85,9 @@ class HomeReportController extends Controller
             $dayStart = $currentDate->copy()->startOfDay()->toDateTimeString();
             $dayEnd = $currentDate->copy()->endOfDay()->toDateTimeString();
 
-            // Simplificar etiqueta para reportes - usar solo 'Hoy' si es el día actual
+            // Formatear la fecha en formato español completo
             Carbon::setLocale('es');
-            $dayLabel = $currentDate->isToday() ? 'Hoy' : $currentDate->locale('es')->dayName;
+            $dayLabel = $currentDate->isToday() ? 'Hoy' : $currentDate->locale('es')->isoFormat('dddd D [de] MMMM [de] YYYY');
 
             $dailyData = $this->generateReportData($userId, $dayStart, $dayEnd);
 
@@ -110,7 +110,7 @@ class HomeReportController extends Controller
             $generalSummary['balance'] += $dailyData['summary']['balance'];
 
             $periodData[] = $dailyData;
-            $periodLabels[] = "Caja del día: " . $dayLabel;
+            $periodLabels[] = $dayLabel;  // Eliminar prefijo "Caja del día:" y usar solo la fecha en formato español
 
             $currentDate->addDay();
         }
@@ -176,9 +176,9 @@ class HomeReportController extends Controller
             $dayStart = $currentDate->copy()->startOfDay()->toDateTimeString();
             $dayEnd = $currentDate->copy()->endOfDay()->toDateTimeString();
 
-            // Usar formato simplificado de fecha
+            // Usar formato español completo para la fecha
             Carbon::setLocale('es');
-            $dayLabel = $currentDate->isToday() ? 'Hoy' : $currentDate->locale('es')->dayName;
+            $dayLabel = $currentDate->isToday() ? 'Hoy' : $currentDate->locale('es')->isoFormat('dddd D [de] MMMM [de] YYYY');
 
             $stats = $this->dashboardService->getStatsByPeriod($userId, $dayStart, $dayEnd);
 

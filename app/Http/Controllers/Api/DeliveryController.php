@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DeliveryRequest;
 use App\Http\Requests\DeliveryStatusRequest;
+use App\Http\Services\DeliveryEventService;
+use App\Http\Services\EmployeeEventService;
+use App\Models\Client;
 use App\Models\Delivery;
 use App\Models\Service;
-use App\Models\Client;
-use App\Http\Services\EmployeeEventService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DeliveryController extends Controller
 {
@@ -102,6 +103,7 @@ class DeliveryController extends Controller
             'deliveries',
             $delivery->id
         );
+        DeliveryEventService::log('update_delivery', $delivery);
 
         return response()->json($delivery->load($this->relations), 200);
     }
@@ -126,7 +128,7 @@ class DeliveryController extends Controller
 
     public function filter(Request $request): JsonResponse
     {
-        $search = (string) $request->input("search", "");
+        $search = (string)$request->input("search", "");
         $sort = $request->input("sortBy", "id");
         $order = strtolower($request->input("sortDirection", "desc"));
 
@@ -147,8 +149,6 @@ class DeliveryController extends Controller
             ->deliveries()
             ->with(['client:id,legal_name', 'courier:id,first_name', 'service:id,name', 'receipt']);
 
-        // Filtro por defecto: solo mostrar deliveries pendientes o en tránsito
-        // Solo se aplica si no se especifica un filtro de status personalizado
         $filters = $request->input('filters', []);
         $hasStatusFilter = isset($filters['status']) && $filters['status'] !== null && $filters['status'] !== '';
 
@@ -232,6 +232,7 @@ class DeliveryController extends Controller
         $delivery->update($updateData);
 
         EmployeeEventService::log($eventKey, 'deliveries', 'deliveries', $delivery->id);
+        DeliveryEventService::log($eventKey, $delivery);
 
         $deliveries = Auth::user()
             ->deliveries()

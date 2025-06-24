@@ -189,6 +189,7 @@ class DeliveryController extends Controller
                 'status' => $delivery->status,
                 'payment_status' => $delivery->payment_status,
                 'pickup_address' => $delivery->pickup_address,
+                'notes' => $delivery->notes,
                 'receipt' => $delivery->receipt,
                 'amount' => $delivery->amount,
                 'client_legal_name' => optional($delivery->client)->legal_name,

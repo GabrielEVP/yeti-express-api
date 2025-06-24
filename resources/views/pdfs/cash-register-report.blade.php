@@ -130,6 +130,13 @@
     <p>Generado el: {{ \Carbon\Carbon::now()->format('d-m-Y H:i:s') }}</p>
 </div>
 
+@if(empty($period_data) || $general_summary['total_delivered'] == 0)
+    <div class="summary-box" style="background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; text-align: center; padding: 30px; margin: 20px 0;">
+        <h3 style="font-size: 16px;">No se encontraron datos</h3>
+        <p>No hay movimientos de caja registrados en el período del {{ \Carbon\Carbon::parse($start_date)->format('d/m/Y') }} al {{ \Carbon\Carbon::parse($end_date)->format('d/m/Y') }}</p>
+    </div>
+@endif
+
 <div class="general-summary">
     <h3>Resumen General del Período</h3>
     <table>

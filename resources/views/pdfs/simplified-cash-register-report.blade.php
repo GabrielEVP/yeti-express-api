@@ -99,6 +99,13 @@
         <div class="date-range">Período: {{ \Carbon\Carbon::parse($start_date)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($end_date)->format('d/m/Y') }}</div>
     </div>
 
+    @if(empty($daily_data) || $summary['total_delivered'] == 0)
+        <div style="text-align: center; padding: 30px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; margin: 20px 0; color: #856404;">
+            <h3 style="font-weight: bold; font-size: 16px;">No se encontraron datos</h3>
+            <p>No hay movimientos de caja registrados en el período del {{ \Carbon\Carbon::parse($start_date)->format('d/m/Y') }} al {{ \Carbon\Carbon::parse($end_date)->format('d/m/Y') }}</p>
+        </div>
+    @endif
+
     <div class="summary-box">
         <div class="summary-title">RESUMEN GENERAL</div>
         <table>

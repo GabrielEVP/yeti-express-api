@@ -93,21 +93,9 @@ class HomeReportController extends Controller
             $generalSummary['balance'] += $dailyData['summary']['balance'];
 
             $periodData[] = $dailyData;
-            $periodLabels[] = $dayLabel;  // Eliminar prefijo "Caja del día:" y usar solo la fecha en formato español
+            $periodLabels[] = $dayLabel;
 
             $currentDate->addDay();
-        }
-
-        if (!$hasData && $generalSummary['total_delivered'] == 0 && $generalSummary['total_collected'] == 0) {
-            Carbon::setLocale('es');
-            $formattedStartDate = $startDateTime->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
-            $formattedEndDate = $endDateTime->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
-
-            return response()->view('pdfs.empty-report', [
-                'message' => "No hay datos de caja disponibles para el período {$formattedStartDate} - {$formattedEndDate}",
-                'start_date' => $startDateTime->format('Y-m-d'),
-                'end_date' => $endDateTime->format('Y-m-d')
-            ]);
         }
 
         $reportData = [
@@ -197,19 +185,6 @@ class HomeReportController extends Controller
             $totalSummary['total_balance'] += $balance;
 
             $currentDate->addDay();
-        }
-
-        if (!$hasData && $totalSummary['total_delivered'] == 0 && $totalSummary['total_collected'] == 0) {
-            // Formatear fechas en español para el mensaje
-            Carbon::setLocale('es');
-            $formattedStartDate = $startDateTime->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
-            $formattedEndDate = $endDateTime->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
-
-            return response()->view('pdfs.empty-report', [
-                'message' => "No hay datos de caja disponibles para el período {$formattedStartDate} - {$formattedEndDate}",
-                'start_date' => $startDateTime->format('Y-m-d'),
-                'end_date' => $endDateTime->format('Y-m-d')
-            ]);
         }
 
         $reportData = [

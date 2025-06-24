@@ -113,8 +113,6 @@ class PDFService
 
     public function generateUnpaidDebtsReport($clients): \Barryvdh\DomPDF\PDF
     {
-        // Las fechas ya vienen formateadas, no es necesario parsearlas
-        // Las fechas ya vienen formateadas, no es necesario parsearlas
         $pdf = PDF::loadView('pdfs.unpaid-debts-report', [
             'clients' => $clients,
             'generatedAt' => now()

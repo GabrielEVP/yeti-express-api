@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\HomeReportController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -20,7 +19,7 @@ Route::middleware("auth:sanctum")->group(function () {
     require __DIR__ . '/modules/courier.php';
     require __DIR__ . '/modules/employee.php';
     require __DIR__ . '/modules/service.php';
-    require __DIR__ . '/modules/company-bills.php';
+    require base_path('app/CompanyBill/Routes/CompanyBillRoutes.php');
     require __DIR__ . '/modules/debt.php';
     require __DIR__ . '/modules/debtPayment.php';
     require __DIR__ . '/modules/report.php';

@@ -29,6 +29,7 @@ class ClientController extends Controller
 
     public function store(ClientRequest $request): JsonResponse
     {
+        $request->merge(["allow_credit" => "1"]);
         $client = Auth::user()->clients()->create($request->all());
 
         $this->syncRelations($client, $request);
@@ -145,6 +146,7 @@ class ClientController extends Controller
         $query = Auth::user()->clients()->when(
             $search,
             fn($q) => $q->where("legal_name", "LIKE", "%{$search}%")
+                ->orWhere("registration_number", "LIKE", "%{$search}%")
         )
             ->when($request->has("type"), function ($q) use ($request) {
                 $q->where("type", $request->input("type"));
@@ -172,40 +174,6 @@ class ClientController extends Controller
         });
 
         return response()->json($clients, 200);
-    }
-    public function getTotalInvoiced(string $id): JsonResponse
-    {
-        $client = Auth::user()->clients()->findOrFail($id);
-        $total = $client->deliveries()->sum('amount');
-
-        return response()->json($total, 200);
-    }
-
-    public function getEarningsDelivery(string $id): JsonResponse
-    {
-        $client = Auth::user()->clients()->findOrFail($id);
-        $earnings = $client->deliveries()
-            ->where('payment_status', 'PAID')
-            ->sum('amount');
-
-        return response()->json($earnings, 200);
-    }
-
-    public function getPendingEarnings(string $id): JsonResponse
-    {
-        $client = Auth::user()->clients()->findOrFail($id);
-        $pending = $client->deliveries()
-            ->where('payment_status', '!=', 'PAID')
-            ->sum('amount');
-
-        return response()->json($pending, 200);
-    }
-
-    public function getPendingEarningsCount(string $id): JsonResponse
-    {
-        $client = Auth::user()->clients()->findOrFail($id);
-        $pending = $client->deliveries()->where('payment_status', '!=', 'PAID')->count();
-        return response()->json($pending, 200);
     }
 
     private function syncRelations(Client $client, Request $request): void

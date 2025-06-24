@@ -17,15 +17,10 @@ class DebtReportController extends Controller
         $this->pdfService = $pdfService;
     }
 
-    /**
-     * Generate report of all clients with unpaid debts
-     * No parameters needed
-     */
     public function unpaidDebtsReport(): \Illuminate\Http\Response
     {
         $this->authorizeOwner(new Client());
 
-        // Get clients with pending or partially paid debts
         $clients = Client::whereHas('debts', function ($query) {
             $query->whereIn('status', ['pending', 'partial_paid']);
         })
@@ -37,7 +32,6 @@ class DebtReportController extends Controller
             ])
             ->get();
 
-        // Generate PDF
         $pdf = $this->pdfService->generateUnpaidDebtsReport($clients);
         return $pdf->stream("unpaid-debts-report.pdf");
     }
@@ -48,7 +42,8 @@ class DebtReportController extends Controller
         $endDate = $request->get('end_date');
 
         if (!$startDate || !$endDate) {
-            abort(400, 'Se requieren fechas de inicio y fin para generar el reporte.');
+            $startDate = \Carbon\Carbon::today()->format('Y-m-d');
+            $endDate = \Carbon\Carbon::today()->format('Y-m-d');
         }
 
         $this->authorizeOwner($client);
@@ -65,7 +60,7 @@ class DebtReportController extends Controller
                                 ->whereDate('date', '<=', $endDate);
                         });
                 })->with(['payments', 'delivery.service']);
-            }z
+            }
         ]);
         $pdf = $this->pdfService->generateClientDebtReport($client, $startDate, $endDate);
         return $pdf->stream("client-debt-report-{$client->id}.pdf");
@@ -75,9 +70,12 @@ class DebtReportController extends Controller
     {
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
+
         if (!$startDate || !$endDate) {
-            abort(400, 'Se requieren fechas de inicio y fin para generar el reporte.');
+            $startDate = \Carbon\Carbon::today()->format('Y-m-d');
+            $endDate = \Carbon\Carbon::today()->format('Y-m-d');
         }
+
         $clients = Client::whereHas('debts', function ($query) use ($startDate, $endDate) {
             $query->whereHas('payments', function ($paymentQuery) use ($startDate, $endDate) {
                 $paymentQuery->whereDate('date', '>=', $startDate)

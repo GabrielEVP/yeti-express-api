@@ -145,12 +145,10 @@ class DeliveryController extends Controller
             return response()->json(["error" => "Invalid sort parameters"], 400);
         }
 
-        $query = Auth::user()
-            ->deliveries()
-            ->with(['client:id,legal_name', 'courier:id,first_name', 'service:id,name', 'receipt']);
+        $query = Auth::user()->deliveries()->with(['client:id,legal_name', 'courier:id,first_name', 'service:id,name,amount', 'receipt']);
 
         $filters = $request->input('filters', []);
-        $hasStatusFilter = isset($filters['status']) && $filters['status'] !== null && $filters['status'] !== '';
+        $hasStatusFilter = isset($filters['status']) && $filters['status'] !== '';
 
         if (!$hasStatusFilter) {
             $query->whereIn('status', ['pending', 'in_transit']);
@@ -174,6 +172,7 @@ class DeliveryController extends Controller
                 'paymentStatus' => $query->where('payment_status', $value),
                 'startDate' => $query->whereDate('date', '>=', $value),
                 'endDate' => $query->whereDate('date', '<=', $value),
+                'serviceId' => $query->where('service_id', $value),
                 default => null
             };
         }
@@ -195,6 +194,7 @@ class DeliveryController extends Controller
                 'client_legal_name' => optional($delivery->client)->legal_name,
                 'courier_name' => optional($delivery->courier)?->first_name . ' ' . optional($delivery->courier)?->last_name,
                 'service_name' => optional($delivery->service)->name,
+                'service_amount' => optional($delivery->service)->amount,
             ];
         });
 

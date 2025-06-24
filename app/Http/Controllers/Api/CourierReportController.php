@@ -24,6 +24,11 @@ class CourierReportController extends Controller
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
 
+        if (!$startDate || !$endDate) {
+            $startDate = \Carbon\Carbon::today()->format('Y-m-d');
+            $endDate = \Carbon\Carbon::today()->format('Y-m-d');
+        }
+
         $deliveriesQuery = $courier->deliveries();
 
         if ($startDate && $endDate) {
@@ -44,7 +49,8 @@ class CourierReportController extends Controller
         $endDate = $request->get('end_date');
 
         if (!$startDate || !$endDate) {
-            abort(400, 'Se requieren fechas de inicio y fin para generar el reporte.');
+            $startDate = \Carbon\Carbon::today()->format('Y-m-d');
+            $endDate = \Carbon\Carbon::today()->format('Y-m-d');
         }
 
         $couriers = Courier::with([

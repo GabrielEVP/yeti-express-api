@@ -32,31 +32,14 @@ class HomeReportController extends Controller
         setlocale(LC_TIME, 'es_ES.UTF-8', 'es_ES', 'es');
     }
 
-    /**
-     * Obtener y validar fechas de inicio y fin desde la solicitud
-     */
-    private function getDateRange(Request $request): array
-    {
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
-
-        if (!$startDate || !$endDate) {
-            abort(400, 'Se requieren fechas de inicio y fin para generar el reporte.');
-        }
-
-        $startDateTime = $this->parseDate($startDate)->startOfDay();
-        $endDateTime = $this->parseDate($endDate)->endOfDay();
-
-        return [$startDateTime, $endDateTime];
-    }
-
     public function cashRegisterReport(Request $request): \Illuminate\Http\Response
     {
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
 
         if (!$startDate || !$endDate) {
-            abort(400, 'Se requieren fechas de inicio y fin para generar el reporte.');
+            $startDate = \Carbon\Carbon::today()->format('Y-m-d');
+            $endDate = \Carbon\Carbon::today()->format('Y-m-d');
         }
 
         $userId = auth()->id();
@@ -116,7 +99,6 @@ class HomeReportController extends Controller
         }
 
         if (!$hasData && $generalSummary['total_delivered'] == 0 && $generalSummary['total_collected'] == 0) {
-            // Formatear fechas en español para el mensaje
             Carbon::setLocale('es');
             $formattedStartDate = $startDateTime->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
             $formattedEndDate = $endDateTime->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
@@ -148,7 +130,8 @@ class HomeReportController extends Controller
         $endDate = $request->get('end_date');
 
         if (!$startDate || !$endDate) {
-            abort(400, 'Se requieren fechas de inicio y fin para generar el reporte.');
+            $startDate = \Carbon\Carbon::today()->format('Y-m-d');
+            $endDate = \Carbon\Carbon::today()->format('Y-m-d');
         }
 
         $userId = auth()->id();
@@ -191,7 +174,6 @@ class HomeReportController extends Controller
             // Obtener los deliveries del día para mostrar el detalle de pagos
             $dailyDeliveries = $this->dashboardService->getCashRegisterDeliveries($userId, $dayStart, $dayEnd);
 
-            // Verificar si hay actividad en este día
             if ($stats['total_delivered'] > 0 || $stats['total_collected'] > 0 || $expenses > 0) {
                 $hasData = true;
             }
@@ -206,7 +188,6 @@ class HomeReportController extends Controller
                 'deliveries' => $dailyDeliveries
             ];
 
-            // Agregar los deliveries a la lista completa
             $allDeliveries = array_merge($allDeliveries, $dailyDeliveries);
 
             $totalSummary['total_delivered'] += $stats['total_delivered'];

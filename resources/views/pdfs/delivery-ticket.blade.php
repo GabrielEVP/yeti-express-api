@@ -58,7 +58,7 @@
     <div class="header">
         <h2>Ticket de Entrega</h2>
         <p>Número: {{ $delivery->number }}</p>
-        <p>Fecha: {{ $delivery->date->format('d/m/Y') }}</p>
+        <p>Fecha: {{ $delivery->created_at->format('d/m/Y H:i:s') }}</p>
     </div>
 
     <div class="divider"></div>
@@ -145,7 +145,7 @@
     <div class="divider"></div>
 
     <div class="footer">
-        <p>Gracias por su preferencia</p>
+        <p>Gracias por confiar en Yetiexpress</p>
         <p>{{ now()->format('d/m/Y H:i:s') }}</p>
     </div>
 </body>

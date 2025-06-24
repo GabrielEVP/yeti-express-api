@@ -12,6 +12,22 @@ use Illuminate\Support\Facades\DB;
 
 class DebtController extends Controller
 {
+    public function getAllUnPaidDebtsAmount(): JsonResponse
+    {
+        $totalPendingAmount = Auth::user()->debts()
+            ->whereNot("status", "paid")
+            ->leftJoin(
+                DB::raw('(SELECT debt_id, SUM(amount) as total_paid FROM debt_payments GROUP BY debt_id) as debt_payments_sum'),
+                'debts.id',
+                '=',
+                'debt_payments_sum.debt_id'
+            )
+            ->selectRaw('SUM(debts.amount - COALESCE(debt_payments_sum.total_paid, 0)) as pending_amount')
+            ->value('pending_amount') ?? 0;
+
+        return response()->json(['total_amount' => (float)$totalPendingAmount], 200);
+    }
+
     public function clientsWithDebt(): JsonResponse
     {
         $clients = Auth::user()->clients()->whereHas('debts', function ($query) {

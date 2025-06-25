@@ -59,7 +59,7 @@ class User extends Authenticatable
 
     public function services(): HasMany
     {
-        return $this->hasMany(Service::class);
+        return $this->hasMany(\App\Service\Models\Service::class);
     }
 
     public function debts(): HasMany

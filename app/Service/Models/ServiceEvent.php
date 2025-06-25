@@ -1,5 +1,5 @@
 <?php
-namespace App\Models;
+namespace App\Service\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +16,6 @@ class ServiceEvent extends Model
 
     public function service(): BelongsTo
     {
-        return $this->belongsTo(Client::class);
+        return $this->belongsTo(Service::class);
     }
 }

@@ -9,7 +9,7 @@ use App\Http\Services\DeliveryEventService;
 use App\Http\Services\EmployeeEventService;
 use App\Models\Client;
 use App\Models\Delivery;
-use App\Models\Service;
+use App\Service\Models\Service;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

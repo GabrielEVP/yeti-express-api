@@ -2,10 +2,10 @@
 
 namespace App\CompanyBill\Services;
 
-use App\CompanyBill\Repositories\ICompanyBillRepository;
 use App\CompanyBill\Models\CompanyBill;
+use App\CompanyBill\Repositories\ICompanyBillRepository;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use \Illuminate\Support\Collection;
 
 class CompanyBillService implements ICompanyBillRepository
 {

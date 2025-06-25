@@ -156,7 +156,8 @@ return [
         App\Providers\AuthServiceProvider::class,
 
         // Custom Providers
-        App\CompanyBill\Providers\CompanyBillServiceProvider::class,
+        \App\CompanyBill\Providers\CompanyBillServiceProvider::class,
+        \App\Service\Providers\ServicesProvider::class,
     ],
 
     'aliases' => [

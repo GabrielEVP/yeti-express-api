@@ -1,9 +1,12 @@
 <?php
 
-namespace App\Models;
+namespace App\Service\Models;
 
+use App\Models\Delivery;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Service extends Model
 {
@@ -16,7 +19,7 @@ class Service extends Model
         "user_id",
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
@@ -26,20 +29,13 @@ class Service extends Model
         return $this->hasMany(Bill::class);
     }
 
-    public function events()
+    public function events(): HasMany
     {
         return $this->hasMany(ServiceEvent::class);
     }
 
-    public function deliveries()
+    public function deliveries(): HasMany
     {
         return $this->hasMany(Delivery::class);
-    }
-
-
-    public function getTotalEarning(): float
-    {
-        $totalBills = $this->bills()->sum('amount');
-        return $this->amount - $this->comision - $totalBills;
     }
 }

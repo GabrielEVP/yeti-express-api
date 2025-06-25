@@ -3,7 +3,7 @@
 namespace App\CompanyBill\Repositories;
 
 use Illuminate\Support\Collection;
-use App\Models\CompanyBill;
+use App\CompanyBill\Models\CompanyBill;
 
 interface ICompanyBillRepository
 {

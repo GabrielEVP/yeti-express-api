@@ -2,9 +2,11 @@
 
 namespace App\CompanyBill\Controllers;
 
+use App\CompanyBill\DTO\FormRequestCompanyBillDTO;
 use App\Http\Controllers\Controller;
 use App\CompanyBill\Services\CompanyBillService;
 use App\CompanyBill\DTO\CompanyBillDTO;
+use App\CompanyBill\DTO\SimpleCompanyBillDTO;
 use App\Http\Requests\CompanyBillRequest;
 use App\Http\Services\EmployeeEventService;
 use Illuminate\Http\JsonResponse;
@@ -18,7 +20,7 @@ class CompanyBillController extends Controller
     public function index(): JsonResponse
     {
         $bills = $this->service->all()->map(
-            fn ($bill) => new CompanyBillDTO($bill)
+            fn ($bill) => new SimpleCompanyBillDTO($bill)
         );
 
         return response()->json($bills, 200);
@@ -26,12 +28,14 @@ class CompanyBillController extends Controller
 
     public function store(CompanyBillRequest $request): JsonResponse
     {
-        $data = $request->validated();
-        $data['user_id'] = $request->user()->id;
-        $bill = $this->service->create($data);
+        $data = FormRequestCompanyBillDTO::fromArray($request->validated());
+        $bill = $this->service->create($data->toArray());
+
+        EmployeeEventService::log('create_company_bill', 'companyBills', 'companyBills', $bill->id);
 
         return response()->json(new CompanyBillDTO($bill), 201);
     }
+
 
     public function show(string $id): JsonResponse
     {
@@ -41,12 +45,14 @@ class CompanyBillController extends Controller
 
     public function update(CompanyBillRequest $request, string $id): JsonResponse
     {
-        $bill = $this->service->update($id, $request->validated());
+        $data = FormRequestCompanyBillDTO::fromArray($request->validated());
+        $bill = $this->service->update($id, $data->toArray());
 
-        EmployeeEventService::log('update_company_bill', 'companyBills', 'companyBills', $bill->id);
+        EmployeeEventService::log('update_company_bill', 'companyBills', 'companyBills', $id);
 
         return response()->json(new CompanyBillDTO($bill), 200);
     }
+
 
     public function destroy(string $id): JsonResponse
     {
@@ -54,15 +60,13 @@ class CompanyBillController extends Controller
 
         EmployeeEventService::log('delete_company_bill', 'companyBills', 'companyBills', $id);
 
-        return response()->json([
-            'message' => "CompanyBill with ID {$id} has been deleted",
-        ], 200);
+        return response()->json(['message' => "CompanyBill with ID {$id} has been deleted"], 200);
     }
 
     public function search(string $query): JsonResponse
     {
         $bills = $this->service->search($query)->map(
-            fn ($bill) => new CompanyBillDTO($bill)
+            fn ($bill) => new SimpleCompanyBillDTO($bill)
         );
 
         return response()->json($bills, 200);

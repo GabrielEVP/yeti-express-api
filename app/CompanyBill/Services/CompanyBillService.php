@@ -3,13 +3,25 @@
 namespace App\CompanyBill\Services;
 
 use App\CompanyBill\Repositories\ICompanyBillRepository;
-use App\Models\CompanyBill;
+use App\CompanyBill\Models\CompanyBill;
+use Illuminate\Support\Facades\Auth;
+use \Illuminate\Support\Collection;
 
 class CompanyBillService implements ICompanyBillRepository
 {
-    public function all(): \Illuminate\Support\Collection
+    private const SELECT_SIMPLE_FIELDS = ['id', 'name', 'date', 'method', 'amount'];
+
+    private function baseQuery()
     {
-        return CompanyBill::all();
+        return CompanyBill::query()
+            ->where('user_id', Auth::id());
+    }
+
+    public function all(): Collection
+    {
+        return $this->baseQuery()
+            ->select(self::SELECT_SIMPLE_FIELDS)
+            ->get();
     }
 
     public function create(array $data): CompanyBill
@@ -19,24 +31,26 @@ class CompanyBillService implements ICompanyBillRepository
 
     public function find(string $id): CompanyBill
     {
-        return CompanyBill::findOrFail($id);
+        return $this->baseQuery()->findOrFail($id);
     }
 
     public function update(string $id, array $data): CompanyBill
     {
-        $bill = CompanyBill::findOrFail($id);
+        $bill = $this->find($id);
         $bill->update($data);
         return $bill;
     }
 
     public function delete(string $id): void
     {
-        $bill = CompanyBill::findOrFail($id);
-        $bill->delete();
+        $this->find($id)->delete();
     }
 
-    public function search(string $query): \Illuminate\Support\Collection
+    public function search(string $query): Collection
     {
-        return CompanyBill::where('name', 'like', "%{$query}%")->get()->all();
+        return $this->baseQuery()
+            ->select(self::SELECT_SIMPLE_FIELDS)
+            ->where('name', 'like', "%{$query}%")
+            ->get();
     }
 }

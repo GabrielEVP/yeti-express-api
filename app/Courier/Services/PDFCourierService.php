@@ -12,56 +12,76 @@ class PDFCourierService implements IPDFCourierRepository
 {
     public function getAllReportCourier(Request $request): ReportPDFAllCourierDTO
     {
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
+        [$startDate, $endDate] = $this->validatedDates(
+            $request->get('start_date'),
+            $request->get('end_date')
+        );
 
-        [$startDate, $endDate] = $this->validatedDates($startDate, $endDate);
-
-        $couriers = Auth::user()->couriers()->with([
-            'deliveries' => function ($query) use ($startDate, $endDate) {
-                $query->byPeriod($startDate, $endDate)
-                    ->with(['service', 'client', 'receipt']);
-            }
-        ])->get();
+        $couriers = Auth::user()->couriers()
+            ->select('id', 'first_name', 'last_name', 'phone')
+            ->with(['deliveries' => function ($query) use ($startDate, $endDate) {
+                $query->select('id', 'number', 'date', 'amount', 'status', 'cancellation_notes', 'courier_id', 'client_id')
+                    ->whereBetween('date', [$startDate, $endDate])
+                    ->with(['client:id,legal_name']);
+            }])
+            ->get()
+            ->map(function ($courier) {
+                return [
+                    'id' => $courier->id,
+                    'full_name' => trim($courier->first_name . ' ' . $courier->last_name),
+                    'phone' => $courier->phone,
+                    'deliveries' => $courier->deliveries->map(function ($delivery) {
+                        return [
+                            'number' => $delivery->number,
+                            'date' => $delivery->date->format('d/m/Y'),
+                            'client_name' => $delivery->client->legal_name ?? '-',
+                            'amount' => (float)$delivery->amount,
+                            'status' => $delivery->status,
+                            'cancellation_notes' => $delivery->cancellation_notes,
+                        ];
+                    })->toArray(),
+                ];
+            })
+            ->toArray();
 
         return new ReportPDFAllCourierDTO($couriers, $startDate, $endDate);
     }
 
+
     public function getReportByCourier(string $id, Request $request): ReportPDFCourierDTO
     {
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
-
-        [$startDate, $endDate] = $this->validatedDates($startDate, $endDate);
+        [$startDate, $endDate] = $this->validatedDates(
+            $request->get('start_date'),
+            $request->get('end_date')
+        );
 
         $courier = Auth::user()->couriers()
-            ->with([
-                'deliveries' => function ($query) use ($startDate, $endDate) {
-                    $query->byPeriod($startDate, $endDate)
-                        ->with(['service', 'client', 'receipt']);
-                }
-            ])
+            ->select('id', 'first_name', 'last_name', 'phone')
             ->findOrFail($id);
 
-        $normalizedData = [
-            'id' => $courier->id,
-            'first_name' => $courier->first_name,
-            'last_name' => $courier->last_name,
-            'phone' => $courier->phone,
-            'deliveries' => $courier->deliveries->map(function ($delivery) {
-                return [
-                    'id' => $delivery->id,
-                    'created_at' => $delivery->created_at->format('d/m/Y'),
-                    'client' => $delivery->client?->name ?? '-',
-                    'service' => $delivery->service?->name ?? '-',
-                    'receipt' => $delivery->receipt?->number ?? '-',
-                    'amount' => (float)$delivery->amount,
-                    'status' => $delivery->status ?? 'pending',
-                ];
-            })->toArray(),
-        ];
+        $courier->load(['deliveries' => function ($query) use ($startDate, $endDate) {
+            $query->select('id', 'number', 'date', 'amount', 'status', 'cancellation_notes', 'courier_id', 'client_id')
+                ->whereBetween('date', [$startDate, $endDate])
+                ->with(['client:id,legal_name']);
+        }]);
 
-        return new ReportPDFCourierDTO($normalizedData, $startDate, $endDate);
+        $deliveries = $courier->deliveries->map(function ($delivery) {
+            return [
+                'number' => $delivery->number,
+                'date' => $delivery->date->format('d/m/Y'),
+                'client_name' => $delivery->client->legal_name ?? '-',
+                'amount' => (float)$delivery->amount,
+                'status' => $delivery->status,
+                'cancellation_notes' => $delivery->cancellation_notes,
+            ];
+        })->toArray();
+
+        return new ReportPDFCourierDTO([
+            'id' => $courier->id,
+            'full_name' => trim($courier->first_name . ' ' . $courier->last_name),
+            'phone' => $courier->phone,
+            'deliveries' => $deliveries,
+        ], $startDate, $endDate);
     }
 
     private function validatedDates(?string $startDate, ?string $endDate): array

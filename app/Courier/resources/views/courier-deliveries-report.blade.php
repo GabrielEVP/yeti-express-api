@@ -1,22 +1,19 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8">
-    <title>Reporte de Entregas del Repartidor</title>
+    <title>Reporte General de Entregas de Repartidores</title>
     <style>
         {!! file_get_contents(base_path('app/Courier/resources/css/CourierReport.css')) !!}
     </style>
 </head>
-<body>
 
-<div class="header">
-    <h1>Reporte de Entregas del Repartidor</h1>
-    <p>Generado el {{ now()->format('d/m/Y H:i:s') }}</p>
-</div>
+<body>
 
 <div class="courier-info">
     <h2>Información del Repartidor</h2>
-    <p><strong>Nombre:</strong> {{ $courier->first_name }} {{ $courier->last_name }}</p>
+    <p><strong>Nombre:</strong> {{ $courier->full_name }}</p>
     <p><strong>Teléfono:</strong> {{ $courier->phone }}</p>
 </div>
 
@@ -34,10 +31,9 @@
         <th>Número</th>
         <th>Fecha</th>
         <th>Cliente</th>
-        <th>Servicio</th>
         <th>Monto</th>
         <th>Estado</th>
-        <th>Dirección de Entrega</th>
+        <th>Notas de Cancelación</th>
     </tr>
     </thead>
     <tbody>
@@ -45,18 +41,18 @@
         <tr>
             <td>{{ $delivery['number'] }}</td>
             <td>{{ $delivery['date'] }}</td>
-            <td>{{ is_array($delivery['client']) ? $delivery['client']['name'] : $delivery['client'] }}</td>
-            <td>{{ is_array($delivery['service']) ? $delivery['service']['name'] : $delivery['service'] }}</td>
+            <td>{{ $delivery['client_name'] ?? '-' }}</td>
             <td>${{ number_format($delivery['amount'], 2, ',', '.') }}</td>
             <td class="status-{{ $delivery['status'] }}">
                 @switch($delivery['status'])
                     @case('pending')     Pendiente @break
                     @case('in_transit')  En Tránsito @break
                     @case('delivered')   Entregado @break
-                    @default             Cancelado
+                    @case('cancelled')   Cancelado @break
+                    @default             Desconocido
                 @endswitch
             </td>
-            <td>{{ is_array($delivery['receipt']) ? $delivery['receipt']['number'] : $delivery['receipt'] }}</td>
+            <td>{{ $delivery['cancelled_notes'] ?? '-' }}</td>
         </tr>
     @endforeach
     </tbody>
@@ -69,10 +65,9 @@
     <p><strong>En Tránsito:</strong> {{ $deliveries->where('status', 'in_transit')->count() }}</p>
     <p><strong>Completadas:</strong> {{ $deliveries->where('status', 'delivered')->count() }}</p>
     <p><strong>Canceladas:</strong> {{ $deliveries->where('status', 'cancelled')->count() }}</p>
-    <p><strong>Monto Total:</strong>
-        ${{ number_format($deliveries->sum(function($delivery) { return (float) str_replace([',', '.'], ['.', ''], $delivery['amount']); }), 2, ',', '.') }}
-    </p>
+    <p><strong>Monto Total:</strong> ${{ number_format($deliveries->sum('amount'), 2, ',', '.') }}</p>
 </div>
 
 </body>
 </html>
+

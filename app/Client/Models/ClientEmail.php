@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Models;
+namespace App\Client\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ClientPhone extends Model
+class ClientEmail extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'phone',
+        'email',
         'client_id',
     ];
 

@@ -159,6 +159,7 @@ return [
         \App\CompanyBill\Providers\CompanyBillServiceProvider::class,
         \App\Service\Providers\ServicesProvider::class,
         \App\Courier\Providers\CourierServiceProvider::class,
+        \App\Client\Providers\ClientServiceProvider::class,
     ],
 
     'aliases' => [

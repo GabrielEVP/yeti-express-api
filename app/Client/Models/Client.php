@@ -1,7 +1,10 @@
 <?php
 
-namespace App\Models;
+namespace App\Client\Models;
 
+use App\Models\Debt;
+use App\Models\Delivery;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\CompanyBill\Models\CompanyBill;
 use App\Courier\Models\Courier;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -33,9 +34,9 @@ class User extends Authenticatable
         ];
     }
 
-    public function clients()
+    public function clients(): HasMany
     {
-        return $this->hasMany(Client::class);
+        return $this->hasMany(\App\Client\Models\Client::class);
     }
 
     public function couriers(): HasMany

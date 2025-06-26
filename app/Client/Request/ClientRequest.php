@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Client\Request;
 
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -17,7 +17,6 @@ class ClientRequest extends FormRequest
             'legal_name' => 'required|string|max:255',
             'registration_number' => 'required|string|max:255',
             'notes' => 'nullable|string',
-            'user_id' => 'nullable|exists:users,id',
             'phones' => 'array',
             'phones.*.phone' => 'required_with:phones|string|max:20',
             'emails' => 'array',

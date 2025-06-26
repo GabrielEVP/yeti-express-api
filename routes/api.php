@@ -14,14 +14,12 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::get("user", fn(Request $request) => $request->user());
 
     require __DIR__ . '/modules/dashboard.php';
-    require __DIR__ . '/modules/client.php';
+    require base_path('app/Client/Routes/ClientRoutes.php');
     require __DIR__ . '/modules/delivery.php';
     require base_path('app/Courier/Routes/CourierRoutes.php');
     require __DIR__ . '/modules/employee.php';
-    require __DIR__ . '/modules/service.php';
     require base_path('app/Service/Routes/ServiceRoutes.php');
     require base_path('app/CompanyBill/Routes/CompanyBillRoutes.php');
     require __DIR__ . '/modules/debt.php';
     require __DIR__ . '/modules/debtPayment.php';
-    require __DIR__ . '/modules/report.php';
 });

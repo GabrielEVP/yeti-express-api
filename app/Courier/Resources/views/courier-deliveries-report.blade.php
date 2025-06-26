@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <title>Reporte General de Entregas de Repartidores</title>
     <style>
-        {!! file_get_contents(base_path('app/Courier/resources/css/CourierReport.css')) !!}
+        {!! file_get_contents(base_path('app/Courier/Resources/css/CourierReport.css')) !!}
     </style>
 </head>
 

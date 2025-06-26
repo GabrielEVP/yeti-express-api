@@ -11,14 +11,16 @@ final class SimpleServiceDTO implements JsonSerializable
     public float $amount;
     public float $total_expense;
     public float $total_earning;
+    public bool $can_delete = false;
 
     public function __construct(array $data)
     {
-        $this->id = isset($data['id']) ? (int) $data['id'] : 0;
+        $this->id = (int)$data['id'] ?? 0;
         $this->name = $data['name'] ?? '';
-        $this->amount = isset($data['amount']) ? (float) $data['amount'] : 0;
-        $this->total_expense = isset($data['total_expense']) ? (float) $data['total_expense'] : 0;
-        $this->total_earning = isset($data['total_earning']) ? (float) $data['total_earning'] : 0;
+        $this->amount = (float)$data['amount'] ?? 0;
+        $this->total_expense = (float)$data['total_expense'] ?? 0;
+        $this->total_earning = (float)$data['total_earning'] ?? 0;
+        $this->can_delete = (bool)$data['can_delete'] ?? false;
     }
 
     public function jsonSerialize(): array
@@ -29,6 +31,7 @@ final class SimpleServiceDTO implements JsonSerializable
             'amount' => $this->amount,
             'total_expense' => $this->total_expense,
             'total_earning' => $this->total_earning,
+            'can_delete' => $this->can_delete,
         ];
     }
 }

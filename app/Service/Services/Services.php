@@ -23,7 +23,11 @@ class Services implements IServiceRepository
         return $this->baseQuery()
             ->leftJoin('bills', 'services.id', '=', 'bills.service_id')
             ->select('services.id', 'services.name', 'services.amount')
-            ->selectRaw('COALESCE(SUM(bills.amount), 0) as total_expense, services.amount - COALESCE(SUM(bills.amount), 0) as total_earning')
+            ->selectRaw('
+                COALESCE(SUM(bills.amount), 0) as total_expense,
+                services.amount - COALESCE(SUM(bills.amount), 0) as total_earning,
+                NOT EXISTS (SELECT 1 FROM deliveries WHERE deliveries.service_id = services.id) as can_delete
+            ')
             ->groupBy('services.id', 'services.name', 'services.amount')
             ->get()
             ->map(fn($row) => new SimpleServiceDTO(json_decode(json_encode($row), true)));
@@ -78,7 +82,7 @@ class Services implements IServiceRepository
 
     public function delete(string $id): void
     {
-        $service = Service::with('deliveries')->findOrFail($id);
+        $service = Service::findOrFail($id);
 
         if ($service->deliveries()->exists()) {
             throw new \Exception('service_has_delivery_relation');
@@ -93,7 +97,11 @@ class Services implements IServiceRepository
         return $this->baseQuery()
             ->leftJoin('bills', 'services.id', '=', 'bills.service_id')
             ->select('services.id', 'services.name', 'services.amount')
-            ->selectRaw('COALESCE(SUM(bills.amount), 0) as total_expense, services.amount - COALESCE(SUM(bills.amount), 0) as total_earning')
+            ->selectRaw('
+                COALESCE(SUM(bills.amount), 0) as total_expense,
+                services.amount - COALESCE(SUM(bills.amount), 0) as total_earning,
+                NOT EXISTS (SELECT 1 FROM deliveries WHERE deliveries.service_id = services.id) as can_delete
+            ')
             ->where('services.name', 'like', "%{$query}%")
             ->groupBy('services.id', 'services.name', 'services.amount')
             ->get()

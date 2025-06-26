@@ -1,11 +1,11 @@
 <?php
 
-use App\Http\Controllers\Api\CourierController;
-use App\Http\Controllers\Api\CourierReportController;
+use App\Courier\Controllers\CourierController;
+use App\Courier\Controllers\CourierReportController;
 
 Route::prefix("couriers")->group(function () {
     Route::get("search/{query}", [CourierController::class, "search"]);
-    Route::get("{courier}/deliveries-report", [CourierReportController::class, "courierDeliveriesReport"]);
     Route::get("deliveries-report", [CourierReportController::class, "allCouriersDeliveriesReport"]);
+    Route::get("{id}/deliveries-report", [CourierReportController::class, "courierDeliveriesReport"]);
 });
 Route::apiResource("couriers", CourierController::class);

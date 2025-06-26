@@ -39,7 +39,7 @@ return [
     |
     */
 
-    'debug' => (bool) env('APP_DEBUG', false),
+    'debug' => (bool)env('APP_DEBUG', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -158,6 +158,7 @@ return [
         // Custom Providers
         \App\CompanyBill\Providers\CompanyBillServiceProvider::class,
         \App\Service\Providers\ServicesProvider::class,
+        \App\Courier\Providers\CourierServiceProvider::class,
     ],
 
     'aliases' => [

@@ -43,32 +43,6 @@ class PDFService
         return $pdf;
     }
 
-    public function generateCourierDeliveriesReport($courier, $deliveries = null, $startDate = null, $endDate = null): \Barryvdh\DomPDF\PDF
-    {
-        $pdf = PDF::loadView('pdfs.courier-deliveries-report', [
-            'courier' => $courier,
-            'deliveries' => $deliveries ?? $courier->deliveries,
-            'startDate' => $startDate,
-            'endDate' => $endDate
-        ]);
-
-        $pdf->setPaper('a4', 'portrait');
-
-        return $pdf;
-    }
-
-    public function generateAllCouriersDeliveriesReport($couriers, $startDate, $endDate): \Barryvdh\DomPDF\PDF
-    {
-        $pdf = PDF::loadView('pdfs.all-couriers-deliveries-report', [
-            'couriers' => $couriers,
-            'startDate' => $startDate,
-            'endDate' => $endDate
-        ]);
-
-        $pdf->setPaper('a4', 'portrait');
-
-        return $pdf;
-    }
 
     public function generateCashRegisterReport(array $reportData): \Barryvdh\DomPDF\PDF
     {

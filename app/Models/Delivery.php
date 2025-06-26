@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use App\Service\Models\Service;
-use Illuminate\Database\Eloquent\Model;
+use App\Courier\Models\Courier;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Delivery extends Model
 {

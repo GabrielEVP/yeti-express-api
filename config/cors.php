@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://yeti-express-app-production.up.railway.app/', 'https://yeti-express-app.vercel.app'],
+    'allowed_origins' => ['https://yeti-express-app-production.up.railway.app', 'https://yeti-express-app.vercel.app'],
 
     'allowed_origins_patterns' => [],
 

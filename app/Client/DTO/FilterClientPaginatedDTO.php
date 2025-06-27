@@ -6,7 +6,6 @@ use Illuminate\Support\Collection;
 
 final class FilterClientPaginatedDTO
 {
-    /** @var FilterClientDTO[] */
     public array $items;
     public int $currentPage;
     public int $perPage;

@@ -5,7 +5,6 @@ namespace App\Client\Repositories;
 use App\Client\DTO\ClientDTO;
 use App\Client\DTO\FilterClientPaginatedDTO;
 use App\Client\DTO\FilterRequestClientDTO;
-use App\Client\DTO\SimpleClientDTO;
 use Illuminate\Support\Collection;
 
 interface IClientRepository
@@ -14,9 +13,9 @@ interface IClientRepository
 
     public function find(string $id): ClientDTO;
 
-    public function create(array $data): SimpleClientDTO;
+    public function create(array $data): ClientDTO;
 
-    public function update(string $id, array $data): SimpleClientDTO;
+    public function update(string $id, array $data): ClientDTO;
 
     public function delete(string $id): void;
 

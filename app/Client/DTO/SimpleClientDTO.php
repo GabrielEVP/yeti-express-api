@@ -14,9 +14,9 @@ final class SimpleClientDTO
     {
         $this->id = $data['id'];
         $this->legal_name = $data['legal_name'];
-        $this->type = $data['type'];
+        $this->type = $data['type'] ?? null;
         $this->registration_number = $data['registration_number'];
-        $this->can_delete = $data['can_delete'];
+        $this->can_delete = $data['can_delete'] ?? false;
     }
 
     public function jsonSerialize(): array

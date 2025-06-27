@@ -3,7 +3,6 @@
 namespace App\Client\Services;
 
 use App\Client\DTO\ClientDTO;
-use App\Client\DTO\FilterClientDTO;
 use App\Client\DTO\FilterClientPaginatedDTO;
 use App\Client\DTO\FilterRequestClientDTO;
 use App\Client\DTO\SimpleClientDTO;
@@ -15,7 +14,6 @@ use Illuminate\Support\Facades\DB;
 
 class ClientService implements IClientRepository
 {
-
     private const SELECT_SIMPLE_FIELDS = ['id', 'legal_name', 'type', 'registration_number'];
 
     private function baseQuery()
@@ -51,7 +49,7 @@ class ClientService implements IClientRepository
         return new ClientDTO($client);
     }
 
-    public function create(array $data): SimpleClientDTO
+    public function create(array $data): ClientDTO
     {
         $client = Auth::user()->clients()->create($data);
 
@@ -67,10 +65,10 @@ class ClientService implements IClientRepository
             $client->phones()->create($phone);
         }
 
-        return new SimpleClientDTO($client);
+        return new ClientDTO($client);
     }
 
-    public function update(string $id, array $data): SimpleClientDTO
+    public function update(string $id, array $data): ClientDTO
     {
         $client = $this->baseQuery()->findOrFail($id);
         $client->update($data);
@@ -93,7 +91,7 @@ class ClientService implements IClientRepository
             $client->phones()->create($phone);
         }
 
-        return new SimpleClientDTO($client);
+        return new ClientDTO($client);
     }
 
     public function delete(string $id): void
@@ -133,35 +131,32 @@ class ClientService implements IClientRepository
         }
 
         $query = DB::table('clients')
+            ->select(self::SELECT_SIMPLE_FIELDS)
+            ->selectRaw('
+                NOT EXISTS (SELECT 1 FROM deliveries WHERE deliveries.client_id = clients.id) as can_delete
+            ')
             ->where('user_id', Auth::id())
             ->when($filterRequestClientDTO->search !== '', function ($q) use ($filterRequestClientDTO) {
-                $q->where('legal_name', 'LIKE', "%{$filterRequestClientDTO->search}%")
-                    ->orWhere('registration_number', 'LIKE', "%{$filterRequestClientDTO->search}%");
+                $q->where(function ($query) use ($filterRequestClientDTO) {
+                    $query->where('legal_name', 'LIKE', "%{$filterRequestClientDTO->search}%")
+                        ->orWhere('registration_number', 'LIKE', "%{$filterRequestClientDTO->search}%");
+                });
             })
             ->when($filterRequestClientDTO->type !== null, fn($q) => $q->where('type', $filterRequestClientDTO->type))
             ->when($filterRequestClientDTO->allowCredit !== null, fn($q) => $q->where('allow_credit', $filterRequestClientDTO->allowCredit))
-            ->when(!empty($filterRequestClientDTO->select), function ($q) use ($filterRequestClientDTO) {
-                foreach ($filterRequestClientDTO->select as $filter) {
-                    if (
-                        isset($filter['option'], $filter['value']) &&
-                        in_array($filter['option'], $this->validSortColumns)
-                    ) {
-                        $q->where($filter['option'], $filter['value']);
-                    }
-                }
-            })
             ->orderBy($sort, $order);
 
-        $paginator = $query->paginate($filterRequestClientDTO->perPage, ['*'], 'page', $filterRequestClientDTO->page);
+        $paginator = $query->paginate(
+            $filterRequestClientDTO->perPage ?? 15,
+            ['*'],
+            'page',
+            $filterRequestClientDTO->page ?? 1
+        );
 
-        $items = $paginator->getCollection()->map(function ($client) {
-            $client->can_delete = !DB::table('deliveries')->where('client_id', $client->id)->exists();
-            $client->has_had_debt = DB::table('debts')->where('client_id', $client->id)->exists();
-            return new FilterClientDTO((array)$client);
-        });
+        $data = $paginator->getCollection()->map(fn($client) => new SimpleClientDTO((array)$client));
 
         return new FilterClientPaginatedDTO(
-            $items,
+            $data,
             $paginator->currentPage(),
             $paginator->perPage(),
             $paginator->total()

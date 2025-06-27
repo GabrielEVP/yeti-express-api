@@ -21,6 +21,11 @@ class Client extends Model
         "user_id",
     ];
 
+    protected $casts = [
+        'type' => Type::class,
+        'allow_credit' => 'boolean',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

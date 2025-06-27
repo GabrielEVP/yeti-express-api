@@ -59,14 +59,17 @@ class ClientController extends Controller
 
     public function filter(Request $request): JsonResponse
     {
+        $filters = $request->input('filters', []);
+
         $filterDTO = new FilterRequestClientDTO(
             $request->string('search')->toString(),
             $request->input('sortBy', 'legal_name'),
             $request->input('sortDirection', 'asc'),
-            $request->input('type'),
-            $request->boolean('allowCredit', null),
+            $filters['type'] ?? null,
+            isset($filters['allowCredit']) ? (bool)$filters['allowCredit'] : null,
             $request->input('select', [])
         );
+
         $clients = $this->service->filter($filterDTO);
 
         return response()->json($clients);

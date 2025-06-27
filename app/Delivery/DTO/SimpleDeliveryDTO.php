@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Delivery\DTO;
+
+use JsonSerializable;
+
+final class SimpleDeliveryDTO implements JsonSerializable
+{
+    public int $id;
+    public string $number;
+    public ?string $date;
+    public ?string $status;
+    public ?float $amount;
+
+    public string $client_name;
+    public string $service_name;
+    public string $courier_full_name;
+
+    public function __construct(array $data)
+    {
+        // Add debugging if needed
+        // \Log::debug('SimpleDeliveryDTO data:', $data);
+        $this->id = (int)($data['id'] ?? 0);
+        $this->number = $data['number'] ?? '';
+        $this->date = $data['date'] ?? null;
+        $this->status = $data['status'] ?? null;
+        $this->amount = isset($data['amount']) ? (float)$data['amount'] : null;
+        $this->client_name = $data['client_name'] ?? '';
+        $this->service_name = $data['service_name'] ?? '';
+        $this->courier_full_name = $data['courier_full_name'] ?? '';
+    }
+
+    public function jsonSerialize(): array
+    {
+        return [
+            'id' => $this->id,
+            'number' => $this->number,
+            'date' => $this->date,
+            'status' => $this->status,
+            'amount' => $this->amount,
+            'client_name' => $this->client_name,
+            'service_name' => $this->service_name,
+            'courier_full_name' => $this->courier_full_name,
+        ];
+    }
+}

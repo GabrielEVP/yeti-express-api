@@ -2,11 +2,11 @@
 
 namespace App\Service\Models;
 
-use App\Models\Delivery;
+use App\Delivery\Models\Delivery;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Service extends Model
 {

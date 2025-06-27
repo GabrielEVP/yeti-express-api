@@ -15,7 +15,7 @@ Route::middleware("auth:sanctum")->group(function () {
 
     require __DIR__ . '/modules/dashboard.php';
     require base_path('app/Client/Routes/ClientRoutes.php');
-    require __DIR__ . '/modules/delivery.php';
+    require base_path('app/Delivery/Routes/DeliveryRoutes.php');
     require base_path('app/Courier/Routes/CourierRoutes.php');
     require __DIR__ . '/modules/employee.php';
     require base_path('app/Service/Routes/ServiceRoutes.php');

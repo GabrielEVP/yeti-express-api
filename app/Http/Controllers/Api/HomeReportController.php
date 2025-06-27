@@ -217,7 +217,7 @@ class HomeReportController extends Controller
         $formattedStartDate = $startDateObj->startOfDay()->toDateTimeString();
         $formattedEndDate = $endDateObj->endOfDay()->toDateTimeString();
 
-        $previousDayPayments = \App\Models\Delivery::with(['client', 'debt.payments'])
+        $previousDayPayments = \App\Delivery\Models\Delivery::with(['client', 'debt.payments'])
             ->where('user_id', $userId)
             ->where('date', '<=', $formattedStartDate)
             ->where(function ($query) use ($formattedStartDate, $formattedEndDate) {

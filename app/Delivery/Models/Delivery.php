@@ -1,8 +1,11 @@
 <?php
 
-namespace App\Models;
+namespace App\Delivery\Models;
 
 use App\Courier\Models\Courier;
+use App\Models\Client;
+use App\Models\Debt;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -27,25 +30,28 @@ class Delivery extends Model
     ];
 
     protected $casts = [
-        "date" => "date",
+        'date' => 'date',
+        'status' => Status::class,
+        'payment_type' => PaymentType::class,
+        'payment_status' => PaymentStatus::class,
     ];
 
-    public function user()
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function service()
+    public function service(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(\App\Service\Models\Service::class, 'service_id');
     }
 
-    public function client()
+    public function client(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Client::class);
     }
 
-    public function courier()
+    public function courier(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Courier::class);
     }
@@ -63,10 +69,5 @@ class Delivery extends Model
     public function debt()
     {
         return $this->hasOne(Debt::class);
-    }
-
-    public function scopeByPeriod($query, $startDate, $endDate)
-    {
-        return $query->whereBetween('date', [$startDate, $endDate]);
     }
 }

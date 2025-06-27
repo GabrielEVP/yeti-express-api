@@ -160,6 +160,7 @@ return [
         \App\Service\Providers\ServicesProvider::class,
         \App\Courier\Providers\CourierServiceProvider::class,
         \App\Client\Providers\ClientServiceProvider::class,
+        \App\Delivery\Providers\DeliveryServiceProvider::class,
     ],
 
     'aliases' => [

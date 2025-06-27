@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\CompanyBill\Models\CompanyBill;
 use App\Courier\Models\Courier;
+use App\Delivery\Models\Delivery;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;

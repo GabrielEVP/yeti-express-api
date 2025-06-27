@@ -67,7 +67,9 @@ class ClientController extends Controller
             $request->input('sortDirection', 'asc'),
             $filters['type'] ?? null,
             isset($filters['allowCredit']) ? (bool)$filters['allowCredit'] : null,
-            $request->input('select', [])
+            $request->input('select', []),
+            $request->integer('page', 1),
+            $request->integer('perPage', 15)
         );
 
         $clients = $this->service->filter($filterDTO);

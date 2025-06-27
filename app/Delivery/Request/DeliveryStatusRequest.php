@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Delivery\Request;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -15,10 +15,7 @@ class DeliveryStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => [
-                'required',
-                'string',
-                Rule::in(['in_transit', 'cancelled', 'delivered']),
+            'status' => ['required', 'string', Rule::in(['in_transit', 'cancelled', 'delivered']),
             ],
         ];
     }

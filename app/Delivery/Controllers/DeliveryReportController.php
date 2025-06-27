@@ -1,11 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Delivery\Controllers;
 
+use App\Delivery\Models\Delivery;
 use App\Http\Controllers\Controller;
-use App\Models\Delivery;
 use App\Services\PDFService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DeliveryReportController extends Controller

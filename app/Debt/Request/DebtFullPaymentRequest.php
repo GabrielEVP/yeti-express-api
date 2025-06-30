@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Debt\Request;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class DebtPartialPaymentRequest extends FormRequest
+class DebtFullPaymentRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -16,7 +16,6 @@ class DebtPartialPaymentRequest extends FormRequest
     {
         return [
             "debt_id" => "required",
-            'amount' => 'required|numeric|min:0',
             'method' => [
                 'required',
                 'string',

@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Debt\Request;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ClientDebtPaymentRequest extends FormRequest
+class DebtPaymentRequest extends FormRequest
 {
     public function authorize(): bool
     {

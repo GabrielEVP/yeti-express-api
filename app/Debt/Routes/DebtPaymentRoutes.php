@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Api\DebtPaymentController;
+use App\Debt\Controllers\DebtPaymentController;
 
 Route::prefix('debt-payments')->group(function () {
     Route::get('/', [DebtPaymentController::class, 'index']);

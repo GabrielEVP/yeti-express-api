@@ -20,6 +20,6 @@ Route::middleware("auth:sanctum")->group(function () {
     require __DIR__ . '/modules/employee.php';
     require base_path('app/Service/Routes/ServiceRoutes.php');
     require base_path('app/CompanyBill/Routes/CompanyBillRoutes.php');
-    require __DIR__ . '/modules/debt.php';
-    require __DIR__ . '/modules/debtPayment.php';
+    require base_path('app/Debt/Routes/DebtRoutes.php.php');
+    require base_path('app/Debt/Routes/DebtPaymentRoutes.php.php');
 });

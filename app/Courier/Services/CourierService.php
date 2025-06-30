@@ -66,7 +66,7 @@ class CourierService implements ICourierRepository
         return $this->baseQuery()
             ->select(self::SELECT_SIMPLE_FIELDS)
             ->selectRaw('
-                NOT EXISTS (SELECT 1 FROM deliveries WHERE deliveries.courier_id = courier_id.id) as can_delete
+                NOT EXISTS (SELECT 1 FROM deliveries WHERE deliveries.courier_id = id) as can_delete
             ')
             ->where('first_name', 'like', "%{$query}%")
             ->orWhere('last_name', 'like', "%{$query}%")

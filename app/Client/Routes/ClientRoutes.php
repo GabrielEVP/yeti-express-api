@@ -1,7 +1,7 @@
 <?php
 
 use App\Client\Controllers\ClientController;
-use App\Http\Controllers\Api\DebtReportController;
+use App\Debt\Controllers\DebtReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix("clients")->group(function () {

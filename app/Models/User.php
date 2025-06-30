@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\CompanyBill\Models\CompanyBill;
 use App\Courier\Models\Courier;
+use App\Debt\Models\Debt;
+use App\Debt\Models\DebtPayment;
 use App\Delivery\Models\Delivery;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;

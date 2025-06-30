@@ -8,7 +8,7 @@ class DomPDFTDelivery
 {
     public function generateDeliveryTicket($delivery): \Barryvdh\DomPDF\PDF
     {
-        $pdf = PDF::loadView('Delivery::pdfs.delivery-ticket', [
+        $pdf = PDF::loadView('Delivery::delivery-ticket', [
             'delivery' => $delivery
         ]);
 

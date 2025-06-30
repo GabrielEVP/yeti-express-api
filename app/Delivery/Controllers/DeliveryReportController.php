@@ -2,38 +2,27 @@
 
 namespace App\Delivery\Controllers;
 
-use App\Delivery\Models\Delivery;
+use App\Delivery\DomPDF\DomPDFTDelivery;
+use App\Delivery\Services\PDFDeliveryService;
 use App\Http\Controllers\Controller;
-use App\Services\PDFService;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Response;
 
 class DeliveryReportController extends Controller
 {
-    protected PDFService $pdfService;
+    protected DomPDFTDelivery $pdfService;
+    private PDFDeliveryService $PDFDeliveryService;
 
-    public function __construct(PDFService $pdfService)
+    public function __construct(DomPDFTDelivery $pdfService, PDFDeliveryService $PDFDeliveryService)
     {
         $this->pdfService = $pdfService;
+        $this->PDFDeliveryService = $PDFDeliveryService;
     }
 
-    public function deliveryTicket(Delivery $delivery): \Illuminate\Http\Response
+    public function getTicketReportDelivery(string $id): Response
     {
-        $this->authorizeOwner($delivery);
-
-        $delivery->load([
-            'service',
-            'client',
-            'courier',
-            'receipt'
-        ]);
-
+        $delivery = $this->PDFDeliveryService->getTicketReportDelivery($id);
         $pdf = $this->pdfService->generateDeliveryTicket($delivery);
 
-        return $pdf->stream("delivery-ticket-{$delivery->number}.pdf");
-    }
-
-    private function authorizeOwner($model): void
-    {
-        abort_if(!Auth::user(), 403, 'No tienes permiso para acceder a este recurso.');
+        return $pdf->stream("delivery-ticket.pdf");
     }
 }

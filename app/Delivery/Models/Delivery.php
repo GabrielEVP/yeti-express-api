@@ -6,8 +6,10 @@ use App\Client\Models\Client;
 use App\Courier\Models\Courier;
 use App\Models\Debt;
 use App\Models\User;
+use App\Service\Models\Service;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Delivery extends Model
 {
@@ -36,22 +38,22 @@ class Delivery extends Model
         'payment_status' => PaymentStatus::class,
     ];
 
-    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function service(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function service(): BelongsTo
     {
-        return $this->belongsTo(\App\Service\Models\Service::class, 'service_id');
+        return $this->belongsTo(Service::class);
     }
 
-    public function client(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
     }
 
-    public function courier(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function courier(): BelongsTo
     {
         return $this->belongsTo(Courier::class);
     }

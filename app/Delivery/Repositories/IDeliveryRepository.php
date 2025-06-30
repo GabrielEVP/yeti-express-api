@@ -5,6 +5,7 @@ namespace App\Delivery\Repositories;
 use App\Delivery\DTO\DeliveryDTO;
 use App\Delivery\DTO\FilterDeliveryPaginatedDTO;
 use App\Delivery\DTO\FilterRequestDeliveryDTO;
+use App\Delivery\Models\Status;
 use Illuminate\Support\Collection;
 
 interface IDeliveryRepository
@@ -23,9 +24,9 @@ interface IDeliveryRepository
 
     public function filter(FilterRequestDeliveryDTO $filterRequestDeliveryDTO): FilterDeliveryPaginatedDTO;
 
-    public function updateStatus(string $id, string $status): void;
+    public function updateStatus(string $id, Status $status): void;
 
-    public function cancelDelivery(string $id, string $query): void;
+    public function cancelDelivery(string $id, string $cancellation_notes): void;
 
 
 }

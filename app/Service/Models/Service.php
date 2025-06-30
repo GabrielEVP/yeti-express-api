@@ -24,11 +24,6 @@ class Service extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function bills(): HasMany
-    {
-        return $this->hasMany(Bill::class);
-    }
-
     public function events(): HasMany
     {
         return $this->hasMany(ServiceEvent::class);

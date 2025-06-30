@@ -2,10 +2,11 @@
 
 namespace App\Delivery\Services;
 
+use App\Client\Models\Client;
 use App\Delivery\DTO\{DeliveryDTO, FilterDeliveryPaginatedDTO, FilterRequestDeliveryDTO, SimpleDeliveryDTO};
 use App\Delivery\Models\Delivery;
+use App\Delivery\Models\Status;
 use App\Delivery\Repositories\IDeliveryRepository;
-use App\Client\Models\Client;
 use App\Service\Models\Service;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -141,7 +142,6 @@ class DeliveryService implements IDeliveryRepository
         );
 
         $data = $paginator->getCollection()->map(function ($delivery) {
-            // Convert to array and ensure all attributes are included
             return new SimpleDeliveryDTO($delivery->toArray());
         });
 
@@ -153,27 +153,29 @@ class DeliveryService implements IDeliveryRepository
         );
     }
 
-    public function updateStatus(string $id, string $status): void
+    public function updateStatus(string $id, Status $status): void
     {
         $delivery = Delivery::findOrFail($id);
 
-        $updateData = ['status' => $status];
+        $delivery->status = $status;
 
-        if ($status === 'delivered') {
+        if ($status === Status::DELIVERED) {
             if ($delivery->payment_type === 'partial') {
                 $this->createDebtToDelivery($delivery);
             } elseif ($delivery->payment_type === 'full') {
-                $updateData['payment_status'] = 'paid';
+                $delivery->payment_status = 'paid';
             }
         }
 
-        $delivery->update($updateData);
+        $delivery->save();
     }
 
-    public function cancelDelivery(string $id, string $notes): void
+    public function cancelDelivery(string $id, string $cancellation_notes): void
     {
         $delivery = Delivery::findOrFail($id);
-        $delivery->update(['status' => 'cancelled', 'cancellation_notes' => $notes]);
+        $delivery->status = Status::CANCELLED;
+        $delivery->cancellation_notes = $cancellation_notes;
+        $delivery->save();
     }
 
     private function generateNumberDelivery(): string

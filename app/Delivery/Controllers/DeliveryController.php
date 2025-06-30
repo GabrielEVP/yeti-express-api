@@ -4,6 +4,7 @@ namespace App\Delivery\Controllers;
 
 use App\Delivery\DTO\FilterRequestDeliveryDTO;
 use App\Delivery\DTO\FormRequestDeliveryDTO;
+use App\Delivery\Models\Status;
 use App\Delivery\Request\DeliveryRequest;
 use App\Delivery\Request\DeliveryStatusRequest;
 use App\Delivery\Services\DeliveryService;
@@ -78,15 +79,15 @@ class DeliveryController extends Controller
 
     public function updateStatus(string $id, DeliveryStatusRequest $request): JsonResponse
     {
-        $this->service->updateStatus($id, $request);
+        $status = Status::from($request->input('status'));
+        $this->service->updateStatus($id, $status);
         return response()->json(null, 204);
 
     }
 
     public function cancelDelivery(string $id, Request $request): JsonResponse
     {
-        $this->service->cancelDelivery($id, $request);
+        $this->service->cancelDelivery($id, $request->input('cancellation_notes'));
         return response()->json(null, 204);
-
     }
 }

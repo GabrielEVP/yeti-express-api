@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\DebtFullPaymentRequest;
 use App\Http\Requests\DebtPartialPaymentRequest;
 use App\Models\DebtPayment;
-use App\Models\Client;
+use App\Client\Models\Client;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;

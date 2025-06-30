@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\ClientEmail;
+use App\Client\Models\ClientEmail;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ClientEmailFactory extends Factory

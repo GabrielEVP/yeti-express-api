@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
+use App\Client\Models\Client;
 use App\Services\PDFService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

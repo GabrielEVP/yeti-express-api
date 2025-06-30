@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\ClientAddress;
+use App\Client\Models\ClientAddress;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ClientAddressFactory extends Factory

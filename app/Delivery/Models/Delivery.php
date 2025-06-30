@@ -2,8 +2,8 @@
 
 namespace App\Delivery\Models;
 
+use App\Client\Models\Client;
 use App\Courier\Models\Courier;
-use App\Models\Client;
 use App\Models\Debt;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

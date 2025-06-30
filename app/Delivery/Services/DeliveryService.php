@@ -5,7 +5,7 @@ namespace App\Delivery\Services;
 use App\Delivery\DTO\{DeliveryDTO, FilterDeliveryPaginatedDTO, FilterRequestDeliveryDTO, SimpleDeliveryDTO};
 use App\Delivery\Models\Delivery;
 use App\Delivery\Repositories\IDeliveryRepository;
-use App\Models\Client;
+use App\Client\Models\Client;
 use App\Service\Models\Service;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -55,7 +55,10 @@ class DeliveryService implements IDeliveryRepository
         $data['date'] = now()->toDateString();
         $data['number'] = $this->generateNumberDelivery();
         $data['amount'] = $this->getServiceAmount($data['service_id']);
-        $data['payment_type'] = $this->getAllowCreditClient($data['client_id']);
+
+        if (empty($data['payment_type'])) {
+            $data['payment_type'] = $this->getAllowCreditClient($data['client_id']);
+        }
 
         $delivery = Auth::user()->deliveries()->create($data);
 
@@ -184,10 +187,10 @@ class DeliveryService implements IDeliveryRepository
         return $service->amount;
     }
 
-    private function getAllowCreditClient(string $clientId): bool
+    private function getAllowCreditClient(string $clientId): string
     {
         $client = Client::findOrFail($clientId);
-        return $client->allow_credit;
+        return $client->allow_credit ? 'partial' : 'full';
     }
 
     private function CreateDebtToDelivery(Delivery $delivery): void

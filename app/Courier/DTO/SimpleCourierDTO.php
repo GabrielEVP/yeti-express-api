@@ -9,7 +9,7 @@ class SimpleCourierDTO implements JsonSerializable
     public int $id;
     public string $first_name;
     public ?string $last_name;
-    public ?float $phone;
+    public ?string $phone;
 
     public function __construct(array $data)
     {

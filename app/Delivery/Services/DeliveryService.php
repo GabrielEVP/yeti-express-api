@@ -115,7 +115,7 @@ class DeliveryService implements IDeliveryRepository
         }
 
         $query = $this->baseQuery()
-            ->select(['deliveries.id as id', 'deliveries.number as number', 'deliveries.date as date', 'deliveries.amount as amount', 'deliveries.status as status'])
+            ->select(['deliveries.id as id', 'deliveries.number as number', 'deliveries.date as date', 'deliveries.amount as amount', 'deliveries.status as status', 'deliveries.payment_status as payment_status'])
             ->selectRaw('
                 clients.legal_name as client_name,
                 services.name as service_name,
@@ -129,7 +129,17 @@ class DeliveryService implements IDeliveryRepository
                     $query->where('deliveries.number', 'LIKE', "%{$filterRequestDeliveryDTO->search}%");
                 });
             })
-            ->when($filterRequestDeliveryDTO->status !== null, fn($q) => $q->where('deliveries.status', $filterRequestDeliveryDTO->status))
+            ->when($filterRequestDeliveryDTO->start_date !== null, function ($q) use ($filterRequestDeliveryDTO) {
+                $q->whereDate('deliveries.date', '>=', $filterRequestDeliveryDTO->start_date);
+            })
+            ->when($filterRequestDeliveryDTO->end_date !== null, function ($q) use ($filterRequestDeliveryDTO) {
+                $q->whereDate('deliveries.date', '<=', $filterRequestDeliveryDTO->end_date);
+            })
+            ->when(
+                $filterRequestDeliveryDTO->status !== null,
+                fn($q) => $q->where('deliveries.status', $filterRequestDeliveryDTO->status),
+                fn($q) => $q->whereIn('deliveries.status', ['pending', 'in_transit'])
+            )
             ->when($filterRequestDeliveryDTO->service_id !== null, fn($q) => $q->where('deliveries.service_id', $filterRequestDeliveryDTO->service_id))
             ->when($filterRequestDeliveryDTO->payment_status !== null, fn($q) => $q->where('deliveries.payment_status', $filterRequestDeliveryDTO->payment_status))
             ->orderBy('deliveries.' . $sort, $order);

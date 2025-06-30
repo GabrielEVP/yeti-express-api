@@ -66,11 +66,14 @@ class DeliveryController extends Controller
             sortBy: $request->input('sortBy', 'number'),
             sortDirection: $request->input('sortDirection', 'asc'),
             status: $filters['status'] ?? null,
-            service_id: $filters['service_id'] ?? null,
-            payment_status: $filters['payment_status'] ?? null,
+            service_id: $filters['serviceId'] ?? null,
+            payment_status: $filters['paymentStatus'] ?? null,
+            start_date: $filters['startDate'] ?? null,
+            end_date: $filters['endDate'] ?? null,
             page: $request->integer('page', 1),
             perPage: $request->integer('perPage', 15)
         );
+
 
         $clients = $this->service->filter($filterDTO);
 

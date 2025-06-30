@@ -10,6 +10,7 @@ final class SimpleDeliveryDTO implements JsonSerializable
     public string $number;
     public ?string $date;
     public ?string $status;
+    public ?string $payment_status;
     public ?float $amount;
 
     public string $client_name;
@@ -18,12 +19,11 @@ final class SimpleDeliveryDTO implements JsonSerializable
 
     public function __construct(array $data)
     {
-        // Add debugging if needed
-        // \Log::debug('SimpleDeliveryDTO data:', $data);
         $this->id = (int)($data['id'] ?? 0);
         $this->number = $data['number'] ?? '';
         $this->date = $data['date'] ?? null;
         $this->status = $data['status'] ?? null;
+        $this->payment_status = $data['payment_status'] ?? null;
         $this->amount = isset($data['amount']) ? (float)$data['amount'] : null;
         $this->client_name = $data['client_name'] ?? '';
         $this->service_name = $data['service_name'] ?? '';
@@ -37,6 +37,7 @@ final class SimpleDeliveryDTO implements JsonSerializable
             'number' => $this->number,
             'date' => $this->date,
             'status' => $this->status,
+            'payment_status' => $this->payment_status,
             'amount' => $this->amount,
             'client_name' => $this->client_name,
             'service_name' => $this->service_name,

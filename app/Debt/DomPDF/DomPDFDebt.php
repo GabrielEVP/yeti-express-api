@@ -8,7 +8,7 @@ class DomPDFDebt
 {
     public function generateClientDebtReport($client, $startDate, $endDate): \Barryvdh\DomPDF\PDF
     {
-        $pdf = Pdf::loadView('pdfs.client-debt-report', [
+        $pdf = Pdf::loadView('debt::all-clients-debt-report', [
             'client' => $client,
             'startDate' => $startDate,
             'endDate' => $endDate
@@ -21,7 +21,7 @@ class DomPDFDebt
 
     public function generateAllClientsDebtReport($clients, $startDate, $endDate): \Barryvdh\DomPDF\PDF
     {
-        $pdf = Pdf::loadView('pdfs.all-clients-debt-report', [
+        $pdf = Pdf::loadView('debt::all-clients-debt-report', [
             'clients' => $clients,
             'startDate' => $startDate,
             'endDate' => $endDate
@@ -34,7 +34,7 @@ class DomPDFDebt
 
     public function generateUnpaidDebtsReport($clients): \Barryvdh\DomPDF\PDF
     {
-        $pdf = PDF::loadView('pdfs.unpaid-debts-report', [
+        $pdf = PDF::loadView('debt::unpaid-debts-report', [
             'clients' => $clients,
             'generatedAt' => now()
         ]);

@@ -3,18 +3,18 @@
 namespace App\Debt\Controllers;
 
 use App\Client\Models\Client;
+use App\Debt\DomPDF\DomPDFDebt;
+use App\Debt\Requests\DebtReportRequest;
 use App\Debt\Services\PDFDebtService;
 use App\Http\Controllers\Controller;
-use App\Services\PDFService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DebtReportController extends Controller
 {
-    protected PDFService $pdfService;
+    protected DomPDFDebt $pdfService;
     protected PDFDebtService $pdfDebtService;
 
-    public function __construct(PDFService $pdfService, PDFDebtService $pdfDebtService)
+    public function __construct(DomPDFDebt $pdfService, PDFDebtService $pdfDebtService)
     {
         $this->pdfService = $pdfService;
         $this->pdfDebtService = $pdfDebtService;
@@ -24,33 +24,41 @@ class DebtReportController extends Controller
     {
         $this->authorizeOwner(new Client());
 
-        $clients = $this->pdfDebtService->getUnpaidClientsWithDebts();
+        $clientsDTO = $this->pdfDebtService->getUnpaidClientsWithDebts();
 
-        $pdf = $this->pdfService->generateUnpaidDebtsReport($clients);
+        $pdf = $this->pdfService->generateUnpaidDebtsReport($clientsDTO);
         return $pdf->stream("unpaid-debts-report.pdf");
     }
 
-    public function clientDebtReport(Client $client, Request $request): \Illuminate\Http\Response
+    public function clientDebtReport(Client $client, DebtReportRequest $request): \Illuminate\Http\Response
     {
-        $startDate = $request->get('start_date') ?: \Carbon\Carbon::today()->format('Y-m-d');
-        $endDate = $request->get('end_date') ?: \Carbon\Carbon::today()->format('Y-m-d');
-
         $this->authorizeOwner($client);
 
-        $client = $this->pdfDebtService->getClientDebtsWithFilters($client, $startDate, $endDate);
+        $dateRangeDTO = $request->toDTO();
 
-        $pdf = $this->pdfService->generateClientDebtReport($client, $startDate, $endDate);
+        $clientDTO = $this->pdfDebtService->getClientDebtsWithFilters($client, $dateRangeDTO);
+
+        $pdf = $this->pdfService->generateClientDebtReport(
+            $clientDTO,
+            $dateRangeDTO->startDate,
+            $dateRangeDTO->endDate
+        );
+
         return $pdf->stream("client-debt-report-{$client->id}.pdf");
     }
 
-    public function allClientsDebtReport(Request $request): \Illuminate\Http\Response
+    public function allClientsDebtReport(DebtReportRequest $request): \Illuminate\Http\Response
     {
-        $startDate = $request->get('start_date') ?: \Carbon\Carbon::today()->format('Y-m-d');
-        $endDate = $request->get('end_date') ?: \Carbon\Carbon::today()->format('Y-m-d');
+        $dateRangeDTO = $request->toDTO();
 
-        $clients = $this->pdfDebtService->getAllClientsDebtsWithFilters($startDate, $endDate);
+        $clientsDTO = $this->pdfDebtService->getAllClientsDebtsWithFilters($dateRangeDTO);
 
-        $pdf = $this->pdfService->generateAllClientsDebtReport($clients, $startDate, $endDate);
+        $pdf = $this->pdfService->generateAllClientsDebtReport(
+            $clientsDTO,
+            $dateRangeDTO->startDate,
+            $dateRangeDTO->endDate
+        );
+
         return $pdf->stream("all-clients-debt-report.pdf");
     }
 

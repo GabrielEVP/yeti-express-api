@@ -3,14 +3,16 @@
 namespace App\Debt\Services;
 
 use App\Client\Models\Client;
+use App\Debt\DTO\ClientDebtsDTO;
+use App\Debt\DTO\ClientsDebtsCollectionDTO;
+use App\Debt\DTO\DateRangeDTO;
 use App\Debt\Repositories\IPDFDebtRepository;
-use Illuminate\Support\Collection;
 
 class PDFDebtService implements IPDFDebtRepository
 {
-    public function getUnpaidClientsWithDebts(): Collection
+    public function getUnpaidClientsWithDebts(): ClientsDebtsCollectionDTO
     {
-        return Client::whereHas('debts', function ($query) {
+        $clients = Client::whereHas('debts', function ($query) {
             $query->whereIn('status', ['pending', 'partial_paid']);
         })
             ->with([
@@ -20,54 +22,58 @@ class PDFDebtService implements IPDFDebtRepository
                 }
             ])
             ->get();
+
+        return ClientsDebtsCollectionDTO::fromCollection($clients);
     }
 
-    public function getClientDebtsWithFilters(Client $client, string $startDate, string $endDate): Client
+    public function getClientDebtsWithFilters(Client $client, DateRangeDTO $dateRange): ClientDebtsDTO
     {
         $client->load([
-            'debts' => function ($query) use ($startDate, $endDate) {
-                $query->where(function ($subQuery) use ($startDate, $endDate) {
-                    $subQuery->whereHas('payments', function ($paymentQuery) use ($startDate, $endDate) {
-                        $paymentQuery->whereDate('date', '>=', $startDate)
-                            ->whereDate('date', '<=', $endDate);
+            'debts' => function ($query) use ($dateRange) {
+                $query->where(function ($subQuery) use ($dateRange) {
+                    $subQuery->whereHas('payments', function ($paymentQuery) use ($dateRange) {
+                        $paymentQuery->whereDate('date', '>=', $dateRange->startDate)
+                            ->whereDate('date', '<=', $dateRange->endDate);
                     })
-                        ->orWhereHas('delivery', function ($deliveryQuery) use ($startDate, $endDate) {
-                            $deliveryQuery->whereDate('date', '>=', $startDate)
-                                ->whereDate('date', '<=', $endDate);
+                        ->orWhereHas('delivery', function ($deliveryQuery) use ($dateRange) {
+                            $deliveryQuery->whereDate('date', '>=', $dateRange->startDate)
+                                ->whereDate('date', '<=', $dateRange->endDate);
                         });
                 })->with(['payments', 'delivery.service']);
             }
         ]);
 
-        return $client;
+        return ClientDebtsDTO::fromModel($client);
     }
 
-    public function getAllClientsDebtsWithFilters(string $startDate, string $endDate): Collection
+    public function getAllClientsDebtsWithFilters(DateRangeDTO $dateRange): ClientsDebtsCollectionDTO
     {
-        return Client::whereHas('debts', function ($query) use ($startDate, $endDate) {
-            $query->whereHas('payments', function ($paymentQuery) use ($startDate, $endDate) {
-                $paymentQuery->whereDate('date', '>=', $startDate)
-                    ->whereDate('date', '<=', $endDate);
+        $clients = Client::whereHas('debts', function ($query) use ($dateRange) {
+            $query->whereHas('payments', function ($paymentQuery) use ($dateRange) {
+                $paymentQuery->whereDate('date', '>=', $dateRange->startDate)
+                    ->whereDate('date', '<=', $dateRange->endDate);
             })
-                ->orWhereHas('delivery', function ($deliveryQuery) use ($startDate, $endDate) {
-                    $deliveryQuery->whereDate('date', '>=', $startDate)
-                        ->whereDate('date', '<=', $endDate);
+                ->orWhereHas('delivery', function ($deliveryQuery) use ($dateRange) {
+                    $deliveryQuery->whereDate('date', '>=', $dateRange->startDate)
+                        ->whereDate('date', '<=', $dateRange->endDate);
                 });
         })
             ->with([
-                'debts' => function ($query) use ($startDate, $endDate) {
-                    $query->where(function ($subQuery) use ($startDate, $endDate) {
-                        $subQuery->whereHas('payments', function ($paymentQuery) use ($startDate, $endDate) {
-                            $paymentQuery->whereDate('date', '>=', $startDate)
-                                ->whereDate('date', '<=', $endDate);
+                'debts' => function ($query) use ($dateRange) {
+                    $query->where(function ($subQuery) use ($dateRange) {
+                        $subQuery->whereHas('payments', function ($paymentQuery) use ($dateRange) {
+                            $paymentQuery->whereDate('date', '>=', $dateRange->startDate)
+                                ->whereDate('date', '<=', $dateRange->endDate);
                         })
-                            ->orWhereHas('delivery', function ($deliveryQuery) use ($startDate, $endDate) {
-                                $deliveryQuery->whereDate('date', '>=', $startDate)
-                                    ->whereDate('date', '<=', $endDate);
+                            ->orWhereHas('delivery', function ($deliveryQuery) use ($dateRange) {
+                                $deliveryQuery->whereDate('date', '>=', $dateRange->startDate)
+                                    ->whereDate('date', '<=', $dateRange->endDate);
                             });
                     })->with(['payments', 'delivery.service']);
                 }
             ])
             ->get();
+
+        return ClientsDebtsCollectionDTO::fromCollection($clients);
     }
 }

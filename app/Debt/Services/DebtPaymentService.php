@@ -3,54 +3,58 @@
 namespace App\Debt\Services;
 
 use App\Client\Models\Client;
+use App\Debt\DTO\ClientPaymentRequestDTO;
+use App\Debt\DTO\DebtPaymentCollectionDTO;
+use App\Debt\DTO\DebtPaymentDTO;
+use App\Debt\DTO\FullPaymentRequestDTO;
+use App\Debt\DTO\PartialPaymentRequestDTO;
 use App\Debt\Models\Debt;
-use App\Debt\Models\DebtPayment;
 use App\Debt\Repositories\IDebtPaymentRepository;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class DebtPaymentService implements IDebtPaymentRepository
 {
-    public function getAll(): Collection
+    public function getAll(): DebtPaymentCollectionDTO
     {
-        return Auth::user()->debtPayments()->with('debt')->get();
+        $payments = Auth::user()->debtPayments()->with('debt')->get();
+        return DebtPaymentCollectionDTO::fromCollection($payments);
     }
 
-    public function storeFullPayment(int $debtId, string $method): DebtPayment
+    public function storeFullPayment(FullPaymentRequestDTO $request): DebtPaymentDTO
     {
-        $debt = Auth::user()->debts()->findOrFail($debtId);
+        $debt = Auth::user()->debts()->findOrFail($request->debt_id);
 
         $payment = $debt->payments()->create([
             'date' => now(),
             'amount' => $debt->amount,
-            'method' => $method,
+            'method' => $request->method,
             'user_id' => Auth::id(),
         ]);
 
         $this->updateDebtStatus($debt);
 
-        return $payment;
+        return DebtPaymentDTO::fromModel($payment);
     }
 
-    public function storePartialPayment(int $debtId, float $amount, string $method): DebtPayment
+    public function storePartialPayment(PartialPaymentRequestDTO $request): DebtPaymentDTO
     {
-        $debt = Auth::user()->debts()->findOrFail($debtId);
+        $debt = Auth::user()->debts()->findOrFail($request->debt_id);
 
         $payment = $debt->payments()->create([
             'date' => now(),
-            'amount' => $amount,
-            'method' => $method,
+            'amount' => $request->amount,
+            'method' => $request->method,
             'user_id' => Auth::id(),
         ]);
 
         $this->updateDebtStatus($debt);
 
-        return $payment;
+        return DebtPaymentDTO::fromModel($payment);
     }
 
-    public function payAllDebtsForClient(int $clientId, string $method): array
+    public function payAllDebtsForClient(ClientPaymentRequestDTO $request): DebtPaymentCollectionDTO
     {
-        $client = Client::findOrFail($clientId);
+        $client = Client::findOrFail($request->clientId);
 
         $debts = $client->debts()->where('status', '!=', 'paid')->get();
 
@@ -60,7 +64,7 @@ class DebtPaymentService implements IDebtPaymentRepository
             $payment = $debt->payments()->create([
                 'date' => now(),
                 'amount' => $debt->amount,
-                'method' => $method,
+                'method' => $request->method,
                 'user_id' => Auth::id(),
             ]);
 
@@ -68,16 +72,16 @@ class DebtPaymentService implements IDebtPaymentRepository
             $payments[] = $payment;
         }
 
-        return $payments;
+        return DebtPaymentCollectionDTO::fromArray($payments);
     }
 
-    public function payPartialAmountForClient(int $clientId, float $amount, string $method): array
+    public function payPartialAmountForClient(ClientPaymentRequestDTO $request): DebtPaymentCollectionDTO
     {
-        if ($amount <= 0) {
+        if ($request->amount <= 0) {
             throw new \InvalidArgumentException('El monto debe ser mayor a cero.');
         }
 
-        $client = Client::findOrFail($clientId);
+        $client = Client::findOrFail($request->clientId);
 
         $debts = $client->debts()
             ->where('status', '!=', 'paid')
@@ -85,34 +89,35 @@ class DebtPaymentService implements IDebtPaymentRepository
             ->get();
 
         $payments = [];
+        $remainingAmount = $request->amount;
 
         foreach ($debts as $debt) {
-            $remaining = $debt->amount - $debt->payments()->sum('amount');
+            $debtRemaining = $debt->amount - $debt->payments()->sum('amount');
 
-            if ($remaining <= 0) {
+            if ($debtRemaining <= 0) {
                 continue;
             }
 
-            $paymentAmount = min($remaining, $amount);
+            $paymentAmount = min($debtRemaining, $remainingAmount);
 
             $payment = $debt->payments()->create([
                 'date' => now(),
                 'amount' => $paymentAmount,
-                'method' => $method,
+                'method' => $request->method,
                 'user_id' => Auth::id(),
             ]);
 
             $this->updateDebtStatus($debt);
             $payments[] = $payment;
 
-            $amount -= $paymentAmount;
+            $remainingAmount -= $paymentAmount;
 
-            if ($amount <= 0) {
+            if ($remainingAmount <= 0) {
                 break;
             }
         }
 
-        return $payments;
+        return DebtPaymentCollectionDTO::fromArray($payments);
     }
 
     public function updateDebtStatus(Debt $debt): void

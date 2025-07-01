@@ -3,9 +3,9 @@
 namespace App\Debt\Controllers;
 
 use App\Debt\Repositories\IDebtRepository;
+use App\Debt\Requests\FilterDebtByStatusRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class DebtController extends Controller
 {
@@ -15,7 +15,8 @@ class DebtController extends Controller
 
     public function getAllUnPaidDebtsAmount(): JsonResponse
     {
-        return response()->json(['total_amount' => $this->debtRepo->getAllUnPaidDebtsAmount()]);
+        $unpaidAmount = $this->debtRepo->getAllUnPaidDebtsAmount();
+        return response()->json($unpaidAmount);
     }
 
     public function clientsWithDebt(): JsonResponse
@@ -33,19 +34,18 @@ class DebtController extends Controller
         return response()->json($this->debtRepo->getDeliveriesWithDebtByClient($clientId));
     }
 
-    public function filterDeliveryWithDebtByStatusByClient(Request $request): JsonResponse
+    public function filterDeliveryWithDebtByStatusByClient(FilterDebtByStatusRequest $request): JsonResponse
     {
-        $status = $request->query('status');
-        $clientId = $request->route('client');
+        $filterDTO = $request->toDTO();
 
-        if (!$clientId) {
-            return response()->json(['message' => 'Client ID is required'], 422);
-        }
-
-        if ($status !== null && !in_array($status, ['pending', 'partial_paid', 'paid'])) {
-            return response()->json(['message' => 'Invalid status filter'], 422);
-        }
-
-        return response()->json($this->debtRepo->filterDeliveriesWithDebtByStatus($clientId, $status));
+        return response()->json(
+            $this->debtRepo->filterDeliveriesWithDebtByStatus(
+                $filterDTO->clientId,
+                $filterDTO->status,
+                $filterDTO->page,
+                $filterDTO->perPage
+            )->toArray()
+        );
     }
 }
+

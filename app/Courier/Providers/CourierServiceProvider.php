@@ -10,7 +10,7 @@ class CourierServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        $this->loadMigrationsFrom(app_path('Courier/database/migrations'));
+        $this->loadMigrationsFrom(app_path('Courier/Database/migrations'));
         $this->loadRoutesFrom(app_path('Courier/Routes/CourierRoutes.php'));
         $this->loadViewsFrom(app_path('Courier/Resources/views'), 'courier');
     }

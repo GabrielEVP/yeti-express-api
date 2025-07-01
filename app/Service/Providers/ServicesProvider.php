@@ -22,4 +22,3 @@ class ServicesProvider extends ServiceProvider
         );
     }
 }
-

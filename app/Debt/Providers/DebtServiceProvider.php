@@ -14,7 +14,7 @@ class DebtServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        $this->loadMigrationsFrom(app_path('Debt/database/migrations'));
+        $this->loadMigrationsFrom(app_path('Debt/Database/migrations'));
         $this->loadViewsFrom(app_path('Debt/Resources/views'), 'debt');
         $this->loadRoutesFrom(app_path('Debt/Routes/DebtRoutes.php'));
         $this->loadRoutesFrom(app_path('Debt/Routes/DebtPaymentRoutes.php'));

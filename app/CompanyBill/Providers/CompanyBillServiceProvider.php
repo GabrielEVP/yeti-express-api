@@ -10,7 +10,7 @@ class CompanyBillServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        $this->loadMigrationsFrom(app_path('CompanyBill/database/migrations'));
+        $this->loadMigrationsFrom(app_path('CompanyBill/Database/migrations'));
         $this->loadRoutesFrom(app_path('CompanyBill/Routes/CompanyBillRoutes.php'));
     }
 

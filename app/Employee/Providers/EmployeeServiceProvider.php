@@ -10,7 +10,7 @@ class EmployeeServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        $this->loadMigrationsFrom(app_path('Employee/database/migrations'));
+        $this->loadMigrationsFrom(app_path('Employee/Database/migrations'));
         $this->loadRoutesFrom(app_path('Employee/Routes/EmployeeRoutes.php'));
     }
 

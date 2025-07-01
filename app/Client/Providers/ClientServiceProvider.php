@@ -10,7 +10,7 @@ class ClientServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        $this->loadMigrationsFrom(app_path('Client/database/migrations'));
+        $this->loadMigrationsFrom(app_path('Client/Database/migrations'));
         $this->loadRoutesFrom(app_path('Client/Routes/ClientRoutes.php'));
     }
 

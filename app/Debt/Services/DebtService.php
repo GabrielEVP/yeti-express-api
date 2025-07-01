@@ -29,32 +29,20 @@ class DebtService implements IDebtRepository
     {
         $clients = Auth::user()->clients()
             ->whereHas('debts', function ($query) {
-                $query->where('user_id', Auth::id());
+                $query->where('status', '!=', 'paid');
             })
-            ->with([
-                'debts' => function ($query) {
-                    $query->where('user_id', Auth::id())
-                        ->with('payments');
-                }
-            ])
-            ->withCount([
-                'debts' => function ($query) {
-                    $query->where('user_id', Auth::id())->whereNot('status', 'paid');
-                }
-            ])
             ->get();
 
-        $clients->each(function ($client) {
-            $totalDebt = 0;
+        $debtsSummary = DB::table('debts')
+            ->select('client_id', DB::raw('SUM(amount - IF NULL((SELECT SUM(amount) FROM debt_payments WHERE debt_id = debts.id), 0)) as total_pending'))
+            ->whereIn('client_id', $clients->pluck('id'))
+            ->where('status', '!=', 'paid')
+            ->groupBy('client_id')
+            ->get()
+            ->keyBy('client_id');
 
-            foreach ($client->debts as $debt) {
-                $totalPaid = $debt->payments->sum('amount');
-                $remainingAmount = $debt->amount - $totalPaid;
-                $totalDebt += max(0, $remainingAmount);
-            }
-
-            $client->total_debt_amount = $totalDebt;
-            unset($client->debts);
+        $clients->each(function ($client) use ($debtsSummary) {
+            $client->total_pending = $debtsSummary[$client->id]->total_pending ?? 0;
         });
 
         return $clients;
@@ -88,65 +76,57 @@ class DebtService implements IDebtRepository
 
     public function getDeliveriesWithDebtByClient(string $clientId): Collection
     {
-        return Auth::user()->deliveries()->with(['debt', 'debt.payments'])
-            ->whereHas('debt', function ($query) use ($clientId) {
-                $query->where('user_id', Auth::id())
-                    ->where('client_id', $clientId);
-            })
-            ->where('client_id', $clientId)
-            ->get()
-            ->map(function ($delivery) {
-                $debt = $delivery->debt;
+        $userId = Auth::id();
 
-                if ($debt) {
-                    $totalPaid = $debt->payments->sum('amount');
-                    $remainingAmount = $debt->amount - $totalPaid;
-                    $delivery->debt_id = $debt->id;
-                    $delivery->debt_remaining_amount = max(0, $remainingAmount);
-                    $delivery->debt_status = $remainingAmount > 0 ? 'pending' : 'paid';
-                } else {
-                    $delivery->debt_status = 'no_debt';
-                    $delivery->debt_remaining_amount = 0;
-                }
-
-                unset($delivery->debt);
-                return $delivery;
+        return Auth::user()->deliveries()
+            ->select('deliveries.*')
+            ->leftJoin('debts', function ($join) use ($userId) {
+                $join->on('debts.delivery_id', '=', 'deliveries.id')
+                    ->where('debts.user_id', '=', $userId);
             })
-            ->sortBy(function ($delivery) {
-                return match ($delivery->debt_status) {
-                    'pending' => 0,
-                    'paid' => 1,
-                    default => 2,
-                };
-            })->values();
+            ->leftJoin('debt_payments', 'debts.id', '=', 'debt_payments.debt_id')
+            ->where('deliveries.client_id', $clientId)
+            ->groupBy('deliveries.id')
+            ->selectRaw('
+                MAX(debts.id) as debt_id,
+                COALESCE(SUM(debts.amount), 0) as debt_amount,
+                COALESCE(SUM(debt_payments.amount), 0) as total_paid,
+                CASE
+                    WHEN COALESCE(SUM(debts.amount), 0) = 0 THEN "no_debt"
+                    WHEN COALESCE(SUM(debts.amount), 0) > COALESCE(SUM(debt_payments.amount), 0) THEN "pending"
+                    ELSE "paid"
+                END as debt_status,
+                GREATEST(COALESCE(SUM(debts.amount), 0) - COALESCE(SUM(debt_payments.amount), 0), 0) as debt_remaining_amount
+            ')
+            ->get();
     }
 
     public function filterDeliveriesWithDebtByStatus(string $clientId, ?string $status): Collection
     {
-        $query = Delivery::with(['debt', 'debt.payments'])
-            ->whereHas('debt', function ($debtQuery) use ($clientId, $status) {
-                $debtQuery->where('user_id', Auth::id())
-                    ->where('client_id', $clientId);
+        $userId = Auth::id();
+
+        $query = Delivery::query()
+            ->select('deliveries.*')
+            ->leftJoin('debts', function ($join) use ($userId, $clientId, $status) {
+                $join->on('debts.delivery_id', '=', 'deliveries.id')
+                    ->where('debts.user_id', $userId)
+                    ->where('debts.client_id', $clientId);
 
                 if ($status !== null) {
-                    $debtQuery->where('status', $status);
+                    $join->where('debts.status', $status);
                 }
             })
-            ->where('client_id', $clientId);
+            ->leftJoin('debt_payments', 'debts.id', '=', 'debt_payments.debt_id')
+            ->where('deliveries.client_id', $clientId)
+            ->groupBy('deliveries.id')
+            ->selectRaw('
+                MAX(debts.id) as debt_id,
+                COALESCE(SUM(debts.amount), 0) as debt_amount,
+                COALESCE(SUM(debt_payments.amount), 0) as total_paid,
+                GREATEST(COALESCE(SUM(debts.amount), 0) - COALESCE(SUM(debt_payments.amount), 0), 0) as debt_remaining_amount
+            ');
 
-        return $query->get()->map(function ($delivery) {
-            $debt = $delivery->debt;
-
-            if ($debt) {
-                $totalPaid = $debt->payments->sum('amount');
-                $remainingAmount = $debt->amount - $totalPaid;
-                $delivery->debt_id = $debt->id;
-                $delivery->debt_remaining_amount = max(0, $remainingAmount);
-            }
-
-            unset($delivery->debt);
-            return $delivery;
-        });
+        return $query->get();
     }
 }
 

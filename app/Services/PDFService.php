@@ -6,31 +6,6 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class PDFService
 {
-    public function generateClientDebtReport($client, $startDate, $endDate): \Barryvdh\DomPDF\PDF
-    {
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdfs.client-debt-report', [
-            'client' => $client,
-            'startDate' => $startDate,
-            'endDate' => $endDate
-        ]);
-
-        $pdf->setPaper('a4', 'portrait');
-
-        return $pdf;
-    }
-
-    public function generateAllClientsDebtReport($clients, $startDate, $endDate): \Barryvdh\DomPDF\PDF
-    {
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdfs.all-clients-debt-report', [
-            'clients' => $clients,
-            'startDate' => $startDate,
-            'endDate' => $endDate
-        ]);
-
-        $pdf->setPaper('a4', 'portrait');
-
-        return $pdf;
-    }
 
 
     public function generateCashRegisterReport(array $reportData): \Barryvdh\DomPDF\PDF
@@ -60,29 +35,5 @@ class PDFService
         return $pdf;
     }
 
-    public function generatePreviousPaymentsReport(array $reportData): \Barryvdh\DomPDF\PDF
-    {
-        // Ordenar los pagos por número de entrega
-        if (isset($reportData['previousDayPayments']) && !empty($reportData['previousDayPayments'])) {
-            usort($reportData['previousDayPayments'], function ($a, $b) {
-                return $a['number'] <=> $b['number'];
-            });
-        }
 
-        $pdf = PDF::loadView('pdfs.previous-payments-report', $reportData);
-        $pdf->setPaper('a4', 'portrait');
-        return $pdf;
-    }
-
-    public function generateUnpaidDebtsReport($clients): \Barryvdh\DomPDF\PDF
-    {
-        $pdf = PDF::loadView('pdfs.unpaid-debts-report', [
-            'clients' => $clients,
-            'generatedAt' => now()
-        ]);
-
-        $pdf->setPaper('a4', 'portrait');
-
-        return $pdf;
-    }
 }

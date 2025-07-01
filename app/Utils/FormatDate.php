@@ -12,7 +12,7 @@ class FormatDate
         try {
             $date = trim($date);
 
-            if (strpos($date, '/') !== false) {
+            if (str_contains($date, '/')) {
                 $parts = explode('/', $date);
                 if (count($parts) === 3) {
                     $date = "{$parts[2]}-{$parts[1]}-{$parts[0]}";

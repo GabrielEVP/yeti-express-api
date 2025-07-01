@@ -7,6 +7,8 @@ use App\Delivery\Models\Delivery;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Debt extends Model
 {
@@ -22,24 +24,25 @@ class Debt extends Model
 
     protected $casts = [
         'amount' => 'float',
+        'status' => Status::class,
     ];
 
-    public function payments()
+    public function payments(): HasMany
     {
         return $this->hasMany(DebtPayment::class);
     }
 
-    public function client(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
     }
 
-    public function delivery(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function delivery(): BelongsTo
     {
         return $this->belongsTo(Delivery::class);
     }
 
-    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }

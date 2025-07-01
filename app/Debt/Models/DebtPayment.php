@@ -5,6 +5,7 @@ namespace App\Debt\Models;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DebtPayment extends Model
 {
@@ -24,14 +25,15 @@ class DebtPayment extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'amount' => 'float',
+        'method' => Method::class,
     ];
 
-    public function debt(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function debt(): BelongsTo
     {
         return $this->belongsTo(Debt::class);
     }
 
-    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }

@@ -7,7 +7,7 @@ use App\CompanyBill\DTO\FormRequestCompanyBillDTO;
 use App\CompanyBill\DTO\SimpleCompanyBillDTO;
 use App\CompanyBill\Requests\CompanyBillRequest;
 use App\CompanyBill\Services\CompanyBillService;
-use App\Http\Controllers\Controller;
+use App\Core\Controllers\Controller;
 use App\Shared\Services\EmployeeEventService;
 use Illuminate\Http\JsonResponse;
 

@@ -2,9 +2,9 @@
 
 namespace App\Delivery\Controllers;
 
+use App\Core\Controllers\Controller;
 use App\Delivery\DomPDF\DomPDFTDelivery;
 use App\Delivery\Services\PDFDeliveryService;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
 
 class DeliveryReportController extends Controller

@@ -2,6 +2,7 @@
 
 namespace App\Debt\Controllers;
 
+use App\Core\Controllers\Controller;
 use App\Debt\DTO\DebtPaymentDTO;
 use App\Debt\DTO\FullPaymentRequestDTO;
 use App\Debt\DTO\PartialPaymentRequestDTO;
@@ -11,7 +12,6 @@ use App\Debt\Requests\DebtPartialPaymentRequest;
 use App\Debt\Requests\PayAllDebtsRequest;
 use App\Debt\Requests\PayPartialAmountRequest;
 use App\Debt\Services\DebtPaymentService;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 
 class DebtPaymentController extends Controller

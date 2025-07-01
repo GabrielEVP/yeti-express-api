@@ -3,10 +3,10 @@
 namespace App\Debt\Controllers;
 
 use App\Client\Models\Client;
+use App\Core\Controllers\Controller;
 use App\Debt\DomPDF\DomPDFDebt;
 use App\Debt\Requests\DebtReportRequest;
 use App\Debt\Services\PDFDebtService;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 
 class DebtReportController extends Controller

@@ -2,13 +2,13 @@
 
 namespace App\Delivery\Controllers;
 
+use App\Core\Controllers\Controller;
 use App\Delivery\DTO\FilterRequestDeliveryDTO;
 use App\Delivery\DTO\FormRequestDeliveryDTO;
 use App\Delivery\Models\Status;
 use App\Delivery\Request\DeliveryRequest;
 use App\Delivery\Request\DeliveryStatusRequest;
 use App\Delivery\Services\DeliveryService;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Core\Services;
 
-use App\Interfaces\PDFGeneratorInterface;
+use App\Core\Interfaces\PDFGeneratorInterface;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class DomPDFGenerator implements PDFGeneratorInterface
@@ -12,4 +12,3 @@ class DomPDFGenerator implements PDFGeneratorInterface
         return Pdf::loadView($view, $data)->output();
     }
 }
-

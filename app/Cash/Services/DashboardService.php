@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Http\Services;
+namespace App\Cash\Services;
 
+use App\Cash\Utils\FormatDate;
+use App\CompanyBIll\Models\CompanyBill;
 use App\Debt\Models\DebtPayment;
 use App\Delivery\Models\Delivery;
-use App\Models\CompanyBill;
-use App\Utils\FormatDate;
 use Carbon\Carbon;
 
 class DashboardService
 {
-    public function __construct(private FormatDate $dateFormatter)
+    public function __construct(private readonly FormatDate $dateFormatter)
     {
         Carbon::setLocale('es');
     }

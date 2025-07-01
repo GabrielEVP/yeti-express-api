@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Utils;
+namespace App\Cash\Utils;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;

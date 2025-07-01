@@ -2,7 +2,7 @@
 
 namespace App\Service\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Core\Controllers\Controller;
 use App\Http\Requests\ServiceRequest;
 use App\Service\DTO\FormRequestServiceDTO;
 use App\Service\Repositories\IServiceRepository;

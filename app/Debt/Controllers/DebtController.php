@@ -2,9 +2,9 @@
 
 namespace App\Debt\Controllers;
 
+use App\Core\Controllers\Controller;
 use App\Debt\Repositories\IDebtRepository;
 use App\Debt\Requests\FilterDebtByStatusRequest;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 
 class DebtController extends Controller

@@ -2,10 +2,10 @@
 
 namespace App\Courier\Controllers;
 
+use App\Core\Controllers\Controller;
 use App\Courier\DTO\FormRequestCourierDTO;
 use App\Courier\Requests\CourierRequest;
 use App\Courier\Services\CourierService;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 
 class CourierController extends Controller

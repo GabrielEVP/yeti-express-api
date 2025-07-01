@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Cash\Controllers;
 
+use App\Cash\Services\DashboardService;
 use App\Cash\Services\PDFService;
-use App\Http\Controllers\Controller;
-use App\Http\Services\DashboardService;
+use App\Core\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 

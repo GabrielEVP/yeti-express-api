@@ -6,7 +6,7 @@ use App\Client\DTO\FilterRequestClientDTO;
 use App\Client\DTO\FormRequestClientDTO;
 use App\Client\Request\ClientRequest;
 use App\Client\Services\ClientService;
-use App\Http\Controllers\Controller;
+use App\Core\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

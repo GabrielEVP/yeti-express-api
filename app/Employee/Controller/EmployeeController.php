@@ -2,12 +2,12 @@
 
 namespace App\Employee\Controller;
 
+use App\Core\Controllers\Controller;
 use App\Employee\DTO\FormRequestCreateEmployeeDTO;
 use App\Employee\DTO\FormRequestUpdateEmployeeDTO;
 use App\Employee\DTO\FormRequestUpdatePassword;
 use App\Employee\Requests\EmployeeRequest;
 use App\Employee\Services\EmployeeService;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 
 class EmployeeController extends Controller

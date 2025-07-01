@@ -2,9 +2,9 @@
 
 namespace App\Courier\Controllers;
 
+use App\Core\Controllers\Controller;
 use App\Courier\DomPDF\DomPDFCourier;
 use App\Courier\Services\PDFCourierService;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 

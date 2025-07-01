@@ -1,17 +1,18 @@
 <?php
 
-namespace App\Providers;
+namespace App\Core\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
-class AppServiceProvider extends ServiceProvider
+class CoreServiceProviders extends ServiceProvider
 {
     /**
      * Register any application services.
      */
     public function register(): void
     {
-        //
+        $this->loadMigrationsFrom(app_path('Core/Database/migrations'));
+
     }
 
     /**

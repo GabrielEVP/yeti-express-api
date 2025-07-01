@@ -10,11 +10,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class HomeController extends Controller
+class CashController extends Controller
 {
     public function __construct(private readonly FormatDate $dateFormatter, private readonly DashboardService $dashboardService)
     {
-        // Configurar el idioma español para todas las instancias de Carbon
         Carbon::setLocale('es');
         setlocale(LC_TIME, 'es_ES.UTF-8', 'es_ES', 'es');
     }

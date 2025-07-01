@@ -2,15 +2,15 @@
 
 namespace App\Cash\Controllers;
 
+use App\Cash\DomPDF\DomPDFCash;
 use App\Cash\Services\DashboardService;
-use App\Cash\Services\PDFService;
 use App\Core\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
-class HomeReportController extends Controller
+class CashReportController extends Controller
 {
-    protected PDFService $pdfService;
+    protected DomPDFCash $pdfService;
     protected DashboardService $dashboardService;
 
     private function parseDate(string $date): \Carbon\Carbon
@@ -22,7 +22,7 @@ class HomeReportController extends Controller
         return $parsedDate;
     }
 
-    public function __construct(PDFService $pdfService, DashboardService $dashboardService)
+    public function __construct(DomPDFCash $pdfService, DashboardService $dashboardService)
     {
         $this->pdfService = $pdfService;
         $this->dashboardService = $dashboardService;

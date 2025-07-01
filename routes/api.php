@@ -6,7 +6,7 @@ require base_path('app/Auth/Routes/AuthRoutes.php');
 
 Route::middleware("auth:sanctum")->group(function () {
     require base_path('app/Auth/Routes/AuthLoginRoutes.php');
-    require __DIR__ . '/modules/dashboard.php';
+    require base_path('app/Cash/Routes/CashRoutes.php');
     require base_path('app/Client/Routes/ClientRoutes.php');
     require base_path('app/Delivery/Routes/DeliveryRoutes.php');
     require base_path('app/Courier/Routes/CourierRoutes.php');

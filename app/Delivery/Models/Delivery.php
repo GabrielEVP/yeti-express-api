@@ -2,10 +2,10 @@
 
 namespace App\Delivery\Models;
 
+use App\Auth\Models\User;
 use App\Client\Models\Client;
 use App\Courier\Models\Courier;
 use App\Debt\Models\Debt;
-use App\Models\User;
 use App\Service\Models\Service;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

@@ -2,25 +2,25 @@
 
 namespace App\CompanyBill\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\CompanyBillRequest;
-use App\Http\Services\EmployeeEventService;
 use App\CompanyBill\DTO\CompanyBillDTO;
 use App\CompanyBill\DTO\FormRequestCompanyBillDTO;
 use App\CompanyBill\DTO\SimpleCompanyBillDTO;
+use App\CompanyBill\Requests\CompanyBillRequest;
 use App\CompanyBill\Services\CompanyBillService;
+use App\Http\Controllers\Controller;
+use App\Shared\Services\EmployeeEventService;
 use Illuminate\Http\JsonResponse;
 
 class CompanyBillController extends Controller
 {
-    public function __construct(
-        protected CompanyBillService $CompanyBillService
-    ) {}
+    public function __construct(protected CompanyBillService $CompanyBillService)
+    {
+    }
 
     public function index(): JsonResponse
     {
         $bills = $this->CompanyBillService->all()->map(
-            fn ($bill) => new SimpleCompanyBillDTO($bill)
+            fn($bill) => new SimpleCompanyBillDTO($bill)
         );
 
         return response()->json($bills, 200);
@@ -66,7 +66,7 @@ class CompanyBillController extends Controller
     public function search(string $query): JsonResponse
     {
         $bills = $this->CompanyBillService->search($query)->map(
-            fn ($bill) => new SimpleCompanyBillDTO($bill)
+            fn($bill) => new SimpleCompanyBillDTO($bill)
         );
 
         return response()->json($bills, 200);

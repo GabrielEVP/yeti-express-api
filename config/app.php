@@ -152,8 +152,8 @@ return [
         Barryvdh\DomPDF\ServiceProvider::class,
 
         // Application Service Providers...
-        App\Providers\AppServiceProvider::class,
-        App\Providers\AuthServiceProvider::class,
+        App\Core\Providers\AppServiceProvider::class,
+        \App\Auth\Providers\AuthServiceProvider::class,
 
         // Custom Providers
         \App\CompanyBill\Providers\CompanyBillServiceProvider::class,
@@ -162,6 +162,8 @@ return [
         \App\Client\Providers\ClientServiceProvider::class,
         \App\Delivery\Providers\DeliveryServiceProvider::class,
         \App\Debt\Providers\DebtServiceProvider::class,
+        \App\Employee\Providers\EmployeeServiceProvider::class,
+        \App\Auth\Providers\AuthServiceProvider::class,
     ],
 
     'aliases' => [

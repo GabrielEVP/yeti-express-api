@@ -16,7 +16,7 @@ class CheckEmployeePermissions
     {
         $user = $request->user();
 
-        if (!$user instanceof \App\Models\Employee) {
+        if (!$user instanceof \App\Employee\Models\Employee) {
             return $next($request);
         }
 

@@ -3,9 +3,9 @@
 namespace App\Service\Controllers;
 
 use App\Core\Controllers\Controller;
-use App\Http\Requests\ServiceRequest;
 use App\Service\DTO\FormRequestServiceDTO;
 use App\Service\Repositories\IServiceRepository;
+use App\Service\Requests\ServiceRequest;
 use Illuminate\Http\JsonResponse;
 
 class ServiceController extends Controller

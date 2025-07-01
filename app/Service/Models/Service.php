@@ -33,4 +33,9 @@ class Service extends Model
     {
         return $this->hasMany(Delivery::class);
     }
+
+    public function bills(): HasMany
+    {
+        return $this->hasMany(Bill::class);
+    }
 }

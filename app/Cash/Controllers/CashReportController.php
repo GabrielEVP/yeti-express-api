@@ -18,35 +18,20 @@ class CashReportController extends Controller
 
     public function cashRegisterReport(Request $request): Response
     {
-        try {
-            $startDate = $request->get('start_date') ?? '';
-            $endDate = $request->get('end_date') ?? '';
+        $startDate = $request->get('start_date') ?? '';
+        $endDate = $request->get('end_date') ?? '';
 
-            $pdf = $this->cashReportService->generateCashRegisterReport($startDate, $endDate);
-            return $pdf->stream("reporte-caja-detallado.pdf");
-        } catch (\Exception $e) {
-            return response([
-                'error' => 'Error al generar el reporte de caja',
-                'message' => $e->getMessage(),
-                'trace' => config('app.debug') ? $e->getTraceAsString() : null
-            ], 500);
-        }
+        $pdf = $this->cashReportService->generateCashRegisterReport($startDate, $endDate);
+        return $pdf->stream("reporte-caja-detallado.pdf");
     }
 
     public function simplifiedCashRegisterReport(Request $request): Response
     {
-        try {
-            $startDate = $request->get('start_date') ?? '';
-            $endDate = $request->get('end_date') ?? '';
+        $startDate = $request->get('start_date') ?? '';
+        $endDate = $request->get('end_date') ?? '';
 
-            $pdf = $this->cashReportService->generateSimplifiedCashRegisterReport($startDate, $endDate);
-            return $pdf->stream("reporte-cajas-simplificado.pdf");
-        } catch (\Exception $e) {
-            return response([
-                'error' => 'Error al generar el reporte de caja simplificado',
-                'message' => $e->getMessage(),
-                'trace' => config('app.debug') ? $e->getTraceAsString() : null
-            ], 500);
-        }
+        $pdf = $this->cashReportService->generateSimplifiedCashRegisterReport($startDate, $endDate);
+        return $pdf->stream("reporte-cajas-simplificado.pdf");
+
     }
 }

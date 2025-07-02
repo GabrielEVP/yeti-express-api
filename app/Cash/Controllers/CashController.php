@@ -19,51 +19,35 @@ class CashController extends Controller
 
     public function getDashboardStats(Request $request): JsonResponse
     {
-        try {
-            $period = $request->input('period', 'day');
-            $date = $request->input('date', now()->toDateString());
-            $userId = Auth::id();
+        $period = $request->input('period', 'day');
+        $date = $request->input('date', now()->toDateString());
+        $userId = Auth::id();
 
-            if (!$userId) {
-                return response()->json(['error' => 'Usuario no autenticado'], 401);
-            }
-
-            $stats = $this->cashService->getDashboardStats($userId, $period, $date);
-
-            return response()->json($stats);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Error al cargar los datos del dashboard',
-                'message' => $e->getMessage(),
-                'trace' => config('app.debug') ? $e->getTraceAsString() : null
-            ], 500);
+        if (!$userId) {
+            return response()->json(['error' => 'Usuario no autenticado'], 401);
         }
+
+        $stats = $this->cashService->getDashboardStats($userId, $period, $date);
+
+        return response()->json($stats);
     }
 
     public function getCashRegisterReport(Request $request)
     {
-        try {
-            $period = $request->input('period', 'day');
-            $date = $request->input('date', now()->toDateString());
+        $period = $request->input('period', 'day');
+        $date = $request->input('date', now()->toDateString());
 
-            $reportData = $this->cashService->getCashRegisterReportData($period, $date);
+        $reportData = $this->cashService->getCashRegisterReportData($period, $date);
 
-            $pdf = app(\App\Cash\Services\PDFService::class)->generateCashRegisterReport($reportData);
+        $pdf = app(\App\Cash\Services\PDFService::class)->generateCashRegisterReport($reportData);
 
-            $filename = "caja";
-            if ($period === 'day') {
-                $filename .= "_" . Carbon::parse($date)->format('Y-m-d');
-            } else {
-                $filename .= "_{$reportData['period']}_" . Carbon::parse($date)->format('Y-m-d');
-            }
-
-            return $pdf->download("{$filename}.pdf");
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Error al generar el reporte de caja',
-                'message' => $e->getMessage(),
-                'trace' => config('app.debug') ? $e->getTraceAsString() : null
-            ], 500);
+        $filename = "caja";
+        if ($period === 'day') {
+            $filename .= "_" . Carbon::parse($date)->format('Y-m-d');
+        } else {
+            $filename .= "_{$reportData['period']}_" . Carbon::parse($date)->format('Y-m-d');
         }
+
+        return $pdf->download("{$filename}.pdf");
     }
 }

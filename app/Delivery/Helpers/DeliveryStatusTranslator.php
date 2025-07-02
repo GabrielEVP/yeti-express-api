@@ -1,28 +1,19 @@
 <?php
 
-namespace App\Helpers;
+namespace App\Delivery\Helpers;
+
+use App\Delivery\Models\Status;
+use App\Delivery\Models\PaymentStatus;
 
 class DeliveryStatusTranslator
 {
-    /**
-     * Translate delivery status from English to Spanish
-     *
-     * @param string $status Status in English
-     * @return string Status in Spanish
-     */
-    public static function toSpanish($status): string
+    public static function toSpanish(Status $status): string
     {
-        return match (strtolower($status)) {
-            'pending' => 'Pendiente',
-            'in_transit' => 'En Tránsito',
-            'delivered' => 'Entregado',
-            'cancelled' => 'Cancelado',
-            'paid' => 'Pagado',
-            'unpaid' => 'No Pagado',
-            'partially_paid' => 'Parcialmente Pagado',
-            'partial_paid' => 'Parcialmente Pagado',
-            'collected' => 'Cobrado',
-            default => ucfirst(str_replace('_', ' ', $status)),
+        return match ($status) {
+            Status::PENDING => 'Pendiente',
+            Status::IN_TRANSIT => 'En Tránsito',
+            Status::DELIVERED => 'Entregado',
+            Status::CANCELLED => 'Cancelado',
         };
     }
 }

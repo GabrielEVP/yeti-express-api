@@ -12,7 +12,6 @@ class StatusTranslator
             Status::Pending => 'Pendiente',
             Status::PartialPaid => 'Parcialmente Pagado',
             Status::Paid => 'Pagado',
-            default => $status->value,
         };
     }
 }

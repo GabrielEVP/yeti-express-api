@@ -165,6 +165,7 @@ return [
         \App\Debt\Providers\DebtServiceProvider::class,
         \App\Employee\Providers\EmployeeServiceProvider::class,
         \App\CompanyBill\Providers\CompanyBillServiceProvider::class,
+        \App\Cash\Providers\CashServiceProviders::class,
     ],
 
     'aliases' => [

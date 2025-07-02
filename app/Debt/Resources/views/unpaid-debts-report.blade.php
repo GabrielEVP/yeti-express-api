@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reporte de Deudas Pendientes</title>
-    <link rel="stylesheet" href="{{ public_path('css/debt-report.css') }}">
+    <style>
+        {!! file_get_contents(base_path('app/Debt/Resources/css/debt.css')) !!}
+    </style>
 </head>
 <body>
 <div class="header">

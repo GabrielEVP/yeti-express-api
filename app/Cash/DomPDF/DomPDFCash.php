@@ -8,9 +8,6 @@ class DomPDFCash
 {
     public function generateCashRegisterReport(array $reportData): \Barryvdh\DomPDF\PDF
     {
-        ini_set('memory_limit', '256M');
-        set_time_limit(120);
-
         $pdf = PDF::loadView('cash::cash-register-report', $reportData);
 
         $pdf->setPaper('a4', 'portrait');

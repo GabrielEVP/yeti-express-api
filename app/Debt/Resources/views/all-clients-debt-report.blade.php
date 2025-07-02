@@ -3,7 +3,9 @@
 <head>
     <meta charset="utf-8">
     <title>Reporte de Deudas de Todos los Clientes</title>
-    <link rel="stylesheet" href="{{ public_path('css/debt-report.css') }}">
+    <style>
+        {!! file_get_contents(base_path('app/Debt/Resources/css/debt.css')) !!}
+    </style>
 </head>
 <body>
 <div class="header">

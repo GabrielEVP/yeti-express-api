@@ -4,62 +4,7 @@
     <meta charset="utf-8">
     <title>Reporte de Deudas del Cliente</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
-            margin: 20px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .date-range {
-            text-align: center;
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
-
-        .client-info {
-            margin-bottom: 20px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-
-        th,
-        td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f5f5f5;
-        }
-
-        .summary {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #f9f9f9;
-        }
-
-        .status-pending {
-            color: #ff0000;
-        }
-
-        .status-partial {
-            color: #ffa500;
-        }
-
-        .status-paid {
-            color: #008000;
-        }
+        {!! file_get_contents(base_path('app/Debt/Resources/css/debt.css')) !!}
     </style>
 </head>
 <body>

@@ -12,7 +12,6 @@ class MethodTranslator
             Method::Cash => 'Efectivo',
             Method::MobilePayment => 'Pago Móvil',
             Method::Transfer => 'Transferencia',
-            default => $method->value,
         };
     }
 }

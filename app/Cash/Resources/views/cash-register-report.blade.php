@@ -5,121 +5,7 @@
     <meta charset="utf-8">
     <title>Reporte Detallado de Caja</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
-            color: #333;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            font-size: 18px;
-            margin-bottom: 0;
-        }
-
-        h2 {
-            font-size: 16px;
-            margin-top: 5px;
-            margin-bottom: 15px;
-            color: #555;
-        }
-
-        h3 {
-            font-size: 14px;
-            margin-top: 20px;
-            margin-bottom: 10px;
-            background-color: #f4f4f4;
-            padding: 5px;
-            border-radius: 4px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-        }
-
-        th,
-        td {
-            border: 1px solid #ddd;
-            padding: 6px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f4f4f4;
-            font-weight: bold;
-        }
-
-        .summary-box {
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-        }
-
-        .day-separator {
-            page-break-before: always;
-            margin-top: 20px;
-        }
-
-        .general-summary {
-            background-color: #ffffff;
-            padding: 10px;
-            margin: 20px 0;
-            border: 1px solid #505050;
-            border-radius: 4px;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .text-success {
-            color: #28a745;
-            font-weight: bold;
-        }
-
-        .text-danger {
-            color: #dc3545;
-            font-weight: bold;
-        }
-
-        .text-warning {
-            color: #ffc107;
-        }
-
-        .text-paid {
-            color: #28a745;
-            font-weight: bold;
-        }
-
-        .text-pending {
-            color: #dc3545;
-            font-weight: bold;
-        }
-
-        .text-partial {
-            color: #007bff;
-            font-weight: bold;
-        }
-
-        .footer {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 10px;
-            color: #777;
-        }
+        {!! file_get_contents(base_path('app/Cash/Resources/css/Cash.css')) !!}
     </style>
 </head>
 
@@ -221,7 +107,7 @@
                             ${{ number_format($delivery['pending_amount'] ?? 0, 2) }}
                         </td>
                         <td class="{{ $statusClass }}">
-                            {{ \App\Helpers\DeliveryStatusTranslator::toSpanish($delivery['payment_status']) }}
+                            {{ \App\Delivery\Helpers\PaymentStatusTranslator::toSpanish($delivery['payment_status']) }}
                         </td>
                     </tr>
                     @if(isset($delivery['payment_details']) && count($delivery['payment_details']) > 0)

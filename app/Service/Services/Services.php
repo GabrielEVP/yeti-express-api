@@ -7,7 +7,6 @@ use App\Core\DTO\PaginatedDTO;
 use App\Service\DTO\ServiceDTO;
 use App\Service\DTO\SimpleServiceDTO;
 use App\Service\Models\Service;
-use App\Service\Models\ServiceEvent;
 use App\Service\Repositories\IServiceRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -71,14 +70,6 @@ class Services implements IServiceRepository
             $service->bills()->create($bill);
         }
 
-        ServiceEvent::create([
-            'event' => 'update_service',
-            'section' => 'services',
-            'reference_table' => null,
-            'reference_id' => null,
-            'service_id' => $service->id,
-        ]);
-
         return new ServiceDTO($service);
     }
 
@@ -103,10 +94,7 @@ class Services implements IServiceRepository
             ->selectRaw('COALESCE(SUM(bills.amount), 0) as total_expense')
             ->selectRaw('services.amount - COALESCE(SUM(bills.amount), 0) as total_earning')
             ->when($filters->search !== '', function ($q) use ($filters) {
-                $q->where(function ($query) use ($filters) {
-                    $query->where('name', 'LIKE', "%{$filters->search}%")
-                        ->orWhere('description', 'LIKE', "%{$filters->search}%");
-                });
+                $q->where('services.name', 'LIKE', "%{$filters->search}%");
             })
             ->groupBy('services.id', 'services.name', 'services.description', 'services.amount', 'services.user_id', 'services.created_at', 'services.updated_at')
             ->orderBy($filters->sortBy, $filters->sortDirection);

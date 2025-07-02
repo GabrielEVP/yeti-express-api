@@ -88,23 +88,6 @@ class DeliveryService implements IDeliveryRepository
         $delivery->delete();
     }
 
-    public function search(string $query): Collection
-    {
-        return $this->baseQuery()
-            ->select('deliveries.*')
-            ->selectRaw('
-                clients.legal_name as client_name,
-                services.name as service_name,
-                CONCAT(couriers.first_name, " ", couriers.last_name) as courier_full_name
-            ')
-            ->leftJoin('clients', 'deliveries.client_id', '=', 'clients.id')
-            ->leftJoin('services', 'deliveries.service_id', '=', 'services.id')
-            ->leftJoin('couriers', 'deliveries.courier_id', '=', 'couriers.id')
-            ->where('deliveries.number', 'like', "%{$query}%")
-            ->get()
-            ->map(fn($row) => new SimpleDeliveryDTO(json_decode(json_encode($row), true)));
-    }
-
     public function filter(FilterRequestDeliveryPaginatedDTO $filterRequestDeliveryDTO): FilterDeliveryPaginatedDTO
     {
         $sort = $filterRequestDeliveryDTO->sortBy;

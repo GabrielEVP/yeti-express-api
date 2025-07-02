@@ -20,8 +20,6 @@ interface IDeliveryRepository
 
     public function delete(string $id): void;
 
-    public function search(string $query): Collection;
-
     public function filter(FilterRequestDeliveryPaginatedDTO $filterRequestDeliveryDTO): FilterDeliveryPaginatedDTO;
 
     public function updateStatus(string $id, Status $status): void;

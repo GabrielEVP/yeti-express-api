@@ -17,7 +17,6 @@ class ServiceRequest extends FormRequest
             "name" => ["required", "string", "max:255"],
             "description" => ["nullable", "string"],
             "amount" => ["required", "numeric", "min:0"],
-            "comision" => ["required", "numeric", "min:0"],
             "bills" => ["array"],
             "bills.*.name" => ["required", "string", "max:255"],
             "bills.*.amount" => ["required", "numeric", "min:0"],

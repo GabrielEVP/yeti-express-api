@@ -7,18 +7,17 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create("services", function (Blueprint $table) {
+        Schema::create("bills", function (Blueprint $table) {
             $table->id();
+            $table->foreignId("service_id")->constrained("services")->onDelete("cascade");
             $table->string("name");
-            $table->text("description")->nullable();
             $table->decimal("amount", 10, 2);
-            $table->foreignId("user_id")->constrained("users")->onDelete("cascade");
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists("services");
+        Schema::dropIfExists("bills");
     }
 };

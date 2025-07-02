@@ -52,11 +52,6 @@ class ClientController extends Controller
         return response()->json(null, 204);
     }
 
-    public function search(string $query): JsonResponse
-    {
-        return response()->json($this->service->search($query), 200);
-    }
-
     public function filter(Request $request): JsonResponse
     {
         $filters = $request->input('filters', []);

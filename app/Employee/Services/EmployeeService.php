@@ -69,7 +69,7 @@ class EmployeeService implements IEmployeeRepository
     public function filter(FilterRequestPaginatedDTO $filters): PaginatedDTO
     {
         $query = $this->baseQuery()
-            ->select('*') // Seleccionar todos los campos explícitamente
+            ->select(self::SELECT_SIMPLE_FIELDS)
             ->when($filters->search !== '', function ($q) use ($filters) {
                 $q->where(function ($query) use ($filters) {
                     $query->where('name', 'LIKE', "%{$filters->search}%")

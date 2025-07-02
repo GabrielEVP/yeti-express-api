@@ -10,7 +10,6 @@ final class ServiceDTO implements JsonSerializable
     public int $id;
     public string $name;
     public ?string $description;
-    public ?float $commission;
     public float $amount;
     public int $userId;
     public string $created_at;
@@ -26,7 +25,6 @@ final class ServiceDTO implements JsonSerializable
         $this->id = $service->id;
         $this->name = $service->name;
         $this->description = $service->description;
-        $this->commission = $service->comision !== null ? (float)$service->comision : null;
         $this->amount = (float)$service->amount;
         $this->userId = $service->user_id;
         $this->created_at = $service->created_at->toDateTimeString();
@@ -41,16 +39,6 @@ final class ServiceDTO implements JsonSerializable
                 'amount' => (float)$bill->amount,
             ];
         }
-
-        foreach ($service->events ?? [] as $event) {
-            $this->events[] = [
-                'id' => $event->id,
-                'event' => $event->event,
-                'section' => $event->section,
-                'reference_id' => $event->reference_id,
-                'created_at' => $event->created_at->toDateTimeString(),
-            ];
-        }
     }
 
     public function jsonSerialize(): array
@@ -59,7 +47,6 @@ final class ServiceDTO implements JsonSerializable
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,
-            'commission' => $this->commission,
             'amount' => $this->amount,
             'userId' => $this->userId,
             'created_at' => $this->created_at,
@@ -67,7 +54,6 @@ final class ServiceDTO implements JsonSerializable
             'total_expense' => $this->total_expense,
             'total_earning' => $this->total_earning,
             'bills' => $this->bills,
-            'events' => $this->events,
         ];
     }
 }

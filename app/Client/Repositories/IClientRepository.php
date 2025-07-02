@@ -19,7 +19,5 @@ interface IClientRepository
 
     public function delete(string $id): void;
 
-    public function search(string $query): Collection;
-
     public function filter(FilterRequestClientPaginatedDTO $filterRequestClientDTO): FilterClientPaginatedDTO;
 }

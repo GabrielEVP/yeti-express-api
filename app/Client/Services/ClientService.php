@@ -105,22 +105,6 @@ class ClientService implements IClientRepository
         $client->delete();
     }
 
-    public function search(string $query): Collection
-    {
-        return $this->baseQuery()
-            ->select(self::SELECT_SIMPLE_FIELDS)
-            ->selectRaw('
-                NOT EXISTS (SELECT 1 FROM deliveries WHERE deliveries.client_id = id) as can_delete
-            ')
-            ->where(function ($q) use ($query) {
-                $q->where('legal_name', 'like', "%{$query}%")
-                    ->orWhere('registration_number', 'like', "%{$query}%");
-            })
-            ->get()
-            ->map(fn($row) => new SimpleClientDTO(json_decode(json_encode($row), true)));
-    }
-
-
     public function filter(FilterRequestClientPaginatedDTO $filterRequestClientDTO): FilterClientPaginatedDTO
     {
         $sort = $filterRequestClientDTO->sortBy === 'legalName' ? 'legal_name' : $filterRequestClientDTO->sortBy;

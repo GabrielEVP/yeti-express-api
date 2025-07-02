@@ -23,16 +23,6 @@ class CourierDTO implements JsonSerializable
         $this->phone = $courier->phone;
         $this->created_at = $courier->created_at->toDateTimeString();
         $this->updated_at = $courier->updated_at->toDateTimeString();
-
-        foreach ($courier->events ?? [] as $event) {
-            $this->events[] = [
-                'id' => $event->id,
-                'event' => $event->event,
-                'section' => $event->section,
-                'reference_id' => $event->reference_id,
-                'created_at' => $event->created_at->toDateTimeString(),
-            ];
-        }
     }
 
     public function jsonSerialize(): array

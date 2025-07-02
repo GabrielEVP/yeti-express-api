@@ -2,6 +2,8 @@
 
 namespace App\Service\Services;
 
+use App\Core\DTO\FilterRequestPaginatedDTO;
+use App\Core\DTO\PaginatedDTO;
 use App\Service\DTO\ServiceDTO;
 use App\Service\DTO\SimpleServiceDTO;
 use App\Service\Models\Service;
@@ -92,20 +94,40 @@ class Services implements IServiceRepository
         $service->delete();
     }
 
-    public function search(string $query): Collection
+    public function filter(FilterRequestPaginatedDTO $filters): PaginatedDTO
     {
-        return $this->baseQuery()
-            ->leftJoin('bills', 'services.id', '=', 'bills.service_id')
+        $query = $this->baseQuery()
             ->select('services.id', 'services.name', 'services.amount')
-            ->selectRaw('
-                COALESCE(SUM(bills.amount), 0) as total_expense,
-                services.amount - COALESCE(SUM(bills.amount), 0) as total_earning,
-                NOT EXISTS (SELECT 1 FROM deliveries WHERE deliveries.service_id = services.id) as can_delete
-            ')
-            ->where('services.name', 'like', "%{$query}%")
-            ->groupBy('services.id', 'services.name', 'services.amount')
-            ->get()
-            ->map(fn($row) => new SimpleServiceDTO(json_decode(json_encode($row), true)));
+            ->leftJoin('bills', 'services.id', '=', 'bills.service_id')
+            ->selectRaw('NOT EXISTS (SELECT 1 FROM deliveries WHERE deliveries.service_id = id) as can_delete')
+            ->selectRaw('COALESCE(SUM(bills.amount), 0) as total_expense')
+            ->selectRaw('services.amount - COALESCE(SUM(bills.amount), 0) as total_earning')
+            ->when($filters->search !== '', function ($q) use ($filters) {
+                $q->where(function ($query) use ($filters) {
+                    $query->where('name', 'LIKE', "%{$filters->search}%")
+                        ->orWhere('description', 'LIKE', "%{$filters->search}%");
+                });
+            })
+            ->groupBy('services.id', 'services.name', 'services.description', 'services.amount', 'services.user_id', 'services.created_at', 'services.updated_at')
+            ->orderBy($filters->sortBy, $filters->sortDirection);
+
+        $paginator = $query->paginate(
+            $filters->perPage,
+            ['*'],
+            'page',
+            $filters->page
+        );
+
+        $items = $paginator->getCollection()->map(function ($service) {
+            return SimpleServiceDTO::mapFromArray($service);
+        });
+
+        return new PaginatedDTO(
+            $items,
+            $paginator->currentPage(),
+            $paginator->perPage(),
+            $paginator->total()
+        );
     }
 }
 

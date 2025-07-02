@@ -2,6 +2,8 @@
 
 namespace App\Service\Repositories;
 
+use App\Core\DTO\FilterRequestPaginatedDTO;
+use App\Core\DTO\PaginatedDTO;
 use App\Service\DTO\ServiceDTO;
 use Illuminate\Support\Collection;
 
@@ -17,7 +19,7 @@ interface IServiceRepository
 
     public function delete(string $id): void;
 
-    public function search(string $query): Collection;
+    public function filter(FilterRequestPaginatedDTO $filters): PaginatedDTO;
 }
 
 

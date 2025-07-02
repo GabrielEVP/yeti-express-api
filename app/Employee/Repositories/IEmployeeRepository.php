@@ -2,6 +2,8 @@
 
 namespace App\Employee\Repositories;
 
+use App\Core\DTO\FilterRequestPaginatedDTO;
+use App\Core\DTO\PaginatedDTO;
 use App\Employee\DTO\EmployeeDTO;
 
 interface IEmployeeRepository
@@ -18,5 +20,5 @@ interface IEmployeeRepository
 
     public function delete(string $id): void;
 
-    public function search(string $query): array;
+    public function filter(FilterRequestPaginatedDTO $filters): PaginatedDTO;
 }

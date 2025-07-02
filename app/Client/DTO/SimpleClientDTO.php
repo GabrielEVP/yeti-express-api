@@ -29,4 +29,9 @@ final class SimpleClientDTO
             'can_delete' => $this->can_delete,
         ];
     }
+
+    public static function mapFromArray($row): self
+    {
+        return new self($row->toArray());
+    }
 }

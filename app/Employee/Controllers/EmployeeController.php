@@ -1,14 +1,16 @@
 <?php
 
-namespace App\Employee\Controller;
+namespace App\Employee\Controllers;
 
 use App\Core\Controllers\Controller;
+use App\Core\DTO\FilterRequestPaginatedDTO;
 use App\Employee\DTO\FormRequestCreateEmployeeDTO;
 use App\Employee\DTO\FormRequestUpdateEmployeeDTO;
 use App\Employee\DTO\FormRequestUpdatePassword;
 use App\Employee\Requests\EmployeeRequest;
 use App\Employee\Services\EmployeeService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
 {
@@ -60,8 +62,18 @@ class EmployeeController extends Controller
         return response()->json(null, 204);
     }
 
-    public function search(string $query): JsonResponse
+    public function filter(Request $request): JsonResponse
     {
-        return response()->json($this->service->search($query), 200);
+        $filterDTO = new FilterRequestPaginatedDTO(
+            $request->string('search')->toString(),
+            $request->input('sortBy', 'name'),
+            $request->input('sortDirection', 'asc'),
+            $request->integer('page', 1),
+            $request->integer('perPage', 15)
+        );
+
+        $employees = $this->service->filter($filterDTO);
+
+        return response()->json($employees);
     }
 }

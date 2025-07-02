@@ -2,16 +2,13 @@
 
 namespace App\Client\DTO;
 
-final class FilterRequestClientDTO
+use App\Core\DTO\FilterRequestPaginatedDTO;
+
+final class FilterRequestClientPaginatedDTO extends FilterRequestPaginatedDTO
 {
-    public string $search;
-    public string $sortBy;
-    public string $sortDirection;
     public ?string $type;
     public ?bool $allowCredit;
     public array $select;
-    public int $page;
-    public int $perPage;
 
     public function __construct(
         string  $search = '',
@@ -24,14 +21,10 @@ final class FilterRequestClientDTO
         int     $perPage = 15
     )
     {
-        $this->search = $search;
-        $this->sortBy = $sortBy;
-        $this->sortDirection = strtolower($sortDirection);
+        parent::__construct($search, $sortBy, $sortDirection, $page, $perPage);
         $this->type = $type;
         $this->allowCredit = $allowCredit;
         $this->select = $select;
-        $this->page = $page > 0 ? $page : 1;
-        $this->perPage = $perPage > 0 ? $perPage : 15;
     }
 }
 

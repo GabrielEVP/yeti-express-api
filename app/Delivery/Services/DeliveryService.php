@@ -3,7 +3,7 @@
 namespace App\Delivery\Services;
 
 use App\Client\Models\Client;
-use App\Delivery\DTO\{DeliveryDTO, FilterDeliveryPaginatedDTO, FilterRequestDeliveryDTO, SimpleDeliveryDTO};
+use App\Delivery\DTO\{DeliveryDTO, FilterDeliveryPaginatedDTO, FilterRequestDeliveryPaginatedDTO, SimpleDeliveryDTO};
 use App\Delivery\Models\Delivery;
 use App\Delivery\Models\Status;
 use App\Delivery\Repositories\IDeliveryRepository;
@@ -105,7 +105,7 @@ class DeliveryService implements IDeliveryRepository
             ->map(fn($row) => new SimpleDeliveryDTO(json_decode(json_encode($row), true)));
     }
 
-    public function filter(FilterRequestDeliveryDTO $filterRequestDeliveryDTO): FilterDeliveryPaginatedDTO
+    public function filter(FilterRequestDeliveryPaginatedDTO $filterRequestDeliveryDTO): FilterDeliveryPaginatedDTO
     {
         $sort = $filterRequestDeliveryDTO->sortBy;
         $order = $filterRequestDeliveryDTO->sortDirection;

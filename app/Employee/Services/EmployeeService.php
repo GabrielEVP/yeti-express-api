@@ -2,6 +2,8 @@
 
 namespace App\Employee\Services;
 
+use App\Core\DTO\FilterRequestPaginatedDTO;
+use App\Core\DTO\PaginatedDTO;
 use App\Employee\DTO\EmployeeDTO;
 use App\Employee\DTO\SimpleEmployeeDTO;
 use App\Employee\Models\Employee;
@@ -64,14 +66,32 @@ class EmployeeService implements IEmployeeRepository
         $this->baseQuery()->findOrFail($id)->delete();
     }
 
-    public function search(string $query): array
+    public function filter(FilterRequestPaginatedDTO $filters): PaginatedDTO
     {
-        $employees = $this->baseQuery()
-            ->select(self::SELECT_SIMPLE_FIELDS)
-            ->where('name', 'like', "%{$query}%")
-            ->get()
-            ->toArray();
+        $query = $this->baseQuery()
+            ->select('*') // Seleccionar todos los campos explícitamente
+            ->when($filters->search !== '', function ($q) use ($filters) {
+                $q->where(function ($query) use ($filters) {
+                    $query->where('name', 'LIKE', "%{$filters->search}%")
+                        ->orWhere('email', 'LIKE', "%{$filters->search}%");
+                });
+            })
+            ->orderBy($filters->sortBy, $filters->sortDirection);
 
-        return SimpleEmployeeDTO::fromCollection($employees);
+        $paginator = $query->paginate(
+            $filters->perPage,
+            ['*'],
+            'page',
+            $filters->page
+        );
+
+        $items = collect($paginator->items());
+
+        return new PaginatedDTO(
+            $items,
+            $paginator->currentPage(),
+            $paginator->perPage(),
+            $paginator->total()
+        );
     }
 }

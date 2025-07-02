@@ -3,10 +3,12 @@
 namespace App\Courier\Controllers;
 
 use App\Core\Controllers\Controller;
+use App\Core\DTO\FilterRequestPaginatedDTO;
 use App\Courier\DTO\FormRequestCourierDTO;
 use App\Courier\Requests\CourierRequest;
 use App\Courier\Services\CourierService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class CourierController extends Controller
 {
@@ -49,8 +51,18 @@ class CourierController extends Controller
         return response()->json(null, 204);
     }
 
-    public function search(string $query): JsonResponse
+    public function filter(Request $request): JsonResponse
     {
-        return response()->json($this->service->search($query), 200);
+        $filterDTO = new FilterRequestPaginatedDTO(
+            $request->string('search')->toString(),
+            $request->input('sortBy', 'first_name'),
+            $request->input('sortDirection', 'asc'),
+            $request->integer('page', 1),
+            $request->integer('perPage', 15)
+        );
+
+        $couriers = $this->service->filter($filterDTO);
+
+        return response()->json($couriers);
     }
 }

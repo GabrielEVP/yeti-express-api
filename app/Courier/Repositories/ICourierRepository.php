@@ -2,6 +2,8 @@
 
 namespace App\Courier\Repositories;
 
+use App\Core\DTO\FilterRequestPaginatedDTO;
+use App\Core\DTO\PaginatedDTO;
 use App\Courier\DTO\CourierDTO;
 use Illuminate\Support\Collection;
 
@@ -17,5 +19,5 @@ interface ICourierRepository
 
     public function delete(string $id): void;
 
-    public function search(string $query): Collection;
+    public function filter(FilterRequestPaginatedDTO $filters): PaginatedDTO;
 }

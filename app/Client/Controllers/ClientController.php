@@ -2,7 +2,7 @@
 
 namespace App\Client\Controllers;
 
-use App\Client\DTO\FilterRequestClientDTO;
+use App\Client\DTO\FilterRequestClientPaginatedDTO;
 use App\Client\DTO\FormRequestClientDTO;
 use App\Client\Request\ClientRequest;
 use App\Client\Services\ClientService;
@@ -61,7 +61,7 @@ class ClientController extends Controller
     {
         $filters = $request->input('filters', []);
 
-        $filterDTO = new FilterRequestClientDTO(
+        $filterDTO = new FilterRequestClientPaginatedDTO(
             $request->string('search')->toString(),
             $request->input('sortBy', 'legal_name'),
             $request->input('sortDirection', 'asc'),

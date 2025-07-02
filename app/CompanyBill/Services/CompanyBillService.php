@@ -2,8 +2,11 @@
 
 namespace App\CompanyBill\Services;
 
+use App\CompanyBill\DTO\SimpleCompanyBillDTO;
 use App\CompanyBill\Models\CompanyBill;
 use App\CompanyBill\Repositories\ICompanyBillRepository;
+use App\Core\DTO\FilterRequestPaginatedDTO;
+use App\Core\DTO\PaginatedDTO;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
@@ -46,11 +49,34 @@ class CompanyBillService implements ICompanyBillRepository
         $this->find($id)->delete();
     }
 
-    public function search(string $query): Collection
+    public function filter(FilterRequestPaginatedDTO $filters): PaginatedDTO
     {
-        return $this->baseQuery()
+        $query = $this->baseQuery()
             ->select(self::SELECT_SIMPLE_FIELDS)
-            ->where('name', 'like', "%{$query}%")
-            ->get();
+            ->when($filters->search !== '', function ($q) use ($filters) {
+                $q->where(function ($query) use ($filters) {
+                    $query->where('name', 'LIKE', "%{$filters->search}%")
+                        ->orWhere('description', 'LIKE', "%{$filters->search}%");
+                });
+            })
+            ->orderBy($filters->sortBy, $filters->sortDirection);
+
+        $paginator = $query->paginate(
+            $filters->perPage,
+            ['*'],
+            'page',
+            $filters->page
+        );
+
+        $items = collect($paginator->items())->map(function ($bill) {
+            return new SimpleCompanyBillDTO($bill);
+        });
+
+        return new PaginatedDTO(
+            $items,
+            $paginator->currentPage(),
+            $paginator->perPage(),
+            $paginator->total()
+        );
     }
 }

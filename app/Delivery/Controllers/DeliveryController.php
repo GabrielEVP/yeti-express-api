@@ -3,7 +3,7 @@
 namespace App\Delivery\Controllers;
 
 use App\Core\Controllers\Controller;
-use App\Delivery\DTO\FilterRequestDeliveryDTO;
+use App\Delivery\DTO\FilterRequestDeliveryPaginatedDTO;
 use App\Delivery\DTO\FormRequestDeliveryDTO;
 use App\Delivery\Models\Status;
 use App\Delivery\Request\DeliveryRequest;
@@ -61,7 +61,7 @@ class DeliveryController extends Controller
     {
         $filters = $request->input('filters', []);
 
-        $filterDTO = new FilterRequestDeliveryDTO(
+        $filterDTO = new FilterRequestDeliveryPaginatedDTO(
             search: $request->string('search')->toString(),
             sortBy: $request->input('sortBy', 'number'),
             sortDirection: $request->input('sortDirection', 'asc'),

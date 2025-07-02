@@ -2,6 +2,8 @@
 
 namespace App\Courier\Services;
 
+use App\Core\DTO\FilterRequestPaginatedDTO;
+use App\Core\DTO\PaginatedDTO;
 use App\Courier\DTO\CourierDTO;
 use App\Courier\DTO\SimpleCourierDTO;
 use App\Courier\Models\Courier;
@@ -27,7 +29,7 @@ class CourierService implements ICourierRepository
                 NOT EXISTS (SELECT 1 FROM deliveries WHERE deliveries.courier_id = id) as can_delete
             ')
             ->get()
-            ->map(fn($row) => new SimpleCourierDTO(json_decode(json_encode($row), true)));
+            ->map(fn($row) => SimpleCourierDTO::mapFromArray($row));
     }
 
     public function find(string $id): CourierDTO
@@ -61,16 +63,36 @@ class CourierService implements ICourierRepository
         $courier->delete();
     }
 
-    public function search(string $query): Collection
+    public function filter(FilterRequestPaginatedDTO $filters): PaginatedDTO
     {
-        return $this->baseQuery()
+        $query = $this->baseQuery()
             ->select(self::SELECT_SIMPLE_FIELDS)
             ->selectRaw('
                 NOT EXISTS (SELECT 1 FROM deliveries WHERE deliveries.courier_id = id) as can_delete
             ')
-            ->where('first_name', 'like', "%{$query}%")
-            ->orWhere('last_name', 'like', "%{$query}%")
-            ->get()
-            ->map(fn($row) => new SimpleCourierDTO(json_decode(json_encode($row), true)));
+            ->when($filters->search !== '', function ($q) use ($filters) {
+                $q->where(function ($query) use ($filters) {
+                    $query->where('first_name', 'LIKE', "%{$filters->search}%")
+                        ->orWhere('last_name', 'LIKE', "%{$filters->search}%")
+                        ->orWhere('phone', 'LIKE', "%{$filters->search}%");
+                });
+            })
+            ->orderBy($filters->sortBy, $filters->sortDirection);
+
+        $paginator = $query->paginate(
+            $filters->perPage,
+            ['*'],
+            'page',
+            $filters->page
+        );
+
+        $items = $paginator->getCollection()->map(fn($courier) => SimpleCourierDTO::mapFromArray($courier));
+
+        return new PaginatedDTO(
+            $items,
+            $paginator->currentPage(),
+            $paginator->perPage(),
+            $paginator->total()
+        );
     }
 }

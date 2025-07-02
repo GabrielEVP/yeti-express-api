@@ -8,8 +8,10 @@ use App\CompanyBill\DTO\SimpleCompanyBillDTO;
 use App\CompanyBill\Requests\CompanyBillRequest;
 use App\CompanyBill\Services\CompanyBillService;
 use App\Core\Controllers\Controller;
+use App\Core\DTO\FilterRequestPaginatedDTO;
 use App\Shared\Services\EmployeeEventService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class CompanyBillController extends Controller
 {
@@ -36,7 +38,6 @@ class CompanyBillController extends Controller
         return response()->json(new CompanyBillDTO($bill), 201);
     }
 
-
     public function show(string $id): JsonResponse
     {
         $bill = $this->CompanyBillService->find($id);
@@ -53,7 +54,6 @@ class CompanyBillController extends Controller
         return response()->json(new CompanyBillDTO($bill), 200);
     }
 
-
     public function destroy(string $id): JsonResponse
     {
         $this->CompanyBillService->delete($id);
@@ -63,12 +63,18 @@ class CompanyBillController extends Controller
         return response()->json(['message' => "CompanyBill with ID {$id} has been deleted"], 200);
     }
 
-    public function search(string $query): JsonResponse
+    public function filter(Request $request): JsonResponse
     {
-        $bills = $this->CompanyBillService->search($query)->map(
-            fn($bill) => new SimpleCompanyBillDTO($bill)
+        $filterDTO = new FilterRequestPaginatedDTO(
+            $request->string('search')->toString(),
+            $request->input('sortBy', 'date'),
+            $request->input('sortDirection', 'desc'),
+            $request->integer('page', 1),
+            $request->integer('perPage', 15)
         );
 
-        return response()->json($bills, 200);
+        $bills = $this->CompanyBillService->filter($filterDTO);
+
+        return response()->json($bills);
     }
 }

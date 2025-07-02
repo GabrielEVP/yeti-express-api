@@ -34,4 +34,9 @@ final class SimpleServiceDTO implements JsonSerializable
             'can_delete' => $this->can_delete,
         ];
     }
+
+    public static function mapFromArray($row): self
+    {
+        return new self($row->toArray());
+    }
 }

@@ -28,4 +28,9 @@ class SimpleCourierDTO implements JsonSerializable
             'phone' => $this->phone,
         ];
     }
+
+    public static function mapFromArray($row): self
+    {
+        return new self($row->toArray());
+    }
 }

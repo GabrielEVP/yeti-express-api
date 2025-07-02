@@ -4,7 +4,7 @@ namespace App\Client\Repositories;
 
 use App\Client\DTO\ClientDTO;
 use App\Client\DTO\FilterClientPaginatedDTO;
-use App\Client\DTO\FilterRequestClientDTO;
+use App\Client\DTO\FilterRequestClientPaginatedDTO;
 use Illuminate\Support\Collection;
 
 interface IClientRepository
@@ -21,5 +21,5 @@ interface IClientRepository
 
     public function search(string $query): Collection;
 
-    public function filter(FilterRequestClientDTO $filterRequestClientDTO): FilterClientPaginatedDTO;
+    public function filter(FilterRequestClientPaginatedDTO $filterRequestClientDTO): FilterClientPaginatedDTO;
 }

@@ -4,7 +4,7 @@ namespace App\Client\Services;
 
 use App\Client\DTO\ClientDTO;
 use App\Client\DTO\FilterClientPaginatedDTO;
-use App\Client\DTO\FilterRequestClientDTO;
+use App\Client\DTO\FilterRequestClientPaginatedDTO;
 use App\Client\DTO\SimpleClientDTO;
 use App\Client\Models\Client;
 use App\Client\Repositories\IClientRepository;
@@ -121,7 +121,7 @@ class ClientService implements IClientRepository
     }
 
 
-    public function filter(FilterRequestClientDTO $filterRequestClientDTO): FilterClientPaginatedDTO
+    public function filter(FilterRequestClientPaginatedDTO $filterRequestClientDTO): FilterClientPaginatedDTO
     {
         $sort = $filterRequestClientDTO->sortBy === 'legalName' ? 'legal_name' : $filterRequestClientDTO->sortBy;
         $order = $filterRequestClientDTO->sortDirection;

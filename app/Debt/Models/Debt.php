@@ -24,7 +24,7 @@ class Debt extends Model
 
     protected $casts = [
         'amount' => 'float',
-        'status' => Status::class,
+        'status' => Status::Class,
     ];
 
     public function payments(): HasMany

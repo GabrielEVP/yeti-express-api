@@ -59,8 +59,7 @@
             <div class="client-section">
                 <div class="client-header">
                     <h2>{{ $isDTO ? $client->legalName : $client->legal_name }}</h2>
-                    <p><strong>Tipo:</strong> {{ $client->type ?? 'N/A' }} | <strong>Número de
-                            Registro:</strong> {{ $isDTO ? $client->registrationNumber : $client->registration_number }}
+                    <p><strong>Número de Registro:</strong> {{ $isDTO ? $client->registrationNumber : $client->registration_number }}
                     </p>
                 </div>
 
@@ -90,12 +89,10 @@
                                 <td>{{ $debtIsArray ? date('d/m/Y', strtotime($debt['delivery']['date'])) : $debt->delivery->date->format('d/m/Y') }}</td>
                                 <td>${{ number_format($debtIsArray ? $debt['amount'] : $debt->amount, 2) }}</td>
                                 <td class="status-{{ $debtIsArray ? $debt['status'] : $debt->status }}">
-                                    @if($debt->status === 'pending')
-                                        Pendiente
-                                    @elseif($debt->status === 'partial_paid')
-                                        Parcial
+                                    @if($debtIsArray)
+                                        {{ \App\Debt\Helpers\StatusTranslator::toSpanish($debt['status'] instanceof \App\Debt\Models\Status ? $debt['status'] : \App\Debt\Models\Status::from($debt['status'])) }}
                                     @else
-                                        Pagado
+                                        {{ \App\Debt\Helpers\StatusTranslator::toSpanish($debt->status instanceof \App\Debt\Models\Status ? $debt->status : \App\Debt\Models\Status::from($debt->status)) }}
                                     @endif
                                 </td>
                                 <td>

@@ -71,7 +71,7 @@
                                             @foreach($debt['payments'] as $payment)
                                                 <tr>
                                                     <td>{{ date('d/m/Y', strtotime($payment['date'])) }}</td>
-                                                    <td>{{ \App\Helpers\PaymentMethodTranslator::toSpanish($payment['method']) }}</td>
+                                                    <td>{{ \App\Debt\Helpers\MethodTranslator::toSpanish($payment['method'] instanceof \App\Debt\Models\Method ? $payment['method'] : \App\Debt\Models\Method::from($payment['method'])) }}</td>
                                                     <td class="amount">{{ number_format($payment['amount'], 2) }}</td>
                                                 </tr>
                                             @endforeach

@@ -54,17 +54,6 @@ class ClientDTO implements JsonSerializable
                 'email' => $email->email,
             ];
         }
-
-        foreach ($client->events ?? [] as $event) {
-            $this->events[] = [
-                'id' => $event->id,
-                'event' => $event->event,
-                'section' => $event->section,
-                'reference_table' => $event->reference_table,
-                'reference_id' => $event->reference_id,
-                'created_at' => $event->created_at->toDateTimeString(),
-            ];
-        }
     }
 
     public function jsonSerialize(): array
@@ -82,7 +71,6 @@ class ClientDTO implements JsonSerializable
             'addresses' => $this->addresses,
             'phones' => $this->phones,
             'emails' => $this->emails,
-            'events' => $this->events,
         ];
     }
 }

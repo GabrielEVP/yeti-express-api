@@ -27,16 +27,6 @@ return new class extends Migration {
             $table->foreignId("courier_id")->constrained("couriers")->onDelete("cascade");
             $table->foreignId("user_id")->constrained("users")->onDelete("cascade");
         });
-
-        Schema::create("delivery_events", function (Blueprint $table) {
-            $table->id();
-            $table->string("event");
-            $table->string(column: "section");
-            $table->string("reference_table")->nullable();
-            $table->unsignedBigInteger("reference_id")->nullable();
-            $table->timestamps();
-            $table->foreignId("delivery_id")->constrained()->onDelete("cascade");
-        });
     }
 
     /**
@@ -44,7 +34,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists("delivery_events");
         Schema::dropIfExists("deliveries");
     }
 };

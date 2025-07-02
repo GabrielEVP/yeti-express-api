@@ -45,7 +45,7 @@ class ClientService implements IClientRepository
 
     public function find(string $id): ClientDTO
     {
-        $client = $this->baseQuery()->with('events', 'phones', 'emails', 'addresses')->findOrFail($id);
+        $client = $this->baseQuery()->with('phones', 'emails', 'addresses')->findOrFail($id);
         return new ClientDTO($client);
     }
 

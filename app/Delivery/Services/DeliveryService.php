@@ -40,7 +40,6 @@ class DeliveryService implements IDeliveryRepository
     public function find(string $id): DeliveryDTO
     {
         $delivery = $this->baseQuery()->with([
-            'events',
             'receipt',
             'courier',
             'client:id,legal_name',

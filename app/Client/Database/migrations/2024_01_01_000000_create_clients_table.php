@@ -25,21 +25,10 @@ return new class extends Migration {
             $table->timestamps();
             $table->foreignId("user_id")->constrained("users")->onDelete("cascade");
         });
-
-        Schema::create("client_events", function (Blueprint $table) {
-            $table->id();
-            $table->string("event");
-            $table->string("section");
-            $table->string("reference_table")->nullable();
-            $table->unsignedBigInteger("reference_id")->nullable();
-            $table->timestamps();
-            $table->foreignId("client_id")->constrained()->onDelete("cascade");
-        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists("client_events");
         Schema::dropIfExists("clients");
     }
 };

@@ -34,7 +34,7 @@ class CourierService implements ICourierRepository
 
     public function find(string $id): CourierDTO
     {
-        $courier = $this->baseQuery()->with('events')->findOrFail($id);
+        $courier = $this->baseQuery()->findOrFail($id);
         return new CourierDTO($courier);
     }
 

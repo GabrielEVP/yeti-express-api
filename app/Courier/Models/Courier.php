@@ -27,17 +27,12 @@ class Courier extends Model
         "active" => "boolean",
     ];
 
-    public function user()
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function events()
-    {
-        return $this->hasMany(CourierEvent::class);
-    }
-
-    public function deliveries()
+    public function deliveries(): \Illuminate\Database\Eloquent\Relations\HasMany|Courier
     {
         return $this->hasMany(Delivery::class);
     }

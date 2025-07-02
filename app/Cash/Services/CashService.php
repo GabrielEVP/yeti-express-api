@@ -2,6 +2,8 @@
 
 namespace App\Cash\Services;
 
+use App\Cash\DTO\CashRegisterReportDTO;
+use App\Cash\DTO\DashboardStatsDTO;
 use App\Cash\Utils\FormatDate;
 use App\CompanyBIll\Models\CompanyBill;
 use App\Debt\Models\DebtPayment;
@@ -16,7 +18,7 @@ class CashService
         Carbon::setLocale('es');
     }
 
-    public function getDashboardStats(int $userId, string $period, string $date): array
+    public function getDashboardStats(int $userId, string $period, string $date): DashboardStatsDTO
     {
         try {
             Carbon::setLocale('es');
@@ -109,7 +111,7 @@ class CashService
                 }
             }
 
-            return [
+            return new DashboardStatsDTO([
                 'period' => $periodSpanish,
                 'period_label' => $periodLabel,
                 'start_date' => $startDate,
@@ -123,13 +125,13 @@ class CashService
                 'historical_delivered' => $historicalDelivered,
                 'historical_invoiced' => $historicalInvoiced,
                 'historical_balance' => $historicalBalance
-            ];
+            ]);
         } catch (\Exception $e) {
             throw new \Exception('Error al cargar los datos del dashboard: ' . $e->getMessage());
         }
     }
 
-    public function getCashRegisterReportData(string $period, string $date): array
+    public function getCashRegisterReportData(string $period, string $date): CashRegisterReportDTO
     {
         [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
 
@@ -207,14 +209,14 @@ class CashService
             default => $period,
         };
 
-        return [
+        return new CashRegisterReportDTO([
             'period' => $periodSpanish,
             'date' => $date,
             'start_date' => $startDate,
             'end_date' => $endDate,
             'period_labels' => $periodLabels,
             'period_data' => $periodData
-        ];
+        ]);
     }
 
     private function generatePeriodData(int $userId, string $startDate, string $endDate): array

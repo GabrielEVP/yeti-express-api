@@ -2,6 +2,7 @@
 
 namespace App\Cash\Controllers;
 
+use App\Cash\DTO\FilterPeriodRequestDTO;
 use App\Cash\Services\CashService;
 use App\Core\Controllers\Controller;
 use Carbon\Carbon;
@@ -19,35 +20,20 @@ class CashController extends Controller
 
     public function getDashboardStats(Request $request): JsonResponse
     {
-        $period = $request->input('period', 'day');
-        $date = $request->input('date', now()->toDateString());
+        $filterDTO = FilterPeriodRequestDTO::fromRequest($request);
         $userId = Auth::id();
 
-        if (!$userId) {
-            return response()->json(['error' => 'Usuario no autenticado'], 401);
-        }
+        $stats = $this->cashService->getDashboardStats($userId, $filterDTO->period, $filterDTO->date);
 
-        $stats = $this->cashService->getDashboardStats($userId, $period, $date);
-
-        return response()->json($stats);
+        return response()->json($stats->toArray());
     }
 
     public function getCashRegisterReport(Request $request)
     {
-        $period = $request->input('period', 'day');
-        $date = $request->input('date', now()->toDateString());
+        $filterDTO = FilterPeriodRequestDTO::fromRequest($request);
+        $reportData = $this->cashService->getCashRegisterReportData($filterDTO->period, $filterDTO->date);
+        $pdf = app(\App\Cash\Services\PDFService::class)->generateCashRegisterReport($reportData->toArray());
 
-        $reportData = $this->cashService->getCashRegisterReportData($period, $date);
-
-        $pdf = app(\App\Cash\Services\PDFService::class)->generateCashRegisterReport($reportData);
-
-        $filename = "caja";
-        if ($period === 'day') {
-            $filename .= "_" . Carbon::parse($date)->format('Y-m-d');
-        } else {
-            $filename .= "_{$reportData['period']}_" . Carbon::parse($date)->format('Y-m-d');
-        }
-
-        return $pdf->download("{$filename}.pdf");
+        return $pdf->download("caja.pdf");
     }
 }

@@ -2,8 +2,9 @@
 
 namespace App\Debt\Repositories;
 
+use App\Core\DTO\PaginatedDTO;
 use App\Debt\DTO\ClientDebtStatsDTO;
-use App\Debt\DTO\DebtDeliveryPaginatedDTO;
+use App\Debt\DTO\FilterRequestDeliveriesWithDebtDTO;
 use App\Debt\DTO\UnpaidDebtsAmountDTO;
 use Illuminate\Support\Collection;
 
@@ -15,7 +16,5 @@ interface IDebtRepository
 
     public function getClientDebtStats(string $clientId): ClientDebtStatsDTO;
 
-    public function getDeliveriesWithDebtByClient(string $clientId): DebtDeliveryPaginatedDTO;
-
-    public function filterDeliveriesWithDebtByStatus(string $clientId, ?string $status, int $page = 1, int $perPage = 15): DebtDeliveryPaginatedDTO;
+    public function filterDeliveriesWithDebtByStatus(FilterRequestDeliveriesWithDebtDTO $filterDTO): PaginatedDTO;
 }

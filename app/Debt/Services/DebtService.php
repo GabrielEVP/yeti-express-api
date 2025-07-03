@@ -2,10 +2,11 @@
 
 namespace App\Debt\Services;
 
+use App\Core\DTO\PaginatedDTO;
 use App\Debt\DTO\ClientDebtStatsDTO;
 use App\Debt\DTO\ClientWithDebtDTO;
-use App\Debt\DTO\DebtDeliveryPaginatedDTO;
 use App\Debt\DTO\DeliveryWithDebtDTO;
+use App\Debt\DTO\FilterRequestDeliveriesWithDebtDTO;
 use App\Debt\DTO\UnpaidDebtsAmountDTO;
 use App\Debt\Models\Debt;
 use App\Debt\Repositories\IDebtRepository;
@@ -90,43 +91,18 @@ class DebtService implements IDebtRepository
         );
     }
 
-    public function getDeliveriesWithDebtByClient(string $clientId, int $page = 1, int $perPage = 15): DebtDeliveryPaginatedDTO
-    {
-        $query = Auth::user()->deliveries()
-            ->select('deliveries.id', 'deliveries.number', 'deliveries.payment_status', 'deliveries.date')
-            ->join('debts', 'debts.delivery_id', '=', 'deliveries.id')
-            ->leftJoin('debt_payments', 'debts.id', '=', 'debt_payments.debt_id')
-            ->where('deliveries.client_id', $clientId)
-            ->where('debts.status', '!=', 'paid')
-            ->groupBy('deliveries.id', 'deliveries.number', 'deliveries.payment_status', 'deliveries.date')
-            ->selectRaw('
-                MAX(debts.id) as debt_id,
-                COALESCE(SUM(debts.amount), 0) as amount,
-                GREATEST(COALESCE(SUM(debts.amount), 0) - COALESCE(SUM(debt_payments.amount), 0), 0) as debt_remaining_amount
-            ');
-
-        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
-
-        $deliveriesWithDebt = $paginator->getCollection()->map(function ($delivery) {
-            return DeliveryWithDebtDTO::fromArray($delivery->toArray());
-        });
-
-        return new DebtDeliveryPaginatedDTO(
-            $deliveriesWithDebt,
-            $paginator->currentPage(),
-            $paginator->perPage(),
-            $paginator->total()
-        );
-    }
-
-    public function filterDeliveriesWithDebtByStatus(string $clientId, ?string $status, int $page = 1, int $perPage = 15): DebtDeliveryPaginatedDTO
+    public function filterDeliveriesWithDebtByStatus(FilterRequestDeliveriesWithDebtDTO $filterDTO): PaginatedDTO
     {
         $query = Delivery::query()
             ->select('deliveries.id', 'deliveries.number', 'deliveries.payment_status', 'deliveries.date')
             ->join('debts', 'debts.delivery_id', '=', 'deliveries.id')
             ->leftJoin('debt_payments', 'debts.id', '=', 'debt_payments.debt_id')
-            ->where('deliveries.client_id', $clientId)
-            ->where('debts.status', $status)
+            ->where('deliveries.client_id', $filterDTO->client_id)
+            ->when($filterDTO->status, function ($query, $status) {
+                $query->where('debts.status', $status);
+            }, function ($query) {
+                $query->where('debts.status', '!=', 'paid');
+            })
             ->groupBy('deliveries.id', 'deliveries.number', 'deliveries.payment_status', 'deliveries.date')
             ->selectRaw('
                 MAX(debts.id) as debt_id,
@@ -134,13 +110,13 @@ class DebtService implements IDebtRepository
                 GREATEST(COALESCE(SUM(debts.amount), 0) - COALESCE(SUM(debt_payments.amount), 0), 0) as debt_remaining_amount
             ');
 
-        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+        $paginator = $query->paginate($filterDTO->perPage, ['*'], 'page', $filterDTO->page);
 
         $deliveriesWithDebt = $paginator->getCollection()->map(function ($delivery) {
             return DeliveryWithDebtDTO::fromArray($delivery->toArray());
         });
 
-        return new DebtDeliveryPaginatedDTO(
+        return new PaginatedDTO(
             $deliveriesWithDebt,
             $paginator->currentPage(),
             $paginator->perPage(),

@@ -3,9 +3,11 @@
 namespace App\Debt\Controllers;
 
 use App\Core\Controllers\Controller;
+use App\Debt\DTO\FilterRequestDeliveriesWithDebtDTO;
 use App\Debt\Repositories\IDebtRepository;
 use App\Debt\Requests\FilterDebtByStatusRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class DebtController extends Controller
 {
@@ -29,23 +31,22 @@ class DebtController extends Controller
         return response()->json($this->debtRepo->getClientDebtStats($clientId));
     }
 
-    public function loadDeliveryWithDebtByClient(string $clientId): JsonResponse
+    public function filterDeliveryWithDebtByStatusByClient(Request $request): JsonResponse
     {
-        return response()->json($this->debtRepo->getDeliveriesWithDebtByClient($clientId));
-    }
-
-    public function filterDeliveryWithDebtByStatusByClient(FilterDebtByStatusRequest $request): JsonResponse
-    {
-        $filterDTO = $request->toDTO();
-
-        return response()->json(
-            $this->debtRepo->filterDeliveriesWithDebtByStatus(
-                $filterDTO->clientId,
-                $filterDTO->status,
-                $filterDTO->page,
-                $filterDTO->perPage
-            )->toArray()
+        $filterDTO = new FilterRequestDeliveriesWithDebtDTO(
+            $request->string('search', '')->toString(),
+            $request->input('sortBy', 'number'),
+            $request->input('sortDirection', 'asc'),
+            $request->input('client_id'),
+            ($request->input('status') === 'all') ? null : $request->input('status'),
+            $request->integer('page', 1),
+            $request->integer('per_page', 15)
         );
+
+
+        $deliveries = $this->debtRepo->filterDeliveriesWithDebtByStatus($filterDTO);
+
+        return response()->json($deliveries);
     }
 }
 

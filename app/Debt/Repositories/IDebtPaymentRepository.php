@@ -2,22 +2,20 @@
 
 namespace App\Debt\Repositories;
 
-use App\Debt\DTO\ClientPaymentRequestDTO;
-use App\Debt\DTO\DebtPaymentCollectionDTO;
 use App\Debt\DTO\DebtPaymentDTO;
-use App\Debt\DTO\FullPaymentRequestDTO;
-use App\Debt\DTO\PartialPaymentRequestDTO;
-use Illuminate\Support\Collection;
+use App\Debt\DTO\FormRequestPayAllDTO;
+use App\Debt\DTO\FormRequestPayPartialDTO;
+use Illuminate\Database\Eloquent\Collection;
 
 interface IDebtPaymentRepository
 {
-    public function getAll(): DebtPaymentCollectionDTO;
+    public function getAll(): Collection;
 
-    public function storeFullPayment(FullPaymentRequestDTO $request): DebtPaymentDTO;
+    public function storeFullPayment(FormRequestPayAllDTO $request): DebtPaymentDTO;
 
-    public function storePartialPayment(PartialPaymentRequestDTO $request): DebtPaymentDTO;
+    public function storePartialPayment(FormRequestPayPartialDTO $request): DebtPaymentDTO;
 
-    public function payAllDebtsForClient(ClientPaymentRequestDTO $request): DebtPaymentCollectionDTO;
+    public function payAllDebtsForClient(FormRequestPayAllDTO $request): void;
 
-    public function payPartialAmountForClient(ClientPaymentRequestDTO $request): DebtPaymentCollectionDTO;
+    public function payPartialAmountForClient(FormRequestPayPartialDTO $request): void;
 }

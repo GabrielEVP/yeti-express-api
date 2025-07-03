@@ -2,8 +2,8 @@
 
 namespace App\Debt\Requests;
 
-use App\Debt\DTO\ClientPaymentRequestDTO;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PayPartialAmountRequest extends FormRequest
 {
@@ -18,18 +18,11 @@ class PayPartialAmountRequest extends FormRequest
             'pay' => ['required', 'array'],
             'pay.clientId' => ['required', 'integer', 'exists:clients,id'],
             'pay.amount' => ['required', 'numeric', 'min:0.01'],
-            'pay.method' => ['required', 'string', 'in:cash,credit_card,bank_transfer,check']
+            'pay.method' => [
+                'required',
+                'string',
+                Rule::in(['cash', 'mobile_payment', 'bank_transfer', 'other']),
+            ],
         ];
-    }
-
-    public function toDTO(): ClientPaymentRequestDTO
-    {
-        $payData = $this->input('pay');
-
-        return new ClientPaymentRequestDTO(
-            clientId: $payData['clientId'],
-            method: $payData['method'],
-            amount: (float) $payData['amount']
-        );
     }
 }

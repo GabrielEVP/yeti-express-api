@@ -4,10 +4,10 @@ namespace App\Debt\DTO;
 
 use JsonSerializable;
 
-class PartialPaymentRequestDTO implements JsonSerializable
+class FormRequestPayPartialDTO implements JsonSerializable
 {
     public function __construct(
-        public int    $debt_id,
+        public int    $client_id,
         public float  $amount,
         public string $method
     )
@@ -17,7 +17,7 @@ class PartialPaymentRequestDTO implements JsonSerializable
     public static function fromArray(array $data): self
     {
         return new self(
-            debt_id: $data['debt_id'],
+            client_id: $data['$client_id'],
             amount: (float)$data['amount'],
             method: $data['method']
         );
@@ -26,7 +26,7 @@ class PartialPaymentRequestDTO implements JsonSerializable
     public function jsonSerialize(): array
     {
         return [
-            'debt_id' => $this->debt_id,
+            'client_id' => $this->client_id,
             'amount' => $this->amount,
             'method' => $this->method
         ];

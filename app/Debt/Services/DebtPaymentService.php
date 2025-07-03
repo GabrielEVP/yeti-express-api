@@ -3,24 +3,22 @@
 namespace App\Debt\Services;
 
 use App\Client\Models\Client;
-use App\Debt\DTO\ClientPaymentRequestDTO;
-use App\Debt\DTO\DebtPaymentCollectionDTO;
 use App\Debt\DTO\DebtPaymentDTO;
-use App\Debt\DTO\FullPaymentRequestDTO;
-use App\Debt\DTO\PartialPaymentRequestDTO;
+use App\Debt\DTO\FormRequestPayAllDTO;
+use App\Debt\DTO\FormRequestPayPartialDTO;
 use App\Debt\Models\Debt;
 use App\Debt\Repositories\IDebtPaymentRepository;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class DebtPaymentService implements IDebtPaymentRepository
 {
-    public function getAll(): DebtPaymentCollectionDTO
+    public function getAll(): Collection
     {
-        $payments = Auth::user()->debtPayments()->with('debt')->get();
-        return DebtPaymentCollectionDTO::fromCollection($payments);
+        return Auth::user()->debtPayments()->get();
     }
 
-    public function storeFullPayment(FullPaymentRequestDTO $request): DebtPaymentDTO
+    public function storeFullPayment(FormRequestPayAllDTO $request): DebtPaymentDTO
     {
         $debt = Auth::user()->debts()->findOrFail($request->debt_id);
 
@@ -36,7 +34,7 @@ class DebtPaymentService implements IDebtPaymentRepository
         return DebtPaymentDTO::fromModel($payment);
     }
 
-    public function storePartialPayment(PartialPaymentRequestDTO $request): DebtPaymentDTO
+    public function storePartialPayment(FormRequestPayPartialDTO $request): DebtPaymentDTO
     {
         $debt = Auth::user()->debts()->findOrFail($request->debt_id);
 
@@ -52,13 +50,12 @@ class DebtPaymentService implements IDebtPaymentRepository
         return DebtPaymentDTO::fromModel($payment);
     }
 
-    public function payAllDebtsForClient(ClientPaymentRequestDTO $request): DebtPaymentCollectionDTO
+    public function payAllDebtsForClient(FormRequestPayAllDTO $request): void
     {
         $client = Client::findOrFail($request->clientId);
 
         $debts = $client->debts()->where('status', '!=', 'paid')->get();
 
-        $payments = [];
 
         foreach ($debts as $debt) {
             $payment = $debt->payments()->create([
@@ -69,18 +66,11 @@ class DebtPaymentService implements IDebtPaymentRepository
             ]);
 
             $this->updateDebtStatus($debt);
-            $payments[] = $payment;
         }
-
-        return DebtPaymentCollectionDTO::fromArray($payments);
     }
 
-    public function payPartialAmountForClient(ClientPaymentRequestDTO $request): DebtPaymentCollectionDTO
+    public function payPartialAmountForClient(FormRequestPayPartialDTO $request): void
     {
-        if ($request->amount <= 0) {
-            throw new \InvalidArgumentException('El monto debe ser mayor a cero.');
-        }
-
         $client = Client::findOrFail($request->clientId);
 
         $debts = $client->debts()
@@ -88,7 +78,6 @@ class DebtPaymentService implements IDebtPaymentRepository
             ->orderBy('created_at')
             ->get();
 
-        $payments = [];
         $remainingAmount = $request->amount;
 
         foreach ($debts as $debt) {
@@ -108,7 +97,6 @@ class DebtPaymentService implements IDebtPaymentRepository
             ]);
 
             $this->updateDebtStatus($debt);
-            $payments[] = $payment;
 
             $remainingAmount -= $paymentAmount;
 
@@ -116,8 +104,6 @@ class DebtPaymentService implements IDebtPaymentRepository
                 break;
             }
         }
-
-        return DebtPaymentCollectionDTO::fromArray($payments);
     }
 
     public function updateDebtStatus(Debt $debt): void

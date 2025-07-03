@@ -4,8 +4,8 @@ namespace App\Debt\Controllers;
 
 use App\Core\Controllers\Controller;
 use App\Debt\DTO\DebtPaymentDTO;
-use App\Debt\DTO\FullPaymentRequestDTO;
-use App\Debt\DTO\PartialPaymentRequestDTO;
+use App\Debt\DTO\FormRequestPayAllDTO;
+use App\Debt\DTO\FormRequestPayPartialDTO;
 use App\Debt\Models\DebtPayment;
 use App\Debt\Requests\DebtFullPaymentRequest;
 use App\Debt\Requests\DebtPartialPaymentRequest;
@@ -31,39 +31,34 @@ class DebtPaymentController extends Controller
 
     public function storeFullPayment(DebtFullPaymentRequest $request): JsonResponse
     {
-        $paymentRequest = new FullPaymentRequestDTO(
-            debt_id: $request->input('debt_id'),
-            method: $request->input('method')
-        );
+        $dto = FormRequestPayAllDTO::fromArray($request->validated());
+        $service = $this->service->storeFullPayment($dto);
 
-        $payment = $this->service->storeFullPayment($paymentRequest);
-        return response()->json($payment, 201);
+        return response()->json($service, 201);
     }
 
     public function storePartialPayment(DebtPartialPaymentRequest $request): JsonResponse
     {
-        $paymentRequest = new PartialPaymentRequestDTO(
-            debt_id: $request->input('debt_id'),
-            amount: (float)$request->input('amount'),
-            method: $request->input('method')
-        );
+        $dto = FormRequestPayPartialDTO::fromArray($request->validated());
+        $service = $this->service->storePartialPayment($dto);
 
-        $payment = $this->service->storePartialPayment($paymentRequest);
-        return response()->json($payment, 201);
+        return response()->json($service, 201);
     }
 
     public function payAllDebts(PayAllDebtsRequest $request): JsonResponse
     {
-        $paymentRequest = $request->toDTO();
-        $payments = $this->service->payAllDebtsForClient($paymentRequest);
-        return response()->json($payments, 201);
+        $dto = FormRequestPayAllDTO::fromArray($request->validated());
+        $this->service->payAllDebtsForClient($dto);
+
+        return response()->json(null, 204);
     }
 
     public function payPartialAmount(PayPartialAmountRequest $request): JsonResponse
     {
-        $paymentRequest = $request->toDTO();
-        $payments = $this->service->payPartialAmountForClient($paymentRequest);
-        return response()->json($payments, 201);
+        $dto = FormRequestPayPartialDTO::fromArray($request->validated());
+        $this->service->payPartialAmountForClient($dto);
+
+        return response()->json(null, 204);
     }
 
     public function show(DebtPayment $debtPayment): JsonResponse

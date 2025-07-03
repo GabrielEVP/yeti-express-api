@@ -5,11 +5,14 @@ namespace App\Delivery\Services;
 use App\Client\Models\Client;
 use App\Delivery\DTO\{DeliveryDTO, FilterDeliveryPaginatedDTO, FilterRequestDeliveryPaginatedDTO, SimpleDeliveryDTO};
 use App\Delivery\Models\Delivery;
+use App\Delivery\Models\PaymentStatus;
+use App\Delivery\Models\PaymentType;
 use App\Delivery\Models\Status;
 use App\Delivery\Repositories\IDeliveryRepository;
 use App\Service\Models\Service;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use InvalidArgumentException;
 
 class DeliveryService implements IDeliveryRepository
 {
@@ -93,7 +96,7 @@ class DeliveryService implements IDeliveryRepository
         $order = $filterRequestDeliveryDTO->sortDirection;
 
         if (!in_array($sort, $this->validSortColumns) || !in_array($order, ['asc', 'desc'])) {
-            throw new \InvalidArgumentException('Invalid sort parameters');
+            throw new InvalidArgumentException('Invalid sort parameters');
         }
 
         $query = $this->baseQuery()
@@ -151,11 +154,11 @@ class DeliveryService implements IDeliveryRepository
 
         $delivery->status = $status;
 
-        if ($status === Status::DELIVERED) {
-            if ($delivery->payment_type === 'partial') {
+        if ($delivery->status === Status::DELIVERED) {
+            if ($delivery->payment_type === PaymentType::PARTIAL) {
                 $this->createDebtToDelivery($delivery);
-            } elseif ($delivery->payment_type === 'full') {
-                $delivery->payment_status = 'paid';
+            } elseif ($delivery->payment_type === PaymentType::FULL) {
+                $delivery->payment_status = PaymentStatus::PAID;
             }
         }
 

@@ -4,16 +4,19 @@ namespace App\Debt\DTO;
 
 use JsonSerializable;
 
-class FormRequestFullPaymentDTO implements JsonSerializable
+class FormRequestPayAllDTO implements JsonSerializable
 {
-    public function __construct(public string $debt_id, public string $method)
+    public function __construct(
+        public int    $client_id,
+        public string $method
+    )
     {
     }
 
     public static function fromArray(array $data): self
     {
         return new self(
-            debt_id: $data['debt_id'],
+            client_id: $data['client_id'],
             method: $data['method'],
         );
     }
@@ -21,7 +24,7 @@ class FormRequestFullPaymentDTO implements JsonSerializable
     public function toArray(): array
     {
         return [
-            'debt_id' => $this->debt_id,
+            'client_id' => $this->client_id,
             'method' => $this->method,
         ];
     }
@@ -29,7 +32,7 @@ class FormRequestFullPaymentDTO implements JsonSerializable
     public function jsonSerialize(): array
     {
         return [
-            'debt_id' => $this->debt_id,
+            'client_id' => $this->client_id,
             'method' => $this->method
         ];
     }

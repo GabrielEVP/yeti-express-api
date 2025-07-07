@@ -7,7 +7,7 @@ use App\Core\DTO\FilterRequestPaginatedDTO;
 final class FilterRequestClientPaginatedDTO extends FilterRequestPaginatedDTO
 {
     public ?string $type;
-    public ?bool $allowCredit;
+    public ?int $allowCredit;
     public array $select;
 
     public function __construct(
@@ -15,7 +15,7 @@ final class FilterRequestClientPaginatedDTO extends FilterRequestPaginatedDTO
         string  $sortBy = 'legal_name',
         string  $sortDirection = 'asc',
         ?string $type = null,
-        ?bool   $allowCredit = null,
+        ?int    $allowCredit = null,
         array   $select = [],
         int     $page = 1,
         int     $perPage = 15
@@ -27,4 +27,3 @@ final class FilterRequestClientPaginatedDTO extends FilterRequestPaginatedDTO
         $this->select = $select;
     }
 }
-

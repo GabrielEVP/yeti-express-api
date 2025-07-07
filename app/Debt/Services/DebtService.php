@@ -94,7 +94,7 @@ class DebtService implements IDebtRepository
     public function filterDeliveriesWithDebtByStatus(FilterRequestDeliveriesWithDebtDTO $filterDTO): PaginatedDTO
     {
         $query = Delivery::query()
-            ->select('deliveries.id', 'deliveries.number', 'deliveries.payment_status', 'deliveries.date')
+            ->select('deliveries.id', 'deliveries.number', 'deliveries.payment_status', 'deliveries.date', 'deliveries.client_id')
             ->join('debts', 'debts.delivery_id', '=', 'deliveries.id')
             ->leftJoin('debt_payments', 'debts.id', '=', 'debt_payments.debt_id')
             ->where('deliveries.client_id', $filterDTO->client_id)

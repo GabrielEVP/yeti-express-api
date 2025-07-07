@@ -13,7 +13,6 @@ class CourierDTO implements JsonSerializable
     public ?float $phone;
     public string $created_at;
     public string $updated_at;
-    public array $events = [];
 
     public function __construct(Courier $courier)
     {
@@ -34,7 +33,6 @@ class CourierDTO implements JsonSerializable
             'phone' => $this->phone,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'events' => $this->events,
         ];
     }
 }

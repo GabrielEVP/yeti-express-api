@@ -5,7 +5,6 @@ namespace App\Debt\Controllers;
 use App\Core\Controllers\Controller;
 use App\Debt\DTO\FilterRequestDeliveriesWithDebtDTO;
 use App\Debt\Repositories\IDebtRepository;
-use App\Debt\Requests\FilterDebtByStatusRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,18 +14,18 @@ class DebtController extends Controller
     {
     }
 
-    public function getAllUnPaidDebtsAmount(): JsonResponse
+    public function getAllDebtsAmount(): JsonResponse
     {
         $unpaidAmount = $this->debtRepo->getAllUnPaidDebtsAmount();
         return response()->json($unpaidAmount);
     }
 
-    public function clientsWithDebt(): JsonResponse
+    public function getClientsWithDebt(): JsonResponse
     {
         return response()->json($this->debtRepo->getClientsWithDebts());
     }
 
-    public function stats(string $clientId): JsonResponse
+    public function getClientStats(string $clientId): JsonResponse
     {
         return response()->json($this->debtRepo->getClientDebtStats($clientId));
     }

@@ -31,11 +31,6 @@ class Client extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function events()
-    {
-        return $this->hasMany(ClientEvent::class);
-    }
-
     public function addresses()
     {
         return $this->hasMany(ClientAddress::class);

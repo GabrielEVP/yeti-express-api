@@ -7,19 +7,23 @@ use JsonSerializable;
 class DeliveryWithDebtDTO implements JsonSerializable
 {
     public function __construct(
-        public int $id,
+        public int    $id,
+        public string $client_id,
         public string $number,
         public string $date,
         public string $payment_status,
-        public int $debt_id,
-        public float $debt_amount,
-        public float $debt_remaining_amount
-    ) {}
+        public int    $debt_id,
+        public float  $debt_amount,
+        public float  $debt_remaining_amount
+    )
+    {
+    }
 
     public static function fromArray(array $data): self
     {
         return new self(
             id: $data['id'],
+            client_id: $data['client_id'] ?? '',
             number: $data['number'] ?? '',
             date: $data['date'] ?? '',
             payment_status: $data['payment_status'] ?? '',
@@ -33,6 +37,7 @@ class DeliveryWithDebtDTO implements JsonSerializable
     {
         return [
             'id' => $this->id,
+            'client_id' => $this->client_id,
             'number' => $this->number,
             'date' => $this->date,
             'payment_status' => $this->payment_status,

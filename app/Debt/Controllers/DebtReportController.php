@@ -5,9 +5,8 @@ namespace App\Debt\Controllers;
 use App\Client\Models\Client;
 use App\Core\Controllers\Controller;
 use App\Debt\DomPDF\DomPDFDebt;
-use App\Debt\Requests\DebtReportRequest;
 use App\Debt\Services\PDFDebtService;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 class DebtReportController extends Controller
 {
@@ -20,21 +19,18 @@ class DebtReportController extends Controller
         $this->pdfDebtService = $pdfDebtService;
     }
 
-    public function unpaidDebtsReport(): \Illuminate\Http\Response
+    public function getUnPaidDebtsReport(): \Illuminate\Http\Response
     {
-        $this->authorizeOwner(new Client());
-
         $clientsDTO = $this->pdfDebtService->getUnpaidClientsWithDebts();
 
         $pdf = $this->pdfService->generateUnpaidDebtsReport($clientsDTO);
         return $pdf->stream("unpaid-debts-report.pdf");
     }
 
-    public function clientDebtReport(Client $client, DebtReportRequest $request): \Illuminate\Http\Response
+    public function getClientDebtReport(Client $client, Request $request): \Illuminate\Http\Response
     {
-        $this->authorizeOwner($client);
-
-        $dateRangeDTO = $request->toDTO();
+        $request->input('startDate');
+        $request->input('endDate');
 
         $clientDTO = $this->pdfDebtService->getClientDebtsWithFilters($client, $dateRangeDTO);
 
@@ -47,7 +43,7 @@ class DebtReportController extends Controller
         return $pdf->stream("client-debt-report-{$client->id}.pdf");
     }
 
-    public function allClientsDebtReport(DebtReportRequest $request): \Illuminate\Http\Response
+    public function getAllClientsDebtReport(Request $request): \Illuminate\Http\Response
     {
         $dateRangeDTO = $request->toDTO();
 
@@ -62,8 +58,5 @@ class DebtReportController extends Controller
         return $pdf->stream("all-clients-debt-report.pdf");
     }
 
-    private function authorizeOwner($model): void
-    {
-        abort_if(!Auth::user(), 403, 'No tienes permiso para acceder a este recurso.');
-    }
+
 }

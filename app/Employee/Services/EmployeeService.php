@@ -8,6 +8,7 @@ use App\Employee\DTO\EmployeeDTO;
 use App\Employee\DTO\SimpleEmployeeDTO;
 use App\Employee\Models\Employee;
 use App\Employee\Repositories\IEmployeeRepository;
+use App\Shared\Services\EmployeeEventService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
@@ -51,6 +52,14 @@ class EmployeeService implements IEmployeeRepository
         $employee = $this->baseQuery()->findOrFail($id);
         $employee->update($data);
 
+        EmployeeEventService::log(
+            'update_employee',
+            'employees',
+            'employees',
+            (int)$id,
+            'Employee information updated'
+        );
+
         return EmployeeDTO::fromModel($employee);
     }
 
@@ -58,6 +67,14 @@ class EmployeeService implements IEmployeeRepository
     {
         $employee = $this->baseQuery()->findOrFail($id);
         $employee->update(['password' => Hash::make($password)]);
+
+        EmployeeEventService::log(
+            'update_employee_password',
+            'employees',
+            'employees',
+            (int)$id,
+            'Employee password updated'
+        );
 
         return EmployeeDTO::fromModel($employee);
     }

@@ -10,6 +10,7 @@ use App\Debt\DTO\FormRequestPayAllDTO;
 use App\Debt\DTO\FormRequestPayPartialDTO;
 use App\Debt\Models\Debt;
 use App\Debt\Repositories\IDebtPaymentRepository;
+use App\Shared\Services\EmployeeEventService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 
@@ -33,6 +34,14 @@ class DebtPaymentService implements IDebtPaymentRepository
 
         $this->updateDebtStatus($debt);
 
+        EmployeeEventService::log(
+            'full_debt_payment',
+            'debts',
+            'debt_payments',
+            (int)$payment->id,
+            'Full payment made for debt ID: ' . $debt->id . ' with amount: ' . $debt->amount
+        );
+
         return DebtPaymentDTO::fromModel($payment);
     }
 
@@ -49,6 +58,14 @@ class DebtPaymentService implements IDebtPaymentRepository
 
         $this->updateDebtStatus($debt);
 
+        EmployeeEventService::log(
+            'partial_debt_payment',
+            'debts',
+            'debt_payments',
+            (int)$payment->id,
+            'Partial payment made for debt ID: ' . $debt->id . ' with amount: ' . $request->amount
+        );
+
         return DebtPaymentDTO::fromModel($payment);
     }
 
@@ -57,7 +74,7 @@ class DebtPaymentService implements IDebtPaymentRepository
         $client = Client::findOrFail($request->client_id);
 
         $debts = $client->debts()->where('status', '!=', 'paid')->get();
-
+        $totalAmount = 0;
 
         foreach ($debts as $debt) {
             $payment = $debt->payments()->create([
@@ -67,7 +84,18 @@ class DebtPaymentService implements IDebtPaymentRepository
                 'user_id' => Auth::id(),
             ]);
 
+            $totalAmount += $debt->amount;
             $this->updateDebtStatus($debt);
+        }
+
+        if ($debts->count() > 0) {
+            EmployeeEventService::log(
+                'pay_all_client_debts',
+                'debts',
+                'clients',
+                (int)$client->id,
+                'All debts paid for client: ' . $client->legal_name . ' with total amount: ' . $totalAmount
+            );
         }
     }
 
@@ -81,6 +109,8 @@ class DebtPaymentService implements IDebtPaymentRepository
             ->get();
 
         $remainingAmount = $request->amount;
+        $totalPaid = 0;
+        $debtsPaid = 0;
 
         foreach ($debts as $debt) {
             $debtRemaining = $debt->amount - $debt->payments()->sum('amount');
@@ -99,12 +129,24 @@ class DebtPaymentService implements IDebtPaymentRepository
             ]);
 
             $this->updateDebtStatus($debt);
+            $totalPaid += $paymentAmount;
+            $debtsPaid++;
 
             $remainingAmount -= $paymentAmount;
 
             if ($remainingAmount <= 0) {
                 break;
             }
+        }
+
+        if ($debtsPaid > 0) {
+            EmployeeEventService::log(
+                'pay_partial_client_debts',
+                'debts',
+                'clients',
+                (int)$client->id,
+                'Partial payment of ' . $totalPaid . ' made for client: ' . $client->legal_name . ' across ' . $debtsPaid . ' debts'
+            );
         }
     }
 

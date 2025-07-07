@@ -27,6 +27,7 @@ return new class extends Migration {
             $table->string('section');
             $table->string('reference_table')->nullable();
             $table->unsignedBigInteger('reference_id')->nullable();
+            $table->string('message', 255)->nullable();
             $table->timestamps();
             $table->foreignId('employee_id')->constrained()->onDelete('cascade');
         });

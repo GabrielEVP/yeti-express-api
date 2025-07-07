@@ -8,6 +8,7 @@ use App\Courier\DTO\CourierDTO;
 use App\Courier\DTO\SimpleCourierDTO;
 use App\Courier\Models\Courier;
 use App\Courier\Repositories\ICourierRepository;
+use App\Shared\Services\EmployeeEventService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
@@ -41,6 +42,15 @@ class CourierService implements ICourierRepository
     public function create(array $data): CourierDTO
     {
         $courier = Auth::user()->couriers()->create($data);
+
+        EmployeeEventService::log(
+            'create_courier',
+            'couriers',
+            'couriers',
+            (int)$courier->id,
+            'Courier created: ' . $courier->first_name . ' ' . $courier->last_name
+        );
+
         return new CourierDTO($courier);
     }
 
@@ -48,6 +58,14 @@ class CourierService implements ICourierRepository
     {
         $courier = Courier::findOrFail($id);
         $courier->update($data);
+
+        EmployeeEventService::log(
+            'update_courier',
+            'couriers',
+            'couriers',
+            (int)$id,
+            'Courier updated: ' . $courier->first_name . ' ' . $courier->last_name
+        );
 
         return new CourierDTO($courier);
     }
@@ -60,7 +78,16 @@ class CourierService implements ICourierRepository
             throw new \Exception('courier_has_delivery_relation');
         }
 
+        $courierName = $courier->first_name . ' ' . $courier->last_name;
         $courier->delete();
+
+        EmployeeEventService::log(
+            'delete_courier',
+            'couriers',
+            'couriers',
+            (int)$id,
+            'Courier deleted: ' . $courierName
+        );
     }
 
     public function filter(FilterRequestPaginatedDTO $filters): PaginatedDTO

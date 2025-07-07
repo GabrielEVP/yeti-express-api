@@ -7,10 +7,10 @@ use Illuminate\Support\Facades\Auth;
 
 class EmployeeEventService
 {
-    public static function log(string $event, string $section = null, string $referenceTable = null, int $referenceId = null): ?EmployeeEvent
+    public static function log(string $event, string $section = null, string $referenceTable = null, int $referenceId = null, string $message = null): ?EmployeeEvent
     {
         $employee = Auth::user();
-        if (!$employee || !$employee instanceof \App\Employee\Models\Employee) {
+        if (!$employee instanceof \App\Employee\Models\Employee) {
             return null;
         }
 
@@ -20,6 +20,7 @@ class EmployeeEventService
             'section' => $section,
             'reference_table' => $referenceTable,
             'reference_id' => $referenceId,
+            'message' => $message,
         ]));
     }
 }

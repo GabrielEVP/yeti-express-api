@@ -10,7 +10,7 @@ class CourierDTO implements JsonSerializable
     public int $id;
     public string $first_name;
     public ?string $last_name;
-    public ?float $phone;
+    public ?string $phone;
     public string $created_at;
     public string $updated_at;
 

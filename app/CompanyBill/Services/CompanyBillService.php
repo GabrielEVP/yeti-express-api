@@ -7,6 +7,7 @@ use App\CompanyBill\Models\CompanyBill;
 use App\CompanyBill\Repositories\ICompanyBillRepository;
 use App\Core\DTO\FilterRequestPaginatedDTO;
 use App\Core\DTO\PaginatedDTO;
+use App\Shared\Services\EmployeeEventService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
@@ -29,7 +30,17 @@ class CompanyBillService implements ICompanyBillRepository
 
     public function create(array $data): CompanyBill
     {
-        return CompanyBill::create($data);
+        $bill = CompanyBill::create($data);
+
+        EmployeeEventService::log(
+            'create_company_bill',
+            'company_bills',
+            'company_bills',
+            (int)$bill->id,
+            'Company bill created: ' . $bill->name
+        );
+
+        return $bill;
     }
 
     public function find(string $id): CompanyBill
@@ -41,12 +52,31 @@ class CompanyBillService implements ICompanyBillRepository
     {
         $bill = $this->find($id);
         $bill->update($data);
+
+        EmployeeEventService::log(
+            'update_company_bill',
+            'company_bills',
+            'company_bills',
+            (int)$id,
+            'Company bill updated: ' . $bill->name
+        );
+
         return $bill;
     }
 
     public function delete(string $id): void
     {
-        $this->find($id)->delete();
+        $bill = $this->find($id);
+        $name = $bill->name;
+        $bill->delete();
+
+        EmployeeEventService::log(
+            'delete_company_bill',
+            'company_bills',
+            'company_bills',
+            (int)$id,
+            'Company bill deleted: ' . $name
+        );
     }
 
     public function filter(FilterRequestPaginatedDTO $filters): PaginatedDTO

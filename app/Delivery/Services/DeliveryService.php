@@ -10,6 +10,7 @@ use App\Delivery\Models\PaymentType;
 use App\Delivery\Models\Status;
 use App\Delivery\Repositories\IDeliveryRepository;
 use App\Service\Models\Service;
+use App\Shared\Services\EmployeeEventService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
@@ -69,6 +70,14 @@ class DeliveryService implements IDeliveryRepository
             $delivery->receipt()->create($data['receipt']);
         }
 
+        EmployeeEventService::log(
+            'create_delivery',
+            'deliveries',
+            'deliveries',
+            (int)$delivery->id,
+            'Delivery created: ' . $delivery->number
+        );
+
         return new DeliveryDTO($delivery);
     }
 
@@ -81,13 +90,30 @@ class DeliveryService implements IDeliveryRepository
             $delivery->receipt()->update($data['receipt']);
         }
 
+        EmployeeEventService::log(
+            'update_delivery',
+            'deliveries',
+            'deliveries',
+            (int)$id,
+            'Delivery updated: ' . $delivery->number
+        );
+
         return new DeliveryDTO($delivery);
     }
 
     public function delete(string $id): void
     {
         $delivery = $this->baseQuery()->findOrFail($id);
+        $number = $delivery->number;
         $delivery->delete();
+
+        EmployeeEventService::log(
+            'delete_delivery',
+            'deliveries',
+            'deliveries',
+            (int)$id,
+            'Delivery deleted: ' . $number
+        );
     }
 
     public function filter(FilterRequestDeliveryPaginatedDTO $filterRequestDeliveryDTO): FilterDeliveryPaginatedDTO
@@ -163,6 +189,14 @@ class DeliveryService implements IDeliveryRepository
         }
 
         $delivery->save();
+
+        EmployeeEventService::log(
+            'update_delivery_status',
+            'deliveries',
+            'deliveries',
+            (int)$id,
+            'Delivery status updated to ' . $status->value . ': ' . $delivery->number
+        );
     }
 
     public function cancelDelivery(string $id, string $cancellation_notes): void
@@ -171,6 +205,14 @@ class DeliveryService implements IDeliveryRepository
         $delivery->status = Status::CANCELLED;
         $delivery->cancellation_notes = $cancellation_notes;
         $delivery->save();
+
+        EmployeeEventService::log(
+            'cancel_delivery',
+            'deliveries',
+            'deliveries',
+            (int)$id,
+            'Delivery cancelled: ' . $delivery->number
+        );
     }
 
     private function generateNumberDelivery(): string

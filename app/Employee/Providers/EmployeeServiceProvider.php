@@ -12,6 +12,8 @@ class EmployeeServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(app_path('Employee/Database/migrations'));
         $this->loadRoutesFrom(app_path('Employee/Routes/EmployeeRoutes.php'));
+        $this->loadViewsFrom(app_path('Employee/Resources/views'), 'employee');
+
     }
 
     public function register(): void

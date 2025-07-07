@@ -17,6 +17,7 @@ class EmployeeEvent extends Model
         'section',
         'reference_table',
         'reference_id',
+        'message',
         'employee_id',
     ];
 

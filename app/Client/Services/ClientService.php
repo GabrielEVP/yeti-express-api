@@ -8,6 +8,7 @@ use App\Client\DTO\FilterRequestClientPaginatedDTO;
 use App\Client\DTO\SimpleClientDTO;
 use App\Client\Models\Client;
 use App\Client\Repositories\IClientRepository;
+use App\Shared\Services\EmployeeEventService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -65,6 +66,14 @@ class ClientService implements IClientRepository
             $client->phones()->create($phone);
         }
 
+        EmployeeEventService::log(
+            'create_client',
+            'clients',
+            'clients',
+            (int)$client->id,
+            'Client created: ' . $client->legal_name
+        );
+
         return new ClientDTO($client);
     }
 
@@ -91,6 +100,14 @@ class ClientService implements IClientRepository
             $client->phones()->create($phone);
         }
 
+        EmployeeEventService::log(
+            'update_client',
+            'clients',
+            'clients',
+            (int)$id,
+            'Client updated: ' . $client->legal_name
+        );
+
         return new ClientDTO($client);
     }
 
@@ -102,7 +119,16 @@ class ClientService implements IClientRepository
             throw new \Exception('client_has_delivery_relation');
         }
 
+        $legalName = $client->legal_name;
         $client->delete();
+
+        EmployeeEventService::log(
+            'delete_client',
+            'clients',
+            'clients',
+            (int)$id,
+            'Client deleted: ' . $legalName
+        );
     }
 
     public function filter(FilterRequestClientPaginatedDTO $filterRequestClientDTO): FilterClientPaginatedDTO

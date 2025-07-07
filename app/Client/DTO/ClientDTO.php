@@ -13,7 +13,7 @@ class ClientDTO implements JsonSerializable
     public ?Type $type;
     public string $registration_number;
     public ?string $notes;
-    public ?bool $allow_credit;
+    public ?int $allow_credit;
     public int $user_id;
     public string $created_at;
     public string $updated_at;
@@ -29,7 +29,7 @@ class ClientDTO implements JsonSerializable
         $this->type = $client->type;
         $this->registration_number = $client->registration_number;
         $this->notes = $client->notes;
-        $this->allow_credit = $client->allow_credit ?? false;
+        $this->allow_credit = $client->allow_credit ?? 0;
         $this->user_id = $client->user_id;
         $this->created_at = $client->created_at->toDateTimeString();
         $this->updated_at = $client->updated_at->toDateTimeString();

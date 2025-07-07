@@ -17,6 +17,7 @@ class ClientRequest extends FormRequest
             'legal_name' => 'required|string|max:255',
             'registration_number' => 'required|string|max:255',
             'notes' => 'nullable|string',
+            'allow_credit' => 'nullable|integer',
             'phones' => 'array',
             'phones.*.phone' => 'required_with:phones|string|max:20',
             'emails' => 'array',

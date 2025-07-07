@@ -11,6 +11,7 @@ final class FormRequestClientDTO implements \JsonSerializable
         public array  $addresses,
         public array  $emails,
         public array  $phones,
+        public ?int   $allow_credit = null,
     )
     {
     }
@@ -38,7 +39,8 @@ final class FormRequestClientDTO implements \JsonSerializable
                     'phone' => $phone['phone'] ?? '',
                 ],
                 $data['phones'] ?? []
-            )
+            ),
+            allow_credit: isset($data['allow_credit']) ? (int)$data['allow_credit'] : null
         );
     }
 
@@ -51,6 +53,7 @@ final class FormRequestClientDTO implements \JsonSerializable
             'phones' => $this->phones,
             'emails' => $this->emails,
             'addresses' => $this->addresses,
+            'allow_credit' => $this->allow_credit,
         ];
     }
 

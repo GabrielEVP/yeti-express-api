@@ -23,7 +23,7 @@ class Client extends Model
 
     protected $casts = [
         'type' => Type::class,
-        'allow_credit' => 'boolean',
+        'allow_credit' => 'integer',
     ];
 
     public function user()

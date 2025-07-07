@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 class ClientService implements IClientRepository
 {
-    private const SELECT_SIMPLE_FIELDS = ['id', 'legal_name', 'type', 'registration_number'];
+    private const SELECT_SIMPLE_FIELDS = ['id', 'legal_name', 'type', 'registration_number', 'allow_credit'];
 
     private function baseQuery()
     {

@@ -63,7 +63,7 @@ class ClientController extends Controller
             $request->input('sortBy', 'legal_name'),
             $request->input('sortDirection', 'asc'),
             $filters['type'] ?? null,
-            isset($filters['allowCredit']) ? (bool)$filters['allowCredit'] : null,
+            isset($filters['allowCredit']) ? (int)$filters['allowCredit'] : null,
             $request->input('select', []),
             $request->integer('page', 1),
             $request->integer('perPage', 15)

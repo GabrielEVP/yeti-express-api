@@ -9,6 +9,7 @@ final class SimpleClientDTO
     public ?string $type;
     public string $registration_number;
     public bool $can_delete;
+    public ?int $allow_credit;
 
     public function __construct(array $data)
     {
@@ -17,6 +18,7 @@ final class SimpleClientDTO
         $this->type = $data['type'] ?? null;
         $this->registration_number = $data['registration_number'];
         $this->can_delete = $data['can_delete'] ?? false;
+        $this->allow_credit = $data['allow_credit'] ?? null;
     }
 
     public function jsonSerialize(): array
@@ -27,6 +29,7 @@ final class SimpleClientDTO
             'type' => $this->type,
             'registration_number' => $this->registration_number,
             'can_delete' => $this->can_delete,
+            'allow_credit' => $this->allow_credit,
         ];
     }
 

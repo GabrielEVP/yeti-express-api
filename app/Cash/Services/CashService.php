@@ -21,82 +21,28 @@ class CashService
     public function getDashboardStats(int $userId, string $period, string $date): DashboardStatsDTO
     {
         try {
-            Carbon::setLocale('es');
-
-            // Asegurar que la fecha tenga un formato válido
-            try {
-                if (!$date || !Carbon::canBeCreatedFromFormat($date, 'Y-m-d')) {
-                    $date = now()->toDateString();
-                }
-            } catch (\Exception $e) {
-                \Log::warning("Fecha inválida, usando fecha actual: {$e->getMessage()}");
-                $date = now()->toDateString();
-            }
-
+            $date = $this->validateDate($date);
             [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
 
             $stats = $this->getStatsByPeriod($userId, $startDate, $endDate);
-
             $companyBills = (float)Auth::user()->companyBills()
                 ->whereBetween('date', [$startDate, $endDate])
                 ->sum('amount');
 
-            // Format period display label in Spanish
-            $periodLabel = match ($period) {
-                'day' => 'Día',
-                'week' => 'Semana',
-                'month' => 'Mes',
-                'year' => 'Año',
-                default => ucfirst($period),
-            };
-
-            // Format start and end dates in Spanish
-            $startDateObj = Carbon::parse($startDate);
-            $endDateObj = Carbon::parse($endDate);
-            $requestDateObj = Carbon::parse($date);
-
-            // Formatear fechas en español
-            $formattedStartDate = $startDateObj->isSameDay(Carbon::today())
-                ? 'Hoy'
-                : $startDateObj->locale('es')->isoFormat('dddd D [de] MMMM [de] YYYY');
-
-            $formattedEndDate = $endDateObj->isSameDay(Carbon::today())
-                ? 'Hoy'
-                : $endDateObj->locale('es')->isoFormat('dddd D [de] MMMM [de] YYYY');
-
-            // Mantener el periodo en inglés para la API pero traducir la etiqueta
-            // En español utilizar la versión española del periodo
-            $periodSpanish = match ($period) {
-                'day' => 'dia',
-                'week' => 'semana',
-                'month' => 'mes',
-                'year' => 'año',
-                default => $period,
-            };
-
-            // Obtener los datos históricos
-            $historicalDelivered = $this->getHistoricalDelivered($userId, $period, $date);
-            $historicalInvoiced = $this->getHistoricalInvoiced($userId, $period, $date);
-            $historicalBalance = $this->getHistoricalBalance($userId, $period, $date);
-
-            // Para el período semanal, no es necesario reformatear las etiquetas de fecha
-            // porque formatDateLabel ya proporciona el nombre del día correcto
-            // basado en la fecha real de cada entrega, no en la posición del índice
-
             return new DashboardStatsDTO([
-                'period' => $periodSpanish,
-                'period_label' => $periodLabel,
+                'period' => $this->getPeriodInSpanish($period),
+                'period_label' => $this->getPeriodLabel($period),
                 'start_date' => $startDate,
                 'end_date' => $endDate,
-                'formatted_start_date' => $formattedStartDate,
-                'formatted_end_date' => $formattedEndDate,
+                'formatted_start_date' => $this->formatDisplayDate($startDate),
+                'formatted_end_date' => $this->formatDisplayDate($endDate),
                 'total_delivered' => $stats['total_delivered'],
                 'total_invoiced' => $stats['total_invoiced'],
                 'total_collected' => $stats['total_collected'],
                 'total_company_bills' => $companyBills,
-                'historical_delivered' => $historicalDelivered,
-                'historical_invoiced' => $historicalInvoiced,
-                'historical_balance' => $historicalBalance
+                'historical_delivered' => $this->getHistoricalData($userId, $period, $date, 'delivered'),
+                'historical_invoiced' => $this->getHistoricalData($userId, $period, $date, 'invoiced'),
+                'historical_balance' => $this->getHistoricalBalance($userId, $period, $date)
             ]);
         } catch (\Exception $e) {
             throw new \Exception('Error al cargar los datos del dashboard: ' . $e->getMessage());
@@ -106,91 +52,12 @@ class CashService
     public function getCashRegisterReportData(string $period, string $date): CashRegisterReportDTO
     {
         [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
-
         $userId = Auth::id();
-        $periodLabels = [];
-        $periodData = [];
 
-        if ($period === 'day') {
-            // Para período diario, simplemente mostrar 'Hoy'
-            $dayStart = Carbon::parse($date)->startOfDay()->toDateTimeString();
-            $dayEnd = Carbon::parse($date)->endOfDay()->toDateTimeString();
-
-            $periodLabels[] = "Hoy";
-            $periodData[] = $this->generatePeriodData($userId, $dayStart, $dayEnd);
-        } elseif ($period === 'week') {
-            $currentDate = Carbon::parse($startDate);
-            $endDateTime = Carbon::parse($endDate);
-
-            // Crear un mapeo de días para asegurar que se mantenga la correspondencia
-            // entre los nombres de los días y sus fechas
-            $dayMapping = [];
-
-            while ($currentDate->lte($endDateTime)) {
-                $dayStart = $currentDate->copy()->startOfDay()->toDateTimeString();
-                $dayEnd = $currentDate->copy()->endOfDay()->toDateTimeString();
-
-                // Mostrar solo el nombre del día en español sin prefijo
-                Carbon::setLocale('es');
-                $dayLabel = ucfirst($currentDate->locale('es')->dayName); // Lunes, Martes, etc.
-                $dayDate = $currentDate->toDateString();
-
-                // Guardar mapeo entre fecha y nombre del día
-                $dayMapping[$dayDate] = $dayLabel;
-
-                $periodLabels[] = $dayLabel;
-                $periodData[] = $this->generatePeriodData($userId, $dayStart, $dayEnd);
-
-                $currentDate->addDay();
-            }
-        } elseif ($period === 'month') {
-            $currentDate = Carbon::parse($startDate);
-            $endDateTime = Carbon::parse($endDate);
-            $weekNumber = 1;
-
-            while ($currentDate->lte($endDateTime)) {
-                $weekStart = $currentDate->copy()->toDateTimeString();
-                $weekEnd = min($currentDate->copy()->addDays(6), $endDateTime)->endOfDay()->toDateTimeString();
-
-                // Usar exactamente 'Semana 1', 'Semana 2', etc.
-                $periodLabels[] = "Semana {$weekNumber}";
-                $periodData[] = $this->generatePeriodData($userId, $weekStart, $weekEnd);
-
-                $currentDate->addDays(7);
-                $weekNumber++;
-            }
-        } elseif ($period === 'year') {
-            $currentDate = Carbon::parse($startDate);
-            $endDateTime = Carbon::parse($endDate);
-
-            while ($currentDate->lte($endDateTime) && $currentDate->year == Carbon::parse($startDate)->year) {
-                $monthStart = $currentDate->copy()->startOfMonth()->toDateTimeString();
-                $monthEnd = $currentDate->copy()->endOfMonth()->toDateTimeString();
-
-                // Mostrar solo el nombre del mes en español
-                Carbon::setLocale('es');
-                $monthLabel = ucfirst($currentDate->locale('es')->monthName); // Enero, Febrero, etc.
-
-                $periodLabels[] = $monthLabel;
-                $periodData[] = $this->generatePeriodData($userId, $monthStart, $monthEnd);
-
-                $currentDate->addMonth();
-            }
-        } else {
-            $periodLabels[] = "Caja del período {$period} ({$startDate} - {$endDate})";
-            $periodData[] = $this->generatePeriodData($userId, $startDate, $endDate);
-        }
-
-        $periodSpanish = match ($period) {
-            'day' => 'dia',
-            'week' => 'semana',
-            'month' => 'mes',
-            'year' => 'año',
-            default => $period,
-        };
+        [$periodLabels, $periodData] = $this->generatePeriodLabelsAndData($userId, $period, $startDate, $endDate);
 
         return new CashRegisterReportDTO([
-            'period' => $periodSpanish,
+            'period' => $this->getPeriodInSpanish($period),
             'date' => $date,
             'start_date' => $startDate,
             'end_date' => $endDate,
@@ -199,25 +66,100 @@ class CashService
         ]);
     }
 
+    private function validateDate(string $date): string
+    {
+        try {
+            if (!$date || !Carbon::canBeCreatedFromFormat($date, 'Y-m-d')) {
+                return now()->toDateString();
+            }
+            return $date;
+        } catch (\Exception $e) {
+            \Log::warning("Fecha inválida, usando fecha actual: {$e->getMessage()}");
+            return now()->toDateString();
+        }
+    }
+
+    private function getPeriodInSpanish(string $period): string
+    {
+        return match ($period) {
+            'day' => 'dia',
+            'week' => 'semana',
+            'month' => 'mes',
+            'year' => 'año',
+            default => $period,
+        };
+    }
+
+    private function getPeriodLabel(string $period): string
+    {
+        return match ($period) {
+            'day' => 'Día',
+            'week' => 'Semana',
+            'month' => 'Mes',
+            'year' => 'Año',
+            default => ucfirst($period),
+        };
+    }
+
+    private function formatDisplayDate(string $date): string
+    {
+        $dateObj = Carbon::parse($date);
+        return $dateObj->isSameDay(Carbon::today())
+            ? 'Hoy'
+            : $dateObj->locale('es')->isoFormat('dddd D [de] MMMM [de] YYYY');
+    }
+
+    private function generatePeriodLabelsAndData(int $userId, string $period, string $startDate, string $endDate): array
+    {
+        $periodLabels = [];
+        $periodData = [];
+
+        if ($period === 'day') {
+            $periodLabels[] = "Hoy";
+            $periodData[] = $this->generatePeriodData($userId, $startDate, $endDate);
+        } elseif ($period === 'week') {
+            $currentDate = Carbon::parse($startDate);
+            while ($currentDate->lte(Carbon::parse($endDate))) {
+                $periodLabels[] = ucfirst($currentDate->locale('es')->dayName);
+                $periodData[] = $this->generatePeriodData($userId,
+                    $currentDate->copy()->startOfDay()->toDateTimeString(),
+                    $currentDate->copy()->endOfDay()->toDateTimeString()
+                );
+                $currentDate->addDay();
+            }
+        } elseif ($period === 'month') {
+            $currentDate = Carbon::parse($startDate);
+            $weekNumber = 1;
+            while ($currentDate->lte(Carbon::parse($endDate))) {
+                $periodLabels[] = "Semana {$weekNumber}";
+                $periodData[] = $this->generatePeriodData($userId,
+                    $currentDate->copy()->toDateTimeString(),
+                    min($currentDate->copy()->addDays(6), Carbon::parse($endDate))->endOfDay()->toDateTimeString()
+                );
+                $currentDate->addDays(7);
+                $weekNumber++;
+            }
+        } elseif ($period === 'year') {
+            $currentDate = Carbon::parse($startDate);
+            while ($currentDate->lte(Carbon::parse($endDate)) && $currentDate->year == Carbon::parse($startDate)->year) {
+                $periodLabels[] = ucfirst($currentDate->locale('es')->monthName);
+                $periodData[] = $this->generatePeriodData($userId,
+                    $currentDate->copy()->startOfMonth()->toDateTimeString(),
+                    $currentDate->copy()->endOfMonth()->toDateTimeString()
+                );
+                $currentDate->addMonth();
+            }
+        }
+
+        return [$periodLabels, $periodData];
+    }
+
     private function generatePeriodData(int $userId, string $startDate, string $endDate): array
     {
         $stats = $this->getStatsByPeriod($userId, $startDate, $endDate);
-
         $totalExpenses = (float)Auth::user()->companyBills()
             ->whereBetween('date', [$startDate, $endDate])
             ->sum('amount');
-
-        $balance = $stats['total_collected'] - $totalExpenses;
-
-        $deliveries = $this->getCashRegisterDeliveries($userId, $startDate, $endDate);
-
-        $deliveriesByStatus = $this->getDeliveriesByStatus($userId, $startDate, $endDate);
-
-        $courierSummary = $this->getCourierDeliverySummary($userId, $startDate, $endDate);
-
-        $clientDebtSummary = $this->getClientDebtSummary($userId, $startDate, $endDate);
-
-        $clientPaymentSummary = $this->getClientPaymentSummary($userId, $startDate, $endDate);
 
         return [
             'summary' => [
@@ -227,54 +169,14 @@ class CashService
                 'total_invoiced' => $stats['total_invoiced'],
                 'total_collected' => $stats['total_collected'],
                 'total_expenses' => $totalExpenses,
-                'balance' => $balance,
+                'balance' => $stats['total_collected'] - $totalExpenses,
             ],
-            'deliveries' => $deliveries,
-            'deliveriesByStatus' => $deliveriesByStatus,
-            'courierSummary' => $courierSummary,
-            'clientDebtSummary' => $clientDebtSummary,
-            'clientPaymentSummary' => $clientPaymentSummary
+            'deliveries' => $this->getCashRegisterDeliveries($userId, $startDate, $endDate),
+            'deliveriesByStatus' => $this->getDeliveriesByStatus($userId, $startDate, $endDate),
+            'courierSummary' => $this->getCourierDeliverySummary($userId, $startDate, $endDate),
+            'clientDebtSummary' => $this->getClientDebtSummary($userId, $startDate, $endDate),
+            'clientPaymentSummary' => $this->getClientPaymentSummary($userId, $startDate, $endDate)
         ];
-    }
-
-    // Methods from DashboardService
-    private function safeFormatDate($date, string $default = ''): string
-    {
-        if (empty($date)) {
-            return $default;
-        }
-
-        if ($date instanceof Carbon) {
-            return $date->format('Y-m-d');
-        }
-
-        if (!Carbon::hasFormat($date, 'Y-m-d') && !Carbon::hasFormat($date, 'Y-m-d H:i:s')) {
-            \Log::warning("Invalid date format in safeFormatDate: {$date}");
-            return $default;
-        }
-
-        return Carbon::parse($date)->format('Y-m-d');
-    }
-
-    /**
-     * Helper method to create a mapping of dates to day names within a date range
-     *
-     * @param string $startDate Start of the date range
-     * @param string $endDate End of the date range
-     * @return array Mapping of date strings to day names
-     */
-    private function createDayNameMapping(string $startDate, string $endDate): array
-    {
-        $dayMapping = [];
-        $currentDate = Carbon::parse($startDate);
-        $endDateTime = Carbon::parse($endDate);
-
-        while ($currentDate->lte($endDateTime)) {
-            $dayMapping[$currentDate->toDateString()] = ucfirst($currentDate->locale('es')->dayName);
-            $currentDate->addDay();
-        }
-
-        return $dayMapping;
     }
 
     private function ensureDateFormat($date): string
@@ -283,31 +185,19 @@ class CashService
             return $date->toDateTimeString();
         }
 
-        if (is_string($date)) {
-            $date = trim($date);
-
-            if (strpos($date, '/') !== false) {
-                $parts = explode('/', $date);
-                if (count($parts) === 3) {
-                    $date = $parts[2] . '-' . $parts[1] . '-' . $parts[0];
-                }
+        if (is_string($date) && strpos($date, '/') !== false) {
+            $parts = explode('/', trim($date));
+            if (count($parts) === 3) {
+                $date = $parts[2] . '-' . $parts[1] . '-' . $parts[0];
             }
         }
 
-        if (!is_string($date) && !is_object($date) && !is_numeric($date)) {
-            \Log::error('Invalid date format: not convertible to date');
+        try {
+            return Carbon::parse($date)->toDateTimeString();
+        } catch (\Exception $e) {
+            \Log::error('Error formatting date: ' . $e->getMessage());
             return Carbon::now()->toDateTimeString();
         }
-
-        if (
-            !Carbon::canBeCreatedFromFormat($date, 'Y-m-d') &&
-            !Carbon::canBeCreatedFromFormat($date, 'Y-m-d H:i:s')
-        ) {
-            \Log::error('Error formatting date: ' . (is_string($date) ? $date : 'not a string'));
-            return Carbon::now()->toDateTimeString();
-        }
-
-        return Carbon::parse($date)->toDateTimeString();
     }
 
     public function getStatsByPeriod(int $userId, $startDate, $endDate): array
@@ -315,142 +205,68 @@ class CashService
         $startFormatted = $this->ensureDateFormat($startDate);
         $endFormatted = $this->ensureDateFormat($endDate);
 
-        return [
-            'total_delivered' => $this->getTotalDelivered($userId, $startFormatted, $endFormatted),
-            'total_invoiced' => $this->getTotalInvoiced($userId, $startFormatted, $endFormatted),
-            'total_collected' => $this->getTotalCollected($userId, $startFormatted, $endFormatted)
-        ];
-    }
-
-    public function getTotalDelivered(int $userId, $startDate, $endDate): int
-    {
-        $startFormatted = $this->ensureDateFormat($startDate);
-        $endFormatted = $this->ensureDateFormat($endDate);
-
-        return Delivery::where('user_id', $userId)
+        $delivered = Delivery::where('user_id', $userId)
             ->where('status', 'delivered')
-            ->whereBetween('date', [$startFormatted, $endFormatted])
-            ->count();
-    }
+            ->whereBetween('date', [$startFormatted, $endFormatted]);
 
-    public function getTotalInvoiced(int $userId, $startDate, $endDate): float
-    {
-        $startFormatted = $this->ensureDateFormat($startDate);
-        $endFormatted = $this->ensureDateFormat($endDate);
-
-        return (float)Delivery::where('user_id', $userId)
-            ->where('status', 'delivered')
-            ->whereBetween('date', [$startFormatted, $endFormatted])
-            ->sum('amount');
-    }
-
-    public function getTotalCollected(int $userId, $startDate, $endDate): float
-    {
-        $startFormatted = $this->ensureDateFormat($startDate);
-        $endFormatted = $this->ensureDateFormat($endDate);
-
-        $fullPaymentsTotal = Delivery::query()
-            ->where('status', 'delivered')
-            ->where('user_id', $userId)
+        $fullPayments = (float)$delivered->clone()
             ->where('payment_type', 'full')
             ->where('payment_status', 'paid')
-            ->whereBetween('date', [$startFormatted, $endFormatted])
             ->sum('amount');
 
-        $partialPaymentsTotal = DebtPayment::query()
-            ->join('debts', 'debt_payments.debt_id', '=', 'debts.id')
+        $partialPayments = (float)DebtPayment::join('debts', 'debt_payments.debt_id', '=', 'debts.id')
             ->join('deliveries', 'debts.delivery_id', '=', 'deliveries.id')
             ->where('deliveries.user_id', $userId)
             ->whereBetween('debt_payments.created_at', [$startFormatted, $endFormatted])
             ->sum('debt_payments.amount');
 
-        return (float)$fullPaymentsTotal + (float)$partialPaymentsTotal;
+        return [
+            'total_delivered' => $delivered->count(),
+            'total_invoiced' => (float)$delivered->sum('amount'),
+            'total_collected' => $fullPayments + $partialPayments
+        ];
     }
 
-    public function getHistoricalDelivered(int $userId, string $period, string $date): array
+    private function getHistoricalData(int $userId, string $period, string $date, string $type): array
     {
         [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
-        $requestDate = Carbon::parse($date);
-
         $deliveries = Delivery::where('user_id', $userId)
             ->whereBetween('date', [$startDate, $endDate])
             ->where('status', 'delivered')
             ->get();
 
-        // Si estamos en período semanal, asegúrese de que cada entrega se agrupe por su día correcto
         if ($period === 'week') {
-            // Crear mapeo de fechas a nombres de día
-            $dayMapping = [];
-            $currentDate = Carbon::parse($startDate);
-            $endDateTime = Carbon::parse($endDate);
-
-            while ($currentDate->lte($endDateTime)) {
-                $dayMapping[$currentDate->toDateString()] = ucfirst($currentDate->locale('es')->dayName);
-                $currentDate->addDay();
-            }
-
-            // Agrupar por el día real de la entrega
+            $dayMapping = $this->createDayMapping($startDate, $endDate);
             return $deliveries->groupBy(function ($delivery) use ($dayMapping) {
-                $deliveryDate = $delivery->date->toDateString();
-                return $dayMapping[$deliveryDate] ?? ucfirst($delivery->date->locale('es')->dayName);
-            })
-                ->map(fn($group, $date) => ['date' => $date, 'total' => $group->count()])
-                ->values()
-                ->toArray();
+                return $dayMapping[$delivery->date->toDateString()] ?? ucfirst($delivery->date->locale('es')->dayName);
+            })->map(function ($group, $date) use ($type) {
+                $total = $type === 'delivered' ? $group->count() : (float)$group->sum('amount');
+                return ['date' => $date, 'total' => $total];
+            })->values()->toArray();
         }
 
-        // Para otros períodos, usar el comportamiento original
-        return $deliveries
-            ->groupBy(fn($delivery) => $this->dateFormatter->formatDateLabel(Carbon::parse($delivery->date), $period, $requestDate))
-            ->map(fn($group, $date) => ['date' => $date, 'total' => $group->count()])
-            ->values()
-            ->toArray();
+        return $deliveries->groupBy(function ($delivery) use ($period, $date) {
+            return $this->dateFormatter->formatDateLabel(Carbon::parse($delivery->date), $period, Carbon::parse($date));
+        })->map(function ($group, $date) use ($type) {
+            $total = $type === 'delivered' ? $group->count() : (float)$group->sum('amount');
+            return ['date' => $date, 'total' => $total];
+        })->values()->toArray();
     }
 
-    public function getHistoricalInvoiced(int $userId, string $period, string $date): array
+    private function createDayMapping(string $startDate, string $endDate): array
     {
-        [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
-        $requestDate = Carbon::parse($date);
-
-        $deliveries = Delivery::where('user_id', $userId)
-            ->whereBetween('date', [$startDate, $endDate])
-            ->where('status', 'delivered')
-            ->get();
-
-        // Si estamos en período semanal, asegúrese de que cada entrega se agrupe por su día correcto
-        if ($period === 'week') {
-            // Crear mapeo de fechas a nombres de día
-            $dayMapping = [];
-            $currentDate = Carbon::parse($startDate);
-            $endDateTime = Carbon::parse($endDate);
-
-            while ($currentDate->lte($endDateTime)) {
-                $dayMapping[$currentDate->toDateString()] = ucfirst($currentDate->locale('es')->dayName);
-                $currentDate->addDay();
-            }
-
-            // Agrupar por el día real de la entrega
-            return $deliveries->groupBy(function ($delivery) use ($dayMapping) {
-                $deliveryDate = $delivery->date->toDateString();
-                return $dayMapping[$deliveryDate] ?? ucfirst($delivery->date->locale('es')->dayName);
-            })
-                ->map(fn($group, $date) => ['date' => $date, 'total' => (float)$group->sum('amount')])
-                ->values()
-                ->toArray();
+        $dayMapping = [];
+        $currentDate = Carbon::parse($startDate);
+        while ($currentDate->lte(Carbon::parse($endDate))) {
+            $dayMapping[$currentDate->toDateString()] = ucfirst($currentDate->locale('es')->dayName);
+            $currentDate->addDay();
         }
-
-        // Para otros períodos, usar el comportamiento original
-        return $deliveries
-            ->groupBy(fn($delivery) => $this->dateFormatter->formatDateLabel(Carbon::parse($delivery->date), $period, $requestDate))
-            ->map(fn($group, $date) => ['date' => $date, 'total' => (float)$group->sum('amount')])
-            ->values()
-            ->toArray();
+        return $dayMapping;
     }
 
     public function getHistoricalBalance(int $userId, string $period, string $date): array
     {
         [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
-        $requestDate = Carbon::parse($date);
 
         $fullPayments = Delivery::where('user_id', $userId)
             ->where('payment_type', 'full')
@@ -468,83 +284,111 @@ class CashService
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
 
-        // Si estamos en período semanal, necesitamos manejar el agrupamiento de manera especial
-        if ($period === 'week') {
-            // Crear mapeo de fechas a nombres de día
-            $dayMapping = [];
-            $currentDate = Carbon::parse($startDate);
-            $endDateTime = Carbon::parse($endDate);
+        $dayMapping = $period === 'week' ? $this->createDayMapping($startDate, $endDate) : [];
 
-            while ($currentDate->lte($endDateTime)) {
-                $dayMapping[$currentDate->toDateString()] = ucfirst($currentDate->locale('es')->dayName);
-                $currentDate->addDay();
-            }
+        $groupedData = $this->groupPaymentsByPeriod($fullPayments, $debtPayments, $companyBills, $period, $date, $dayMapping);
 
-            // Agrupar pagos por día real de la semana
-            $groupedFull = $fullPayments->groupBy(function ($p) use ($dayMapping) {
-                $dateString = $p->date instanceof Carbon ? $p->date->toDateString() : Carbon::parse($p->date)->toDateString();
-                return $dayMapping[$dateString] ?? ucfirst(Carbon::parse($dateString)->locale('es')->dayName);
-            });
-
-            $groupedPartial = $debtPayments->groupBy(function ($p) use ($dayMapping) {
-                $dateString = $p->created_at instanceof Carbon ? $p->created_at->toDateString() : Carbon::parse($p->created_at)->toDateString();
-                return $dayMapping[$dateString] ?? ucfirst(Carbon::parse($dateString)->locale('es')->dayName);
-            });
-
-            $groupedBills = $companyBills->groupBy(function ($b) use ($dayMapping) {
-                $dateString = $b->date instanceof Carbon ? $b->date->toDateString() : Carbon::parse($b->date)->toDateString();
-                return $dayMapping[$dateString] ?? ucfirst(Carbon::parse($dateString)->locale('es')->dayName);
-            });
-        } else {
-            // Para otros períodos, usar el comportamiento original
-            // Determinar cómo agrupar según el período
-            if ($period === 'week') {
-                $dayMapping = $this->createDayNameMapping($startDate, $endDate);
-
-                $groupedFull = $fullPayments->groupBy(function ($p) use ($dayMapping) {
-                    $dateString = $p->date instanceof Carbon ? $p->date->toDateString() : Carbon::parse($p->date)->toDateString();
-                    return $dayMapping[$dateString] ?? ucfirst(Carbon::parse($dateString)->locale('es')->dayName);
-                });
-
-                $groupedPartial = $debtPayments->groupBy(function ($p) use ($dayMapping) {
-                    $dateString = $p->created_at instanceof Carbon ? $p->created_at->toDateString() : Carbon::parse($p->created_at)->toDateString();
-                    return $dayMapping[$dateString] ?? ucfirst(Carbon::parse($dateString)->locale('es')->dayName);
-                });
-
-                $groupedBills = $companyBills->groupBy(function ($b) use ($dayMapping) {
-                    $dateString = $b->date instanceof Carbon ? $b->date->toDateString() : Carbon::parse($b->date)->toDateString();
-                    return $dayMapping[$dateString] ?? ucfirst(Carbon::parse($dateString)->locale('es')->dayName);
-                });
-            } else {
-                // Para otros períodos, usar el comportamiento original
-                $groupedFull = $fullPayments->groupBy(fn($p) => $this->dateFormatter->formatDateLabel(Carbon::parse($p->date), $period, $requestDate));
-                $groupedPartial = $debtPayments->groupBy(fn($p) => $this->dateFormatter->formatDateLabel(Carbon::parse($p->created_at), $period, $requestDate));
-                $groupedBills = $companyBills->groupBy(fn($b) => $this->dateFormatter->formatDateLabel(Carbon::parse($b->date), $period, $requestDate));
-            }
-        }
-
-        $allDates = array_unique(array_merge(
-            $groupedFull->keys()->toArray(),
-            $groupedPartial->keys()->toArray(),
-            $groupedBills->keys()->toArray()
-        ));
-
-        return collect($allDates)->sort()->map(function ($dateKey) use ($groupedFull, $groupedPartial, $groupedBills) {
-            $full = $groupedFull->get($dateKey, collect());
-            $partial = $groupedPartial->get($dateKey, collect());
-            $bills = $groupedBills->get($dateKey, collect());
-
-            $collected = $full->sum('amount') + $partial->sum('amount');
-            $expenses = $bills->sum('amount');
-            $balance = $collected - $expenses;
+        return collect($groupedData)->map(function ($dateKey) use ($fullPayments, $debtPayments, $companyBills, $period, $date, $dayMapping) {
+            $collected = $this->calculateCollectedForDate($fullPayments, $debtPayments, $dateKey, $period, $date, $dayMapping);
+            $expenses = $this->calculateExpensesForDate($companyBills, $dateKey, $period, $date, $dayMapping);
 
             return [
                 'date' => $dateKey,
                 'total_collected' => (float)$collected,
                 'total_expenses' => (float)$expenses,
-                'balance' => (float)$balance
+                'balance' => (float)($collected - $expenses)
             ];
         })->values()->toArray();
+    }
+
+    private function groupPaymentsByPeriod($fullPayments, $debtPayments, $companyBills, $period, $date, $dayMapping): array
+    {
+        $allDates = collect();
+
+        foreach ([$fullPayments, $debtPayments, $companyBills] as $collection) {
+            $dates = $collection->map(function ($item) use ($period, $date, $dayMapping) {
+                $itemDate = isset($item->date) ? $item->date : $item->created_at;
+                return $this->getDateGroupKey($itemDate, $period, $date, $dayMapping);
+            });
+            $allDates = $allDates->merge($dates);
+        }
+
+        return $allDates->unique()->sort()->toArray();
+    }
+
+    private function getDateGroupKey($date, $period, $requestDate, $dayMapping): string
+    {
+        $dateString = $date instanceof Carbon ? $date->toDateString() : Carbon::parse($date)->toDateString();
+
+        if ($period === 'week' && !empty($dayMapping)) {
+            return $dayMapping[$dateString] ?? ucfirst(Carbon::parse($dateString)->locale('es')->dayName);
+        }
+
+        return $this->dateFormatter->formatDateLabel(Carbon::parse($date), $period, Carbon::parse($requestDate));
+    }
+
+    private function calculateCollectedForDate($fullPayments, $debtPayments, $dateKey, $period, $date, $dayMapping): float
+    {
+        $full = $fullPayments->filter(function ($p) use ($dateKey, $period, $date, $dayMapping) {
+            return $this->getDateGroupKey($p->date, $period, $date, $dayMapping) === $dateKey;
+        });
+
+        $partial = $debtPayments->filter(function ($p) use ($dateKey, $period, $date, $dayMapping) {
+            return $this->getDateGroupKey($p->created_at, $period, $date, $dayMapping) === $dateKey;
+        });
+
+        return $full->sum('amount') + $partial->sum('amount');
+    }
+
+    private function calculateExpensesForDate($companyBills, $dateKey, $period, $date, $dayMapping): float
+    {
+        return $companyBills->filter(function ($b) use ($dateKey, $period, $date, $dayMapping) {
+            return $this->getDateGroupKey($b->date, $period, $date, $dayMapping) === $dateKey;
+        })->sum('amount');
+    }
+
+    private function processDeliveryData($delivery): array
+    {
+        $paidAmount = 0;
+        $pendingAmount = $delivery->amount;
+        $paymentDetails = [];
+
+        if ($delivery->payment_status === 'paid' && $delivery->payment_type === 'full') {
+            $paidAmount = $delivery->amount;
+            $pendingAmount = 0;
+            $paymentDetails[] = [
+                'date' => $delivery->updated_at->format('Y-m-d'),
+                'amount' => (float)$delivery->amount,
+                'payment_method' => 'Efectivo',
+                'notes' => 'Pago completo'
+            ];
+        } elseif ($delivery->debt && $delivery->debt->payments->count() > 0) {
+            $paidAmount = $delivery->debt->payments->sum('amount');
+            $pendingAmount = max(0, $delivery->amount - $paidAmount);
+            $paymentDetails = $delivery->debt->payments->map(function ($payment) {
+                return [
+                    'date' => ($payment->date ?? $payment->created_at)->format('Y-m-d'),
+                    'amount' => (float)$payment->amount,
+                    'payment_method' => $payment->method ?? 'Efectivo',
+                    'notes' => $payment->notes ?? ''
+                ];
+            })->toArray();
+        }
+
+        return [
+            'number' => $delivery->number,
+            'date' => $delivery->date->format('Y-m-d'),
+            'client' => $delivery->client->legal_name ?? 'Sin cliente',
+            'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
+            'service' => $delivery->service->name ?? 'Sin servicio',
+            'total_amount' => (float)$delivery->amount,
+            'paid_amount' => (float)$paidAmount,
+            'pending_amount' => (float)$pendingAmount,
+            'status' => $delivery->status,
+            'payment_status' => $delivery->payment_status,
+            'payment_type' => $delivery->payment_type,
+            'payment_details' => $paymentDetails
+        ];
     }
 
     public function getCashRegisterDeliveries(int $userId, string $startDate, string $endDate): array
@@ -555,59 +399,7 @@ class CashService
             ->get();
 
         return $deliveries->map(function ($delivery) {
-            $paidAmount = 0;
-            $pendingAmount = $delivery->amount;
-            $paymentDetails = [];
-
-            if ($delivery->payment_status === 'paid' && $delivery->payment_type === 'full') {
-                // Pago completo
-                $paidAmount = $delivery->amount;
-                $pendingAmount = 0;
-
-                // Agregar un detalle de pago para pagos completos
-                $paymentDetails[] = [
-                    'date' => $delivery->updated_at->format('Y-m-d'),
-                    'amount' => (float)$delivery->amount,
-                    'payment_method' => 'Efectivo',  // Default para pagos completos
-                    'notes' => 'Pago completo'
-                ];
-            } elseif ($delivery->debt) {
-                // Tiene deuda con pagos parciales
-                if ($delivery->debt->payments && $delivery->debt->payments->count() > 0) {
-                    $paidAmount = $delivery->debt->payments->sum('amount');
-                    $pendingAmount = max(0, $delivery->amount - $paidAmount);
-
-                    // Asegurarse de incluir TODOS los pagos ordenados por fecha
-                    $paymentDetails = $delivery->debt->payments
-                        ->sortBy(function ($payment) {
-                            return $payment->date ?? $payment->created_at;
-                        })
-                        ->map(function ($payment) {
-                            return [
-                                'date' => $payment->date ? $payment->date->format('Y-m-d') : $payment->created_at->format('Y-m-d'),
-                                'amount' => (float)$payment->amount,
-                                'payment_method' => $payment->method ?? 'Efectivo',
-                                'notes' => $payment->notes ?? ''
-                            ];
-                        })->values()->toArray();
-                }
-            }
-
-            return [
-                'number' => $delivery->number,
-                'date' => $this->safeFormatDate($delivery->date, 'N/A'),
-                'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
-                'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
-                'service' => $delivery->service ? $delivery->service->name : 'Sin servicio',
-                'total_amount' => (float)$delivery->amount,
-                'amount' => (float)$delivery->amount,  // Mantener para compatibilidad con vistas existentes
-                'paid_amount' => (float)$paidAmount,
-                'pending_amount' => (float)$pendingAmount,
-                'status' => $delivery->status,
-                'payment_status' => $delivery->payment_status,
-                'payment_type' => $delivery->payment_type,
-                'payment_details' => $paymentDetails
-            ];
+            return $this->processDeliveryData($delivery);
         })->toArray();
     }
 
@@ -618,115 +410,11 @@ class CashService
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
 
-        // Procesamos las entregas para asegurarnos que cada una tenga información detallada de sus pagos
-        $delivered = $deliveries->where('status', 'delivered')->values();
-        $canceled = $deliveries->where('status', 'cancelled')->values();
-        $collected = $deliveries->where('payment_status', 'paid')->values();
-        $uncollected = $deliveries->whereIn('payment_status', ['pending', 'partial_paid'])->values();
-
         return [
-            'delivered' => $delivered->map(function ($delivery) {
-                $paidAmount = 0;
-                $pendingAmount = $delivery->amount;
-
-                if ($delivery->payment_status === 'paid' && $delivery->payment_type === 'full') {
-                    $paidAmount = $delivery->amount;
-                    $pendingAmount = 0;
-                } elseif ($delivery->debt) {
-                    $paidAmount = $delivery->debt->payments->sum('amount');
-                    $pendingAmount = max(0, $delivery->amount - $paidAmount);
-                }
-
-                return [
-                    'number' => $delivery->number,
-                    'date' => $delivery->date->format('Y-m-d'),
-                    'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
-                    'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
-                    'service' => $delivery->service ? $delivery->service->name : 'Sin servicio',
-                    'total_amount' => (float)$delivery->amount,
-                    'amount' => (float)$delivery->amount,  // Mantener para compatibilidad con vistas existentes
-                    'paid_amount' => (float)$paidAmount,
-                    'pending_amount' => (float)$pendingAmount,
-                    'payment_status' => $delivery->payment_status,
-                    'payment_type' => $delivery->payment_type
-                ];
-            })->toArray(),
-            'canceled' => $canceled->map(function ($delivery) {
-                return [
-                    'number' => $delivery->number,
-                    'date' => $delivery->date->format('Y-m-d'),
-                    'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
-                    'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
-                    'service' => $delivery->service->name ?? 'N/A',
-                    'amount' => (float)$delivery->amount,
-                    'cancellation_notes' => $delivery->cancellation_notes
-                ];
-            })->toArray(),
-            'collected' => $collected->map(function ($delivery) {
-                $paidAmount = 0;
-                $paymentDetails = [];
-
-                if ($delivery->payment_type === 'full') {
-                    $paidAmount = $delivery->amount;
-                } elseif ($delivery->debt) {
-                    $paidAmount = $delivery->debt->payments->sum('amount');
-
-                    $paymentDetails = $delivery->debt->payments->map(function ($payment) {
-                        return [
-                            'date' => $payment->date ? $payment->date->format('Y-m-d') : $payment->created_at->format('Y-m-d'),
-                            'amount' => (float)$payment->amount,
-                            'payment_method' => $payment->method ?? 'No especificado',
-                            'notes' => $payment->notes ?? ''
-                        ];
-                    })->toArray();
-                }
-
-                return [
-                    'number' => $delivery->number,
-                    'date' => $delivery->date->format('Y-m-d'),
-                    'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
-                    'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
-                    'service' => $delivery->service->name ?? 'N/A',
-                    'total_amount' => (float)$delivery->amount,
-                    'amount' => (float)$delivery->amount,  // Mantener para compatibilidad con vistas existentes
-                    'paid_amount' => (float)$paidAmount,
-                    'payment_type' => $delivery->payment_type,
-                    'payment_details' => $paymentDetails
-                ];
-            })->toArray(),
-            'uncollected' => $uncollected->map(function ($delivery) {
-                $paidAmount = 0;
-                $pendingAmount = $delivery->amount;
-                $paymentDetails = [];
-
-                if ($delivery->debt) {
-                    $paidAmount = $delivery->debt->payments->sum('amount');
-                    $pendingAmount = max(0, $delivery->amount - $paidAmount);
-
-                    $paymentDetails = $delivery->debt->payments->map(function ($payment) {
-                        return [
-                            'date' => $payment->date ? $payment->date->format('Y-m-d') : $payment->created_at->format('Y-m-d'),
-                            'amount' => (float)$payment->amount,
-                            'payment_method' => $payment->method ?? 'No especificado',
-                            'notes' => $payment->notes ?? ''
-                        ];
-                    })->toArray();
-                }
-
-                return [
-                    'number' => $delivery->number,
-                    'date' => $delivery->date->format('Y-m-d'),
-                    'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
-                    'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
-                    'service' => $delivery->service->name ?? 'N/A',
-                    'total_amount' => (float)$delivery->amount,
-                    'amount' => (float)$delivery->amount,  // Mantener para compatibilidad con vistas existentes
-                    'paid_amount' => (float)$paidAmount,
-                    'pending_amount' => (float)$pendingAmount,
-                    'payment_status' => $delivery->payment_status,
-                    'payment_details' => $paymentDetails
-                ];
-            })->toArray()
+            'delivered' => $deliveries->where('status', 'delivered')->map(fn($d) => $this->processDeliveryData($d))->values()->toArray(),
+            'canceled' => $deliveries->where('status', 'cancelled')->map(fn($d) => $this->processDeliveryData($d))->values()->toArray(),
+            'collected' => $deliveries->where('payment_status', 'paid')->map(fn($d) => $this->processDeliveryData($d))->values()->toArray(),
+            'uncollected' => $deliveries->whereIn('payment_status', ['pending', 'partial_paid'])->map(fn($d) => $this->processDeliveryData($d))->values()->toArray()
         ];
     }
 
@@ -738,53 +426,21 @@ class CashService
             ->get();
 
         return $deliveries->groupBy('courier_id')
-            ->map(function ($group, $courierId) {
+            ->map(function ($group) {
                 $courier = $group->first()->courier;
-                $courierName = $courier ? $courier->first_name . ' ' . $courier->last_name : 'Sin repartidor';
-
                 $delivered = $group->where('status', 'delivered');
                 $canceled = $group->where('status', 'cancelled');
 
                 return [
-                    'courier' => $courierName,
+                    'courier' => $courier ? $courier->first_name . ' ' . $courier->last_name : 'Sin repartidor',
                     'total_deliveries' => $group->count(),
                     'delivered_count' => $delivered->count(),
                     'delivered_amount' => (float)$delivered->sum('amount'),
                     'canceled_count' => $canceled->count(),
                     'canceled_amount' => (float)$canceled->sum('amount'),
                     'deliveries' => [
-                        'delivered' => $delivered->map(function ($delivery) {
-                            $paidAmount = 0;
-                            $pendingAmount = $delivery->amount;
-
-                            if ($delivery->payment_status === 'paid' && $delivery->payment_type === 'full') {
-                                $paidAmount = $delivery->amount;
-                                $pendingAmount = 0;
-                            } elseif ($delivery->debt) {
-                                $paidAmount = $delivery->debt->payments->sum('amount');
-                                $pendingAmount = max(0, $delivery->amount - $paidAmount);
-                            }
-
-                            return [
-                                'number' => $delivery->number,
-                                'date' => $delivery->date->format('Y-m-d'),
-                                'client' => $delivery->client->legal_name ?? 'N/A',
-                                'total_amount' => (float)$delivery->amount,
-                                'amount' => (float)$delivery->amount,  // Mantener para compatibilidad con vistas existentes
-                                'paid_amount' => (float)$paidAmount,
-                                'pending_amount' => (float)$pendingAmount,
-                                'payment_status' => $delivery->payment_status
-                            ];
-                        })->values()->toArray(),
-                        'canceled' => $canceled->map(function ($delivery) {
-                            return [
-                                'number' => $delivery->number,
-                                'date' => $delivery->date->format('Y-m-d'),
-                                'client' => $delivery->client->legal_name ?? 'N/A',
-                                'amount' => (float)$delivery->amount,
-                                'cancellation_notes' => $delivery->cancellation_notes ?? 'N/A'
-                            ];
-                        })->values()->toArray()
+                        'delivered' => $delivered->map(fn($d) => $this->processDeliveryData($d))->values()->toArray(),
+                        'canceled' => $canceled->map(fn($d) => $this->processDeliveryData($d))->values()->toArray()
                     ]
                 ];
             })->values()->toArray();
@@ -799,101 +455,51 @@ class CashService
             ->get();
 
         return $debts->groupBy('client_id')
-            ->map(function ($group, $clientId) {
+            ->map(function ($group) {
                 $client = $group->first()->client;
-                $clientName = $client ? $client->legal_name : 'Cliente desconocido';
-                $totalDebt = 0;
-
-                foreach ($group as $delivery) {
+                $totalDebt = $group->sum(function ($delivery) {
                     if ($delivery->payment_status === 'pending') {
-                        $totalDebt += $delivery->amount;
-                    } else if ($delivery->payment_status === 'partial_paid' && $delivery->debt) {
-                        $paid = $delivery->debt->payments->sum('amount');
-                        $totalDebt += ($delivery->amount - $paid);
+                        return $delivery->amount;
                     }
-                }
+                    if ($delivery->payment_status === 'partial_paid' && $delivery->debt) {
+                        return $delivery->amount - $delivery->debt->payments->sum('amount');
+                    }
+                    return 0;
+                });
 
                 return [
-                    'client' => $clientName,
+                    'client' => $client->legal_name ?? 'Cliente desconocido',
                     'total_deliveries' => $group->count(),
                     'total_debt' => (float)$totalDebt,
-                    'deliveries' => $group->map(function ($delivery) {
-                        $pendingAmount = $delivery->amount;
-                        $paidAmount = 0;
-                        $paymentDetails = [];
-
-                        if ($delivery->debt) {
-                            $payments = $delivery->debt->payments;
-                            $paidAmount = $payments->sum('amount');
-                            $pendingAmount = $delivery->amount - $paidAmount;
-
-                            $paymentDetails = $payments->map(function ($payment) {
-                                return [
-                                    'date' => $payment->date->format('Y-m-d'),
-                                    'amount' => (float)$payment->amount,
-                                    'payment_method' => $payment->payment_method,
-                                    'notes' => $payment->notes
-                                ];
-                            })->toArray();
-                        }
-
-                        return [
-                            'number' => $delivery->number,
-                            'date' => $delivery->date->format('Y-m-d'),
-                            'amount' => (float)$delivery->amount,
-                            'paid_amount' => (float)$paidAmount,
-                            'pending_amount' => (float)$pendingAmount,
-                            'payment_status' => $delivery->payment_status,
-                            'payment_details' => $paymentDetails
-                        ];
-                    })->toArray()
+                    'deliveries' => $group->map(fn($d) => $this->processDeliveryData($d))->toArray()
                 ];
             })->values()->toArray();
     }
 
     public function getClientPaymentSummary(int $userId, string $startDate, string $endDate): array
     {
-        if (str_contains($startDate, '/')) {
-            $parts = explode('/', trim($startDate));
-            if (count($parts) === 3) {
-                $startDate = $parts[2] . '-' . $parts[1] . '-' . $parts[0];
-            }
-        }
-
-        if (str_contains($endDate, '/')) {
-            $parts = explode('/', trim($endDate));
-            if (count($parts) === 3) {
-                $endDate = $parts[2] . '-' . $parts[1] . '-' . $parts[0];
-            }
-        }
-
-        $start = Carbon::parse($this->ensureDateFormat($startDate))->startOfDay();
-        $end = Carbon::parse($this->ensureDateFormat($endDate))->endOfDay();
-
         $deliveries = Delivery::with(['debt.payments'])
             ->where('user_id', $userId)
-            ->whereBetween('date', [$start, $end])
+            ->whereBetween('date', [$this->ensureDateFormat($startDate), $this->ensureDateFormat($endDate)])
             ->whereIn('payment_status', ['paid', 'partial_paid'])
             ->get();
 
         return $deliveries->map(function ($delivery) {
-            $payments = $delivery->debt && $delivery->debt->payments
-                ? $delivery->debt->payments->map(function ($payment) {
-                    return [
-                        'date' => $payment->date->format('Y-m-d'),
-                        'amount' => (float)$payment->amount,
-                        'method' => $payment->payment_method,
-                        'notes' => $payment->notes,
-                    ];
-                })->toArray()
-                : [];
-
             return [
                 'delivery_number' => $delivery->number,
                 'delivery_date' => $delivery->date->format('Y-m-d'),
                 'delivery_amount' => (float)$delivery->amount,
                 'payment_status' => $delivery->payment_status,
-                'payments' => $payments,
+                'payments' => $delivery->debt && $delivery->debt->payments
+                    ? $delivery->debt->payments->map(function ($payment) {
+                        return [
+                            'date' => $payment->date->format('Y-m-d'),
+                            'amount' => (float)$payment->amount,
+                            'method' => $payment->payment_method,
+                            'notes' => $payment->notes,
+                        ];
+                    })->toArray()
+                    : []
             ];
         })->toArray();
     }

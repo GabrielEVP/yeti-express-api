@@ -11,7 +11,7 @@ class FormRequestUpdatePassword
     public static function fromArray(array $data): self
     {
         return new self(
-            password: $data['$password'],
+            password: $data['password'],
         );
     }
 

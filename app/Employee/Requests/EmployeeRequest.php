@@ -26,7 +26,7 @@ class EmployeeRequest extends FormRequest
         if ($this->isMethod('put') && $this->routeIs('employees.update')) {
             return [
                 'name' => ['required', 'string', 'max:100'],
-                'email' => ['required', 'email', 'max:100', "unique:employees,email,{$this->employee->id}"],
+                'email' => ['required', 'email', 'max:100'],
                 'role' => ['required', 'in:admin,basic'],
                 'active' => ['boolean'],
             ];

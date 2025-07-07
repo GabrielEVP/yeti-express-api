@@ -34,7 +34,11 @@ class FormRequestUpdateEmployeeDTO implements JsonSerializable
 
     public function toArray(): array
     {
-        return $this->toArray();
+        return [
+            'name' => $this->name,
+            'email' => $this->email,
+            'role' => $this->role,
+        ];
     }
 }
 

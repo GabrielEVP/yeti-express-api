@@ -2,73 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-
-class User extends Authenticatable
+class User extends \App\Auth\Models\User
 {
-    use HasApiTokens, HasFactory, Notifiable;
-
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'profile_image',
-    ];
-
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
-
-    public function clients()
-    {
-        return $this->hasMany(Client::class);
-    }
-
-    public function couriers(): HasMany
-    {
-        return $this->hasMany(Courier::class);
-    }
-
-    public function deliveries(): HasMany
-    {
-        return $this->hasMany(Delivery::class);
-    }
-
-    public function employees(): HasMany
-    {
-        return $this->hasMany(Employee::class);
-    }
-
-    public function companyBills(): HasMany
-    {
-        return $this->hasMany(CompanyBill::class);
-    }
-
-    public function services(): HasMany
-    {
-        return $this->hasMany(Service::class);
-    }
-
-    public function debts(): HasMany
-    {
-        return $this->hasMany(Debt::class);
-    }
-
-    public function debtPayments(): HasMany
-    {
-        return $this->hasMany(DebtPayment::class);
-    }
+    // This class extends the Auth User model to maintain compatibility with Laravel Sanctum
+    // which expects the User model to be in the App\Models namespace
 }

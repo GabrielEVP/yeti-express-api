@@ -1,0 +1,15 @@
+<?php
+
+namespace App\Client\Models;
+
+
+enum Type: string
+{
+    case VENEZOLANO = 'venezolano';
+    case FOREIGN = 'foreign';
+    case LEGAL = 'legal';
+    case COMMUNE = 'commune';
+    case GOVERNMENT = 'government';
+    case PASAPORT = 'pasaport';
+    case PERSONAL_SIGNATURE = 'personal_signature';
+}

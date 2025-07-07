@@ -39,7 +39,7 @@ return [
     |
     */
 
-    'debug' => (bool) env('APP_DEBUG', false),
+    'debug' => (bool)env('APP_DEBUG', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -120,7 +120,7 @@ return [
 
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
-        'store' => env('APP_MAINTENANCE_STORE', 'database'),
+        'store' => env('APP_MAINTENANCE_STORE', 'Database'),
     ],
 
     'providers' => [
@@ -152,8 +152,20 @@ return [
         Barryvdh\DomPDF\ServiceProvider::class,
 
         // Application Service Providers...
-        App\Providers\AppServiceProvider::class,
-        App\Providers\AuthServiceProvider::class,
+        App\Core\Providers\CoreServiceProviders::class,
+        \App\Auth\Providers\AuthServiceProvider::class,
+
+        // Custom Providers
+        \App\Core\Providers\CoreServiceProviders::class,
+        \App\Auth\Providers\AuthServiceProvider::class,
+        \App\Client\Providers\ClientServiceProvider::class,
+        \App\Service\Providers\ServicesProvider::class,
+        \App\Courier\Providers\CourierServiceProvider::class,
+        \App\Delivery\Providers\DeliveryServiceProvider::class,
+        \App\Debt\Providers\DebtServiceProvider::class,
+        \App\Employee\Providers\EmployeeServiceProvider::class,
+        \App\CompanyBill\Providers\CompanyBillServiceProvider::class,
+        \App\Cash\Providers\CashServiceProviders::class,
     ],
 
     'aliases' => [

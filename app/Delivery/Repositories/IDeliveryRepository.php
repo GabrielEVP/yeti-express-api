@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Delivery\Repositories;
+
+use App\Delivery\DTO\DeliveryDTO;
+use App\Delivery\DTO\FilterDeliveryPaginatedDTO;
+use App\Delivery\DTO\FilterRequestDeliveryPaginatedDTO;
+use App\Delivery\Models\Status;
+use Illuminate\Support\Collection;
+
+interface IDeliveryRepository
+{
+    public function all(): Collection;
+
+    public function find(string $id): DeliveryDTO;
+
+    public function create(array $data): DeliveryDTO;
+
+    public function update(string $id, array $data): DeliveryDTO;
+
+    public function delete(string $id): void;
+
+    public function filter(FilterRequestDeliveryPaginatedDTO $filterRequestDeliveryDTO): FilterDeliveryPaginatedDTO;
+
+    public function updateStatus(string $id, Status $status): void;
+
+    public function cancelDelivery(string $id, string $cancellation_notes): void;
+
+
+}

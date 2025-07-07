@@ -15,9 +15,8 @@ class PayAllDebtsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'pay' => ['required', 'array'],
-            'pay.clientId' => ['required', 'integer', 'exists:clients,id'],
-            'pay.method' => [
+            'client_id' => ['required', 'integer', 'exists:clients,id'],
+            'method' => [
                 'required',
                 'string',
                 Rule::in(['cash', 'mobile_payment', 'bank_transfer', 'other']),

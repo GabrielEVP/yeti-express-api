@@ -44,7 +44,7 @@
             <td>{{ $debt->delivery->number }}</td>
             <td>{{ $debt->delivery->date->format('d/m/Y') }}</td>
             <td>${{ number_format($debt->amount, 2) }}</td>
-            <td class="status-{{ str_replace('_', '-', $debt->status) }}">
+            <td>
                 @if($debt->status === 'pending')
                     Pendiente
                 @elseif($debt->status === 'partial_paid')

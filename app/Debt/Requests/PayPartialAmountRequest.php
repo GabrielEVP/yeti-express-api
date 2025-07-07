@@ -15,10 +15,9 @@ class PayPartialAmountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'pay' => ['required', 'array'],
-            'pay.clientId' => ['required', 'integer', 'exists:clients,id'],
-            'pay.amount' => ['required', 'numeric', 'min:0.01'],
-            'pay.method' => [
+            'client_id' => ['required', 'integer', 'exists:clients,id'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'method' => [
                 'required',
                 'string',
                 Rule::in(['cash', 'mobile_payment', 'bank_transfer', 'other']),

@@ -17,7 +17,7 @@ class FormRequestPayPartialDTO implements JsonSerializable
     public static function fromArray(array $data): self
     {
         return new self(
-            client_id: $data['$client_id'],
+            client_id: $data['client_id'],
             amount: (float)$data['amount'],
             method: $data['method']
         );

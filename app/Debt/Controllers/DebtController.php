@@ -37,7 +37,7 @@ class DebtController extends Controller
             $request->input('sortBy', 'number'),
             $request->input('sortDirection', 'asc'),
             $request->input('client_id'),
-            ($request->input('status') === 'all') ? null : $request->input('status'),
+            ($request->input('payment_status') === 'all') ? null : $request->input('payment_status'),
             $request->integer('page', 1),
             $request->integer('per_page', 15)
         );

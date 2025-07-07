@@ -7,6 +7,7 @@ use App\Core\Controllers\Controller;
 use App\Debt\DomPDF\DomPDFDebt;
 use App\Debt\Services\PDFDebtService;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class DebtReportController extends Controller
 {
@@ -19,44 +20,50 @@ class DebtReportController extends Controller
         $this->pdfDebtService = $pdfDebtService;
     }
 
-    public function getUnPaidDebtsReport(): \Illuminate\Http\Response
+    public function getUnPaidDebtsReport(): Response
     {
-        $clientsDTO = $this->pdfDebtService->getUnpaidClientsWithDebts();
+        $clients = $this->pdfDebtService->getUnpaidClientsWithDebts();
 
-        $pdf = $this->pdfService->generateUnpaidDebtsReport($clientsDTO);
+        $pdf = $this->pdfService->generateUnpaidDebtsReport($clients);
+
         return $pdf->stream("unpaid-debts-report.pdf");
     }
 
-    public function getClientDebtReport(Client $client, Request $request): \Illuminate\Http\Response
+    public function getClientDebtReport(string $id, Request $request): Response
     {
-        $request->input('startDate');
-        $request->input('endDate');
+        $dateRange = [
+            'startDate' => $request->input('startDate'),
+            'endDate' => $request->input('endDate')
+        ];
 
-        $clientDTO = $this->pdfDebtService->getClientDebtsWithFilters($client, $dateRangeDTO);
+        $client = Client::findOrFail($id);
+        $client = $this->pdfDebtService->getClientDebtsWithFilters($client, $dateRange);
 
         $pdf = $this->pdfService->generateClientDebtReport(
-            $clientDTO,
-            $dateRangeDTO->startDate,
-            $dateRangeDTO->endDate
+            $client,
+            $dateRange['startDate'],
+            $dateRange['endDate']
         );
 
-        return $pdf->stream("client-debt-report-{$client->id}.pdf");
+
+        return $pdf->stream("client-debt-report.pdf");
     }
 
-    public function getAllClientsDebtReport(Request $request): \Illuminate\Http\Response
+    public function getAllClientsDebtReport(Request $request): Response
     {
-        $dateRangeDTO = $request->toDTO();
+        $dateRange = [
+            'startDate' => $request->input('startDate'),
+            'endDate' => $request->input('endDate')
+        ];
 
-        $clientsDTO = $this->pdfDebtService->getAllClientsDebtsWithFilters($dateRangeDTO);
+        $clients = $this->pdfDebtService->getAllClientsDebtsWithFilters($dateRange);
 
         $pdf = $this->pdfService->generateAllClientsDebtReport(
-            $clientsDTO,
-            $dateRangeDTO->startDate,
-            $dateRangeDTO->endDate
+            $clients,
+            $dateRange['startDate'],
+            $dateRange['endDate']
         );
 
         return $pdf->stream("all-clients-debt-report.pdf");
     }
-
-
 }

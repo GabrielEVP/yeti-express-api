@@ -3,16 +3,14 @@
 namespace App\Debt\Repositories;
 
 use App\Client\Models\Client;
-use App\Debt\DTO\ClientDebtsDTO;
-use App\Debt\DTO\ClientsDebtsCollectionDTO;
-use App\Debt\DTO\DateRangeDTO;
+use Illuminate\Database\Eloquent\Collection;
 
 interface IPDFDebtRepository
 {
-    public function getUnpaidClientsWithDebts(): ClientsDebtsCollectionDTO;
+    public function getUnpaidClientsWithDebts(): Collection;
 
-    public function getClientDebtsWithFilters(Client $client, DateRangeDTO $dateRange): ClientDebtsDTO;
+    public function getClientDebtsWithFilters(Client $client, array $dateRange): Client;
 
-    public function getAllClientsDebtsWithFilters(DateRangeDTO $dateRange): ClientsDebtsCollectionDTO;
+    public function getAllClientsDebtsWithFilters(array $dateRange): Collection;
 }
 

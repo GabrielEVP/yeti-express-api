@@ -48,22 +48,33 @@ class DebtService implements IDebtRepository
             ->get();
 
         $debtsSummary = DB::table('debts')
-            ->select('client_id', DB::raw('SUM(amount - IFNULL((SELECT SUM(amount) FROM debt_payments WHERE debt_id = debts.id), 0)) as total_pending'))
+            ->select(
+                'client_id',
+                DB::raw('COUNT(*) as debt_counts'),
+                DB::raw('SUM(amount - IFNULL((SELECT SUM(amount) FROM debt_payments WHERE debt_id = debts.id), 0)) as total_pending')
+            )
             ->whereIn('client_id', $clients->pluck('id'))
             ->where('status', '!=', 'paid')
             ->groupBy('client_id')
             ->get()
             ->keyBy('client_id');
 
-        return $clients->map(function ($client) use ($debtsSummary) {
-            return new ClientWithDebtDTO(
-                id: $client->id,
-                legal_name: $client->legal_name,
-                registration_number: $client->registration_number,
-                total_pending: (float)($debtsSummary[$client->id]->total_pending ?? 0)
-            );
-        });
+        return $clients
+            ->map(function ($client) use ($debtsSummary) {
+                $summary = $debtsSummary[$client->id] ?? null;
+
+                return new ClientWithDebtDTO(
+                    id: $client->id,
+                    legal_name: $client->legal_name,
+                    registration_number: $client->registration_number,
+                    debt_counts: (int)($summary->debt_counts ?? 0),
+                    total_pending: (float)($summary->total_pending ?? 0)
+                );
+            })
+            ->sortByDesc('total_pending')
+            ->values();
     }
+
 
     public function getClientDebtStats(string $clientId): ClientDebtStatsDTO
     {
@@ -106,9 +117,10 @@ class DebtService implements IDebtRepository
             ->groupBy('deliveries.id', 'deliveries.number', 'deliveries.payment_status', 'deliveries.date')
             ->selectRaw('
                 MAX(debts.id) as debt_id,
-                COALESCE(SUM(debts.amount), 0) as amount,
-                GREATEST(COALESCE(SUM(debts.amount), 0) - COALESCE(SUM(debt_payments.amount), 0), 0) as debt_remaining_amount
+                MAX(debts.amount) as amount,
+                MAX(debts.amount) - COALESCE(SUM(debt_payments.amount), 0) as debt_remaining_amount
             ');
+
 
         $paginator = $query->paginate($filterDTO->perPage, ['*'], 'page', $filterDTO->page);
 

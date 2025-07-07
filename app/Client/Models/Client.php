@@ -51,7 +51,7 @@ class Client extends Model
         return $this->hasMany(Delivery::class);
     }
 
-    public function Debts()
+    public function debts()
     {
         return $this->hasMany(Debt::class);
     }

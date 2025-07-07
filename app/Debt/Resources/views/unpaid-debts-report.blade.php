@@ -24,7 +24,7 @@
         <p>No se encontraron clientes con deudas pendientes en este momento.</p>
     </div>
 @else
-    @foreach($clients->getClients() as $client)
+    @foreach($clients as $client)
         <div class="client-section">
             <div class="client-header">
                 Cliente: {{ $client->legalName }}
@@ -33,7 +33,7 @@
                 @endif
             </div>
 
-            @if(empty($client->debts))
+            @if($client->debts->isEmpty())
                 <div class="no-records">
                     <p>No hay deudas pendientes para este cliente.</p>
                 </div>
@@ -51,15 +51,20 @@
                     </thead>
                     <tbody>
                     @foreach($client->debts as $debt)
+                        @php
+                            $paid = $debt->payments->sum('amount');
+                            $pending = $debt->amount - $paid;
+                        @endphp
                         <tr>
-                            <td>{{ $debt['delivery']['number'] }}</td>
-                            <td>{{ date('d/m/Y', strtotime($debt['delivery']['date'])) }}</td>
-                            <td>{{ $debt['delivery']['service']['name'] }}</td>
-                            <td class="amount">{{ number_format($debt['amount'], 2) }}</td>
-                            <td class="amount">{{ number_format(collect($debt['payments'])->sum('amount'), 2) }}</td>
-                            <td class="amount">{{ number_format($debt['amount'] - collect($debt['payments'])->sum('amount'), 2) }}</td>
+                            <td>{{ $debt->delivery->number }}</td>
+                            <td>{{ $debt->delivery->date->format('d/m/Y') }}</td>
+                            <td>{{ $debt->delivery->service->name }}</td>
+                            <td class="amount">{{ number_format($debt->amount, 2) }}</td>
+                            <td class="amount">{{ number_format($paid, 2) }}</td>
+                            <td class="amount">{{ number_format($pending, 2) }}</td>
                         </tr>
-                        @if(!empty($debt['payments']))
+
+                        @if($debt->payments->isNotEmpty())
                             <tr>
                                 <td colspan="8">
                                     <div class="payments-section">
@@ -70,11 +75,11 @@
                                                 <th>Método</th>
                                                 <th>Monto</th>
                                             </tr>
-                                            @foreach($debt['payments'] as $payment)
+                                            @foreach($debt->payments as $payment)
                                                 <tr>
-                                                    <td>{{ date('d/m/Y', strtotime($payment['date'])) }}</td>
-                                                    <td>{{ \App\Debt\Helpers\MethodTranslator::toSpanish($payment['method'] instanceof \App\Debt\Models\Method ? $payment['method'] : \App\Debt\Models\Method::from($payment['method'])) }}</td>
-                                                    <td class="amount">{{ number_format($payment['amount'], 2) }}</td>
+                                                    <td>{{ $payment->date->format('d/m/Y') }}</td>
+                                                    <td>{{ \App\Debt\Helpers\MethodTranslator::toSpanish($payment->method) }}</td>
+                                                    <td class="amount">{{ number_format($payment->amount, 2) }}</td>
                                                 </tr>
                                             @endforeach
                                         </table>
@@ -87,20 +92,20 @@
                 </table>
 
                 <div class="debt-total">
-                    Deuda total pendiente: {{ number_format(collect($client->debts)->sum(function($debt) {
-                            return $debt['amount'] - collect($debt['payments'])->sum('amount');
-                        }), 2) }}
+                    Deuda total
+                    pendiente: {{ number_format($client->debts->sum(fn($debt) => $debt->amount - $debt->payments->sum('amount')), 2) }}
                 </div>
             @endif
         </div>
     @endforeach
 
     <div class="debt-total">
-        TOTAL DEUDAS PENDIENTES: {{ number_format(collect($clients->getClients())->sum(function($client) {
-                return collect($client->debts)->sum(function($debt) {
-                    return $debt['amount'] - collect($debt['payments'])->sum('amount');
-                });
-            }), 2) }}
+        TOTAL DEUDAS PENDIENTES:
+        {{ number_format($clients->sum(function($client) {
+            return $client->debts->sum(function($debt) {
+                return $debt->amount - $debt->payments->sum('amount');
+            });
+        }), 2) }}
     </div>
 @endif
 

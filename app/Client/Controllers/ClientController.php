@@ -56,8 +56,10 @@ class ClientController extends Controller
     {
         $filters = $request->input('filters', []);
 
+        $search = $request->has('search') ? $request->string('search')->toString() : '';
+
         $filterDTO = new FilterRequestClientPaginatedDTO(
-            $request->string('search')->toString(),
+            $search,
             $request->input('sortBy', 'legal_name'),
             $request->input('sortDirection', 'asc'),
             $filters['type'] ?? null,

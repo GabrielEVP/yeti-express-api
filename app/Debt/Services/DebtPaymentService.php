@@ -4,6 +4,8 @@ namespace App\Debt\Services;
 
 use App\Client\Models\Client;
 use App\Debt\DTO\DebtPaymentDTO;
+use App\Debt\DTO\FormRequestFullPaymentDTO;
+use App\Debt\DTO\FormRequestPartialPaymentDTO;
 use App\Debt\DTO\FormRequestPayAllDTO;
 use App\Debt\DTO\FormRequestPayPartialDTO;
 use App\Debt\Models\Debt;
@@ -18,7 +20,7 @@ class DebtPaymentService implements IDebtPaymentRepository
         return Auth::user()->debtPayments()->get();
     }
 
-    public function storeFullPayment(FormRequestPayAllDTO $request): DebtPaymentDTO
+    public function storeFullPayment(FormRequestFullPaymentDTO $request): DebtPaymentDTO
     {
         $debt = Auth::user()->debts()->findOrFail($request->debt_id);
 
@@ -34,7 +36,7 @@ class DebtPaymentService implements IDebtPaymentRepository
         return DebtPaymentDTO::fromModel($payment);
     }
 
-    public function storePartialPayment(FormRequestPayPartialDTO $request): DebtPaymentDTO
+    public function storePartialPayment(FormRequestPartialPaymentDTO $request): DebtPaymentDTO
     {
         $debt = Auth::user()->debts()->findOrFail($request->debt_id);
 
@@ -52,7 +54,7 @@ class DebtPaymentService implements IDebtPaymentRepository
 
     public function payAllDebtsForClient(FormRequestPayAllDTO $request): void
     {
-        $client = Client::findOrFail($request->clientId);
+        $client = Client::findOrFail($request->client_id);
 
         $debts = $client->debts()->where('status', '!=', 'paid')->get();
 
@@ -71,7 +73,7 @@ class DebtPaymentService implements IDebtPaymentRepository
 
     public function payPartialAmountForClient(FormRequestPayPartialDTO $request): void
     {
-        $client = Client::findOrFail($request->clientId);
+        $client = Client::findOrFail($request->client_id);
 
         $debts = $client->debts()
             ->where('status', '!=', 'paid')

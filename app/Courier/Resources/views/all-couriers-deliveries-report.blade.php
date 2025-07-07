@@ -33,7 +33,7 @@
 
         $totalDeliveries += count($deliveries);
         foreach ($deliveries as $delivery) {
-            switch ($delivery['status']) {
+            switch ($delivery['status']->value ?? $delivery['status']) {
                 case 'pending':
                     $totalPending++;
                     break;
@@ -97,8 +97,8 @@
                         <td>{{ $delivery['date'] }}</td>
                         <td>{{ $delivery['client_name'] }}</td>
                         <td>${{ number_format($delivery['amount'], 2, ',', '.') }}</td>
-                        <td class="status-{{ $delivery['status'] }}">
-                            @switch($delivery['status'])
+                        <td class="status-{{ $delivery['status']->value ?? $delivery['status'] }}">
+                            @switch($delivery['status']->value ?? $delivery['status'])
                                 @case('pending') Pendiente @break
                                 @case('in_transit') En Tránsito @break
                                 @case('delivered') Entregado @break
@@ -116,7 +116,7 @@
                 @php
                     $statusCount = ['pending' => 0, 'in_transit' => 0, 'delivered' => 0, 'cancelled' => 0];
                     foreach ($courier['deliveries'] as $delivery) {
-                        $status = $delivery['status'] ?? 'cancelled';
+                        $status = $delivery['status']->value ?? $delivery['status'] ?? 'cancelled';
                         $statusCount[$status] = ($statusCount[$status] ?? 0) + 1;
                     }
                 @endphp

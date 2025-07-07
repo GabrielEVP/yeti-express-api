@@ -79,37 +79,9 @@ class CashService
             $historicalInvoiced = $this->getHistoricalInvoiced($userId, $period, $date);
             $historicalBalance = $this->getHistoricalBalance($userId, $period, $date);
 
-            // Reformatear las etiquetas de fecha según el periodo
-            if ($period === 'week') {
-                // Determinar el primer día de la semana
-                $weekStart = Carbon::parse($startDate);
-                $dayNames = [];
-
-                // Crear un array con los nombres de los días en español
-                for ($i = 0; $i < 7; $i++) {
-                    $currentDay = $weekStart->copy()->addDays($i);
-                    $dayNames[] = ucfirst($currentDay->locale('es')->dayName);
-                }
-
-                // Asignar nombres de días a los datos históricos
-                if (count($historicalDelivered) > 0 && count($dayNames) >= count($historicalDelivered)) {
-                    foreach ($historicalDelivered as $key => $item) {
-                        $historicalDelivered[$key]['date'] = $dayNames[$key % 7];
-                    }
-                }
-
-                if (count($historicalInvoiced) > 0 && count($dayNames) >= count($historicalInvoiced)) {
-                    foreach ($historicalInvoiced as $key => $item) {
-                        $historicalInvoiced[$key]['date'] = $dayNames[$key % 7];
-                    }
-                }
-
-                if (count($historicalBalance) > 0 && count($dayNames) >= count($historicalBalance)) {
-                    foreach ($historicalBalance as $key => $item) {
-                        $historicalBalance[$key]['date'] = $dayNames[$key % 7];
-                    }
-                }
-            }
+            // Para el período semanal, no es necesario reformatear las etiquetas de fecha
+            // porque formatDateLabel ya proporciona el nombre del día correcto
+            // basado en la fecha real de cada entrega, no en la posición del índice
 
             return new DashboardStatsDTO([
                 'period' => $periodSpanish,
@@ -150,6 +122,10 @@ class CashService
             $currentDate = Carbon::parse($startDate);
             $endDateTime = Carbon::parse($endDate);
 
+            // Crear un mapeo de días para asegurar que se mantenga la correspondencia
+            // entre los nombres de los días y sus fechas
+            $dayMapping = [];
+
             while ($currentDate->lte($endDateTime)) {
                 $dayStart = $currentDate->copy()->startOfDay()->toDateTimeString();
                 $dayEnd = $currentDate->copy()->endOfDay()->toDateTimeString();
@@ -157,6 +133,10 @@ class CashService
                 // Mostrar solo el nombre del día en español sin prefijo
                 Carbon::setLocale('es');
                 $dayLabel = ucfirst($currentDate->locale('es')->dayName); // Lunes, Martes, etc.
+                $dayDate = $currentDate->toDateString();
+
+                // Guardar mapeo entre fecha y nombre del día
+                $dayMapping[$dayDate] = $dayLabel;
 
                 $periodLabels[] = $dayLabel;
                 $periodData[] = $this->generatePeriodData($userId, $dayStart, $dayEnd);
@@ -276,6 +256,27 @@ class CashService
         return Carbon::parse($date)->format('Y-m-d');
     }
 
+    /**
+     * Helper method to create a mapping of dates to day names within a date range
+     *
+     * @param string $startDate Start of the date range
+     * @param string $endDate End of the date range
+     * @return array Mapping of date strings to day names
+     */
+    private function createDayNameMapping(string $startDate, string $endDate): array
+    {
+        $dayMapping = [];
+        $currentDate = Carbon::parse($startDate);
+        $endDateTime = Carbon::parse($endDate);
+
+        while ($currentDate->lte($endDateTime)) {
+            $dayMapping[$currentDate->toDateString()] = ucfirst($currentDate->locale('es')->dayName);
+            $currentDate->addDay();
+        }
+
+        return $dayMapping;
+    }
+
     private function ensureDateFormat($date): string
     {
         if ($date instanceof Carbon) {
@@ -371,10 +372,35 @@ class CashService
         [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
         $requestDate = Carbon::parse($date);
 
-        return Delivery::where('user_id', $userId)
+        $deliveries = Delivery::where('user_id', $userId)
             ->whereBetween('date', [$startDate, $endDate])
             ->where('status', 'delivered')
-            ->get()
+            ->get();
+
+        // Si estamos en período semanal, asegúrese de que cada entrega se agrupe por su día correcto
+        if ($period === 'week') {
+            // Crear mapeo de fechas a nombres de día
+            $dayMapping = [];
+            $currentDate = Carbon::parse($startDate);
+            $endDateTime = Carbon::parse($endDate);
+
+            while ($currentDate->lte($endDateTime)) {
+                $dayMapping[$currentDate->toDateString()] = ucfirst($currentDate->locale('es')->dayName);
+                $currentDate->addDay();
+            }
+
+            // Agrupar por el día real de la entrega
+            return $deliveries->groupBy(function ($delivery) use ($dayMapping) {
+                $deliveryDate = $delivery->date->toDateString();
+                return $dayMapping[$deliveryDate] ?? ucfirst($delivery->date->locale('es')->dayName);
+            })
+                ->map(fn($group, $date) => ['date' => $date, 'total' => $group->count()])
+                ->values()
+                ->toArray();
+        }
+
+        // Para otros períodos, usar el comportamiento original
+        return $deliveries
             ->groupBy(fn($delivery) => $this->dateFormatter->formatDateLabel(Carbon::parse($delivery->date), $period, $requestDate))
             ->map(fn($group, $date) => ['date' => $date, 'total' => $group->count()])
             ->values()
@@ -386,10 +412,35 @@ class CashService
         [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
         $requestDate = Carbon::parse($date);
 
-        return Delivery::where('user_id', $userId)
+        $deliveries = Delivery::where('user_id', $userId)
             ->whereBetween('date', [$startDate, $endDate])
             ->where('status', 'delivered')
-            ->get()
+            ->get();
+
+        // Si estamos en período semanal, asegúrese de que cada entrega se agrupe por su día correcto
+        if ($period === 'week') {
+            // Crear mapeo de fechas a nombres de día
+            $dayMapping = [];
+            $currentDate = Carbon::parse($startDate);
+            $endDateTime = Carbon::parse($endDate);
+
+            while ($currentDate->lte($endDateTime)) {
+                $dayMapping[$currentDate->toDateString()] = ucfirst($currentDate->locale('es')->dayName);
+                $currentDate->addDay();
+            }
+
+            // Agrupar por el día real de la entrega
+            return $deliveries->groupBy(function ($delivery) use ($dayMapping) {
+                $deliveryDate = $delivery->date->toDateString();
+                return $dayMapping[$deliveryDate] ?? ucfirst($delivery->date->locale('es')->dayName);
+            })
+                ->map(fn($group, $date) => ['date' => $date, 'total' => (float)$group->sum('amount')])
+                ->values()
+                ->toArray();
+        }
+
+        // Para otros períodos, usar el comportamiento original
+        return $deliveries
             ->groupBy(fn($delivery) => $this->dateFormatter->formatDateLabel(Carbon::parse($delivery->date), $period, $requestDate))
             ->map(fn($group, $date) => ['date' => $date, 'total' => (float)$group->sum('amount')])
             ->values()
@@ -417,9 +468,60 @@ class CashService
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
 
-        $groupedFull = $fullPayments->groupBy(fn($p) => $this->dateFormatter->formatDateLabel(Carbon::parse($p->date), $period, $requestDate));
-        $groupedPartial = $debtPayments->groupBy(fn($p) => $this->dateFormatter->formatDateLabel(Carbon::parse($p->created_at), $period, $requestDate));
-        $groupedBills = $companyBills->groupBy(fn($b) => $this->dateFormatter->formatDateLabel(Carbon::parse($b->date), $period, $requestDate));
+        // Si estamos en período semanal, necesitamos manejar el agrupamiento de manera especial
+        if ($period === 'week') {
+            // Crear mapeo de fechas a nombres de día
+            $dayMapping = [];
+            $currentDate = Carbon::parse($startDate);
+            $endDateTime = Carbon::parse($endDate);
+
+            while ($currentDate->lte($endDateTime)) {
+                $dayMapping[$currentDate->toDateString()] = ucfirst($currentDate->locale('es')->dayName);
+                $currentDate->addDay();
+            }
+
+            // Agrupar pagos por día real de la semana
+            $groupedFull = $fullPayments->groupBy(function ($p) use ($dayMapping) {
+                $dateString = $p->date instanceof Carbon ? $p->date->toDateString() : Carbon::parse($p->date)->toDateString();
+                return $dayMapping[$dateString] ?? ucfirst(Carbon::parse($dateString)->locale('es')->dayName);
+            });
+
+            $groupedPartial = $debtPayments->groupBy(function ($p) use ($dayMapping) {
+                $dateString = $p->created_at instanceof Carbon ? $p->created_at->toDateString() : Carbon::parse($p->created_at)->toDateString();
+                return $dayMapping[$dateString] ?? ucfirst(Carbon::parse($dateString)->locale('es')->dayName);
+            });
+
+            $groupedBills = $companyBills->groupBy(function ($b) use ($dayMapping) {
+                $dateString = $b->date instanceof Carbon ? $b->date->toDateString() : Carbon::parse($b->date)->toDateString();
+                return $dayMapping[$dateString] ?? ucfirst(Carbon::parse($dateString)->locale('es')->dayName);
+            });
+        } else {
+            // Para otros períodos, usar el comportamiento original
+            // Determinar cómo agrupar según el período
+            if ($period === 'week') {
+                $dayMapping = $this->createDayNameMapping($startDate, $endDate);
+
+                $groupedFull = $fullPayments->groupBy(function ($p) use ($dayMapping) {
+                    $dateString = $p->date instanceof Carbon ? $p->date->toDateString() : Carbon::parse($p->date)->toDateString();
+                    return $dayMapping[$dateString] ?? ucfirst(Carbon::parse($dateString)->locale('es')->dayName);
+                });
+
+                $groupedPartial = $debtPayments->groupBy(function ($p) use ($dayMapping) {
+                    $dateString = $p->created_at instanceof Carbon ? $p->created_at->toDateString() : Carbon::parse($p->created_at)->toDateString();
+                    return $dayMapping[$dateString] ?? ucfirst(Carbon::parse($dateString)->locale('es')->dayName);
+                });
+
+                $groupedBills = $companyBills->groupBy(function ($b) use ($dayMapping) {
+                    $dateString = $b->date instanceof Carbon ? $b->date->toDateString() : Carbon::parse($b->date)->toDateString();
+                    return $dayMapping[$dateString] ?? ucfirst(Carbon::parse($dateString)->locale('es')->dayName);
+                });
+            } else {
+                // Para otros períodos, usar el comportamiento original
+                $groupedFull = $fullPayments->groupBy(fn($p) => $this->dateFormatter->formatDateLabel(Carbon::parse($p->date), $period, $requestDate));
+                $groupedPartial = $debtPayments->groupBy(fn($p) => $this->dateFormatter->formatDateLabel(Carbon::parse($p->created_at), $period, $requestDate));
+                $groupedBills = $companyBills->groupBy(fn($b) => $this->dateFormatter->formatDateLabel(Carbon::parse($b->date), $period, $requestDate));
+            }
+        }
 
         $allDates = array_unique(array_merge(
             $groupedFull->keys()->toArray(),

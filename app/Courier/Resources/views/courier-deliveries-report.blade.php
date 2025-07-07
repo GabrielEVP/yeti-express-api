@@ -43,13 +43,13 @@
             <td>{{ $delivery['date'] }}</td>
             <td>{{ $delivery['client_name'] ?? '-' }}</td>
             <td>${{ number_format($delivery['amount'], 2, ',', '.') }}</td>
-            <td class="status-{{ $delivery['status'] }}">
-                @switch($delivery['status'])
-                    @case('pending')     Pendiente @break
-                    @case('in_transit')  En Tránsito @break
-                    @case('delivered')   Entregado @break
-                    @case('cancelled')   Cancelado @break
-                    @default             Desconocido
+    
+            <td class="status-{{ $delivery['status']->value ?? $delivery['status'] }}">
+                @switch($delivery['status']->value ?? $delivery['status'])
+                    @case('pending') Pendiente @break
+                    @case('in_transit') En Tránsito @break
+                    @case('delivered') Entregado @break
+                    @default Cancelado
                 @endswitch
             </td>
             <td>{{ $delivery['cancelled_notes'] ?? '-' }}</td>

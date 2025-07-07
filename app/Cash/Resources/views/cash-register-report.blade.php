@@ -17,9 +17,12 @@
 </div>
 
 @if(empty($period_data) || $general_summary['total_delivered'] == 0)
-    <div class="summary-box" style="background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; text-align: center; padding: 30px; margin: 20px 0;">
+    <div class="summary-box"
+         style="background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; text-align: center; padding: 30px; margin: 20px 0;">
         <h3 style="font-size: 16px;">No se encontraron datos</h3>
-        <p>No hay movimientos de caja registrados en el período del {{ \Carbon\Carbon::parse($start_date)->format('d/m/Y') }} al {{ \Carbon\Carbon::parse($end_date)->format('d/m/Y') }}</p>
+        <p>No hay movimientos de caja registrados en el período
+            del {{ \Carbon\Carbon::parse($start_date)->format('d/m/Y') }}
+            al {{ \Carbon\Carbon::parse($end_date)->format('d/m/Y') }}</p>
     </div>
 @endif
 
@@ -178,7 +181,7 @@
         @endif
 
         @if(isset($data['previousDayPayments']) && count($data['previousDayPayments']) > 0)
-            <h3>Pagos Recibidos de Entregas Anteriores</h3>
+            <h3>Pagos Recibidos de Entregas</h3>
             <table>
                 <thead>
                 <tr>
@@ -216,7 +219,7 @@
                 </tbody>
             </table>
         @else
-            <p>No hay pagos de entregas anteriores en este período</p>
+            <p>No hay pagos de entregas en este período</p>
         @endif
     </div>
 @endforeach

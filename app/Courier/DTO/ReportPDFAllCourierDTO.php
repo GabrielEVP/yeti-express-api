@@ -19,7 +19,7 @@ final class ReportPDFAllCourierDTO
                     return [
                         'number' => $delivery['number'],
                         'date' => $delivery['date'],
-                        'status' => $delivery['status'],
+                        'status' => is_object($delivery['status']) ? $delivery['status']->value : $delivery['status'],
                         'client_name' => $delivery['client_name'] ?? '-',
                         'amount' => (float)$delivery['amount'],
                         'cancellation_notes' => $delivery['cancellation_notes'] ?? null,

@@ -27,9 +27,9 @@
     @foreach($clients as $client)
         <div class="client-section">
             <div class="client-header">
-                Cliente: {{ $client->legalName }}
-                @if($client->registrationNumber)
-                    ({{ $client->registrationNumber }})
+                Cliente: {{ $client->legal_name }}
+                @if($client->registration_number)
+                    ({{ $client->registration_number }})
                 @endif
             </div>
 

@@ -6,7 +6,7 @@ namespace App\Client\Models;
 enum Type: string
 {
     case VENEZOLANO = 'venezolano';
-    case FOREIGN = 'foreign';
+    case FOREIGN = 'foreing';
     case LEGAL = 'legal';
     case COMMUNE = 'commune';
     case GOVERNMENT = 'government';

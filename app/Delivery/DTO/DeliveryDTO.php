@@ -35,6 +35,7 @@ final class DeliveryDTO implements JsonSerializable
     public string $receipt_phone;
     public string $receipt_address;
     public array $receipt;
+    public ?array $anonymous_client = null;
 
     public function __construct(Delivery $delivery)
     {
@@ -68,9 +69,20 @@ final class DeliveryDTO implements JsonSerializable
             'full_name' => $delivery->receipt->full_name,
             'phone' => $delivery->receipt->phone,
             'address' => $delivery->receipt->address,
-            'received_at' => $delivery->receipt->received_at?->toDateTimeString(),
             'delivery_id' => $delivery->receipt->delivery_id,
         ];
+
+        $this->anonymous_client = $delivery->delivery_anonymous_client
+            ? [
+                'id' => $delivery->delivery_anonymous_client->id,
+                'delivery_id' => $delivery->delivery_anonymous_client->delivery_id,
+                'legal_name' => $delivery->delivery_anonymous_client->legal_name,
+                'type' => $delivery->delivery_anonymous_client->type?->value,
+                'registration_number' => $delivery->delivery_anonymous_client->registration_number,
+                'address' => $delivery->delivery_anonymous_client->address,
+                'phone' => $delivery->delivery_anonymous_client->phone,
+            ]
+            : null;
     }
 
     public function jsonSerialize(): array
@@ -101,6 +113,7 @@ final class DeliveryDTO implements JsonSerializable
             'receipt_phone' => $this->receipt_phone,
             'receipt_address' => $this->receipt_address,
             'receipt' => $this->receipt,
+            'delivery_anonymous_client' => $this->anonymous_client,
         ];
     }
 }

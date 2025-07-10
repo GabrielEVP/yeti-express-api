@@ -66,6 +66,10 @@ class DeliveryService implements IDeliveryRepository
 
         $delivery = Auth::user()->deliveries()->create($data);
 
+        if (isset($data['anonymous_client'])) {
+            $delivery->anonymousClient()->create($data['anonymous_client']);
+        }
+
         if (isset($data['receipt'])) {
             $delivery->receipt()->create($data['receipt']);
         }
@@ -85,6 +89,10 @@ class DeliveryService implements IDeliveryRepository
     {
         $delivery = $this->baseQuery()->findOrFail($id);
         $delivery->update($data);
+
+        if (isset($data['anonymous_client'])) {
+            $delivery->anonymousClient()->update($data['anonymous_client']);
+        }
 
         if (isset($data['receipt'])) {
             $delivery->receipt()->update($data['receipt']);

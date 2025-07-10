@@ -27,6 +27,7 @@ class Delivery extends Model
         "notes",
         "service_id",
         "client_id",
+        "anonymous_client_id",
         "courier_id",
         "user_id",
     ];
@@ -51,6 +52,11 @@ class Delivery extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function anonymousClient(): BelongsTo
+    {
+        return $this->hasOne(DeliveryAnonymousClient::class);
     }
 
     public function courier(): BelongsTo

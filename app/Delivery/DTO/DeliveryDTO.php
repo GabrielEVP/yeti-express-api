@@ -23,18 +23,14 @@ final class DeliveryDTO implements JsonSerializable
     public string $created_at;
     public string $updated_at;
     public int $service_id;
-    public int $client_id;
+    public ?int $client_id;
     public int $courier_id;
-    public int $user_id;
-    public string $client_legal_name;
+    public ?string $client_legal_name;
     public string $service_name;
     public string $courier_full_name;
-    public string $user_name;
     public ?string $debt_id;
-    public string $receipt_full_name;
-    public string $receipt_phone;
-    public string $receipt_address;
     public array $receipt;
+    public ?array $anonymous_client = null;
 
     public function __construct(Delivery $delivery)
     {
@@ -51,26 +47,38 @@ final class DeliveryDTO implements JsonSerializable
         $this->created_at = $delivery->created_at->toDateTimeString();
         $this->updated_at = $delivery->updated_at->toDateTimeString();
         $this->service_id = $delivery->service_id;
-        $this->client_id = $delivery->client_id;
+        $this->client_id = $delivery->client_id !== 0 ? $delivery->client_id : null;
         $this->courier_id = $delivery->courier_id;
-        $this->user_id = $delivery->user_id;
-        $this->client_legal_name = $delivery->client?->legal_name;
+
+        if ($delivery->client && $delivery->client->legal_name) {
+            $this->client_legal_name = $delivery->client->legal_name;
+        } elseif ($delivery->anonymousClient && $delivery->anonymousClient->legal_name) {
+            $this->client_legal_name = $delivery->anonymousClient->legal_name;
+        } else {
+            $this->client_legal_name = '';
+        }
+
         $this->service_name = $delivery->service->name;
         $this->courier_full_name = trim($delivery->courier->first_name . ' ' . $delivery->courier->last_name);
-        $this->user_name = trim($delivery->user->first_name . ' ' . $delivery->user->last_name);
         $this->debt_id = $delivery->debt?->id;
-        $this->receipt_full_name = $delivery->receipt->full_name;
-        $this->receipt_phone = $delivery->receipt->phone;
-        $this->receipt_address = $delivery->receipt->address;
 
         $this->receipt = [
             'id' => $delivery->receipt->id,
             'full_name' => $delivery->receipt->full_name,
             'phone' => $delivery->receipt->phone,
             'address' => $delivery->receipt->address,
-            'received_at' => $delivery->receipt->received_at?->toDateTimeString(),
             'delivery_id' => $delivery->receipt->delivery_id,
         ];
+
+        $this->anonymous_client = $delivery->anonymousClient
+            ? [
+                'id' => $delivery->anonymousClient->id,
+                'legal_name' => $delivery->anonymousClient->legal_name,
+                'type' => $delivery->anonymousClient->type?->value,
+                'registration_number' => $delivery->anonymousClient->registration_number,
+                'phone' => $delivery->anonymousClient->phone,
+            ]
+            : null;
     }
 
     public function jsonSerialize(): array
@@ -91,16 +99,12 @@ final class DeliveryDTO implements JsonSerializable
             'service_id' => $this->service_id,
             'client_id' => $this->client_id,
             'courier_id' => $this->courier_id,
-            'user_id' => $this->user_id,
             'client_legal_name' => $this->client_legal_name,
             'service_name' => $this->service_name,
             'courier_full_name' => $this->courier_full_name,
-            'user_name' => $this->user_name,
             'debt_id' => $this->debt_id,
-            'receipt_full_name' => $this->receipt_full_name,
-            'receipt_phone' => $this->receipt_phone,
-            'receipt_address' => $this->receipt_address,
             'receipt' => $this->receipt,
+            'anonymous_client' => $this->anonymous_client,
         ];
     }
 }

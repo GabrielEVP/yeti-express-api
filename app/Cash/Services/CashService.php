@@ -378,7 +378,10 @@ class CashService
         return [
             'number' => $delivery->number,
             'date' => $delivery->date->format('Y-m-d'),
-            'client' => $delivery->client->legal_name ?? 'Sin cliente',
+            'client' => $delivery->client_id
+                ? $delivery->client->legal_name
+                : $delivery->anonymousClient->legal_name,
+            'is_anonymous_client' => !$delivery->client_id,
             'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
             'service' => $delivery->service->name ?? 'Sin servicio',
             'total_amount' => (float)$delivery->amount,

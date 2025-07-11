@@ -47,6 +47,7 @@ class DeliveryService implements IDeliveryRepository
             'receipt',
             'courier',
             'client:id,legal_name',
+            'anonymousClient',
             'courier:id,first_name,last_name',
             'service:id,name',
         ])->findOrFail($id);
@@ -60,11 +61,21 @@ class DeliveryService implements IDeliveryRepository
         $data['number'] = $this->generateNumberDelivery();
         $data['amount'] = $this->getServiceAmount($data['service_id']);
 
-        if (empty($data['payment_type'])) {
+        if (isset($data['client_id']) && (empty($data['client_id']))) {
+            $data['client_id'] = null;
+        }
+
+        if (!empty($data['client_id'])) {
             $data['payment_type'] = $this->getAllowCreditClient($data['client_id']);
+        } else {
+            $data['payment_type'] = 'full';
         }
 
         $delivery = Auth::user()->deliveries()->create($data);
+
+        if (isset($data['anonymous_client'])) {
+            $delivery->anonymousClient()->create($data['anonymous_client']);
+        }
 
         if (isset($data['receipt'])) {
             $delivery->receipt()->create($data['receipt']);
@@ -84,7 +95,22 @@ class DeliveryService implements IDeliveryRepository
     public function update(string $id, array $data): DeliveryDTO
     {
         $delivery = $this->baseQuery()->findOrFail($id);
+
+        if (isset($data['client_id']) && (empty($data['client_id']) || $data['client_id'] == '0' || $data['client_id'] == 0)) {
+            $data['client_id'] = null;
+        }
+
+        if (!empty($data['client_id'])) {
+            $data['payment_type'] = $this->getAllowCreditClient($data['client_id']);
+        } else {
+            $data['payment_type'] = 'full';
+        }
+
         $delivery->update($data);
+
+        if (isset($data['anonymous_client'])) {
+            $delivery->anonymousClient()->update($data['anonymous_client']);
+        }
 
         if (isset($data['receipt'])) {
             $delivery->receipt()->update($data['receipt']);
@@ -126,13 +152,19 @@ class DeliveryService implements IDeliveryRepository
         }
 
         $query = $this->baseQuery()
-            ->select(['deliveries.id as id', 'deliveries.number as number', 'deliveries.date as date', 'deliveries.amount as amount', 'deliveries.status as status', 'deliveries.payment_status as payment_status'])
+            ->select(['deliveries.id as id', 'deliveries.number as number', 'deliveries.date as date', 'deliveries.amount as amount', 'deliveries.status as status', 'deliveries.payment_status as payment_status', 'deliveries.client_id as client_id'])
             ->selectRaw('
-                clients.legal_name as client_name,
+                COALESCE(clients.legal_name, delivery_anonymous_clients.legal_name) as client_name,
+                CASE
+                    WHEN clients.legal_name IS NOT NULL THEN "client"
+                    WHEN delivery_anonymous_clients.legal_name IS NOT NULL THEN "anonymous"
+                    ELSE "none"
+                END as client_name_source,
                 services.name as service_name,
                 CONCAT(couriers.first_name, " ", couriers.last_name) as courier_full_name
             ')
             ->leftJoin('clients', 'deliveries.client_id', '=', 'clients.id')
+            ->leftJoin('delivery_anonymous_clients', 'deliveries.id', '=', 'delivery_anonymous_clients.delivery_id')
             ->leftJoin('services', 'deliveries.service_id', '=', 'services.id')
             ->leftJoin('couriers', 'deliveries.courier_id', '=', 'couriers.id')
             ->when($filterRequestDeliveryDTO->search !== '', function ($q) use ($filterRequestDeliveryDTO) {
@@ -228,8 +260,12 @@ class DeliveryService implements IDeliveryRepository
 
     private function getAllowCreditClient(string $clientId): string
     {
+        if (empty($clientId)) {
+            return PaymentType::FULL->value;
+        }
+
         $client = Client::findOrFail($clientId);
-        return $client->allow_credit ? 'partial' : 'full';
+        return $client->allow_credit ? PaymentType::PARTIAL->value : PaymentType::FULL->value;
     }
 
     private function CreateDebtToDelivery(Delivery $delivery): void

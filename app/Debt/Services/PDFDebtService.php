@@ -27,16 +27,18 @@ class PDFDebtService implements IPDFDebtRepository
 
     public function getUnpaidClientsWithDebts(): \Illuminate\Database\Eloquent\Collection
     {
-        return Client::whereHas('debts', function ($query) {
+        $clients = Client::whereHas('debts', function ($query) {
             $query->whereIn('status', ['pending', 'partial_paid']);
         })
             ->with([
                 'debts' => function ($query) {
                     $query->whereIn('status', ['pending', 'partial_paid'])
-                        ->with(['payments', 'delivery.service']);
+                        ->with(['payments', 'delivery.service', 'delivery.anonymousClient']);
                 }
             ])
             ->get();
+
+        return $clients;
     }
 
     public function getClientDebtsWithFilters(Client $client, array $dateRange): Client
@@ -54,7 +56,7 @@ class PDFDebtService implements IPDFDebtRepository
                             $deliveryQuery->whereDate('date', '>=', $dateRange['startDate'])
                                 ->whereDate('date', '<=', $dateRange['endDate']);
                         });
-                })->with(['payments', 'delivery.service']);
+                })->with(['payments', 'delivery.service', 'delivery.anonymousClient']);
             }
         ]);
         return $client;
@@ -83,7 +85,7 @@ class PDFDebtService implements IPDFDebtRepository
                             $deliveryQuery->whereDate('date', '>=', $dateRange['startDate'])
                                 ->whereDate('date', '<=', $dateRange['endDate']);
                         });
-                    })->with(['payments', 'delivery.service']);
+                    })->with(['payments', 'delivery.service', 'delivery.anonymousClient']);
                 }
             ])
             ->get();

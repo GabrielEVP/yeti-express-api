@@ -41,9 +41,9 @@
         <tr>
             <td>{{ $delivery['number'] }}</td>
             <td>{{ $delivery['date'] }}</td>
-            <td>{{ $delivery['client_name'] ?? '-' }}</td>
+            <td style="{{ isset($delivery['is_anonymous_client']) && $delivery['is_anonymous_client'] ? 'background-color: #FFFF00;' : '' }}">{{ $delivery['client_name'] ?? '-' }}</td>
             <td>${{ number_format($delivery['amount'], 2, ',', '.') }}</td>
-    
+
             <td class="status-{{ $delivery['status']->value ?? $delivery['status'] }}">
                 @switch($delivery['status']->value ?? $delivery['status'])
                     @case('pending') Pendiente @break
@@ -70,4 +70,3 @@
 
 </body>
 </html>
-

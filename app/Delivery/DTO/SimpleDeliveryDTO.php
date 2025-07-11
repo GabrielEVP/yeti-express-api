@@ -13,6 +13,7 @@ final class SimpleDeliveryDTO implements JsonSerializable
     public ?float $amount;
 
     public string $client_name;
+    public string $client_name_source;
     public string $service_name;
     public string $courier_full_name;
 
@@ -23,7 +24,10 @@ final class SimpleDeliveryDTO implements JsonSerializable
         $this->date = $data['date'] ?? null;
         $this->status = $data['status'] ?? null;
         $this->amount = isset($data['amount']) ? (float)$data['amount'] : null;
+
         $this->client_name = $data['client_name'] ?? '';
+        $this->client_name_source = $data['client_name_source'] ?? 'none';
+
         $this->service_name = $data['service_name'] ?? '';
         $this->courier_full_name = $data['courier_full_name'] ?? '';
     }
@@ -37,6 +41,7 @@ final class SimpleDeliveryDTO implements JsonSerializable
             'status' => $this->status,
             'amount' => $this->amount,
             'client_name' => $this->client_name,
+            'client_name_source' => $this->client_name_source,
             'service_name' => $this->service_name,
             'courier_full_name' => $this->courier_full_name,
         ];

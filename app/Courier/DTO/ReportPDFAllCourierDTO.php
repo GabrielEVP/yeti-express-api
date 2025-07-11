@@ -21,6 +21,7 @@ final class ReportPDFAllCourierDTO
                         'date' => $delivery['date'],
                         'status' => is_object($delivery['status']) ? $delivery['status']->value : $delivery['status'],
                         'client_name' => $delivery['client_name'] ?? '-',
+                        'is_anonymous_client' => $delivery['is_anonymous_client'] ?? false,
                         'amount' => (float)$delivery['amount'],
                         'cancellation_notes' => $delivery['cancellation_notes'] ?? null,
                     ];

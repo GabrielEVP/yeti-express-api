@@ -34,7 +34,7 @@ final class ReportPDFDeliveryDTO
         $this->created_at = $data['created_at'];
         $this->notes = $data['notes'] ?? '';
         $this->service_name = $data['service']['name'];
-        $this->client_name = $data['client']['legal_name'];
+        $this->client_name = isset($data['client']) && isset($data['client']['legal_name']) ? $data['client']['legal_name'] : 'cliente anónimo';
         $this->courier_full_name = $data['courier_full_name'];
         $this->full_name = $data['receipt']['full_name'];
         $this->receipt_phone = $data['receipt']['phone'];

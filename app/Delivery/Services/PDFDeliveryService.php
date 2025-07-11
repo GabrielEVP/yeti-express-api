@@ -50,9 +50,9 @@ class PDFDeliveryService implements IPDFDeliveryRepository
             'service' => [
                 'name' => $delivery->service->name,
             ],
-            'client' => [
+            'client' => $delivery->client_id ? [
                 'legal_name' => $delivery->client->legal_name,
-            ],
+            ] : null,
             'courier_full_name' => trim($delivery->courier->first_name . ' ' . $delivery->courier->last_name),
             'receipt' => [
                 'full_name' => $delivery->receipt->full_name,

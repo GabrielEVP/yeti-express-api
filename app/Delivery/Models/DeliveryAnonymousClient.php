@@ -15,7 +15,6 @@ class DeliveryAnonymousClient extends Model
         'legal_name',
         'type',
         'registration_number',
-        'address',
         'phone',
         'delivery_id',
     ];

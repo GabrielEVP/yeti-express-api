@@ -95,6 +95,17 @@ class DeliveryService implements IDeliveryRepository
     public function update(string $id, array $data): DeliveryDTO
     {
         $delivery = $this->baseQuery()->findOrFail($id);
+
+        if (isset($data['client_id']) && (empty($data['client_id']) || $data['client_id'] == '0' || $data['client_id'] == 0)) {
+            $data['client_id'] = null;
+        }
+
+        if (!empty($data['client_id'])) {
+            $data['payment_type'] = $this->getAllowCreditClient($data['client_id']);
+        } else {
+            $data['payment_type'] = 'full';
+        }
+
         $delivery->update($data);
 
         if (isset($data['anonymous_client'])) {
@@ -249,12 +260,12 @@ class DeliveryService implements IDeliveryRepository
 
     private function getAllowCreditClient(string $clientId): string
     {
-        if (empty($clientId) || $clientId === '0' || $clientId === 0) {
-            return 'full'; // Default to full payment for invalid client IDs
+        if (empty($clientId)) {
+            return PaymentType::FULL->value;
         }
 
         $client = Client::findOrFail($clientId);
-        return $client->allow_credit ? 'partial' : 'full';
+        return $client->allow_credit ? PaymentType::PARTIAL->value : PaymentType::FULL->value;
     }
 
     private function CreateDebtToDelivery(Delivery $delivery): void

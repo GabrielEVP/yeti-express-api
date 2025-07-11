@@ -65,7 +65,6 @@ final class FormRequestDeliveryDTO implements \JsonSerializable
                 'type' => $this->anonymous_client_type,
                 'registration_number' => $this->anonymous_client_registration_number,
                 'phone' => $this->anonymous_client_phone,
-                'address' => $this->anonymous_client_address,
             ];
         }
 

@@ -61,7 +61,6 @@ class CashReportService
             $dayStart = $currentDate->copy()->startOfDay()->toDateTimeString();
             $dayEnd = $currentDate->copy()->endOfDay()->toDateTimeString();
 
-            // Formatear la fecha en formato español completo
             Carbon::setLocale('es');
             $dayLabel = $currentDate->isToday() ? 'Hoy' : $currentDate->locale('es')->isoFormat('dddd D [de] MMMM [de] YYYY');
 
@@ -230,7 +229,7 @@ class CashReportService
 
     private function getPreviousDayPayments(int $userId, string $startDate, string $endDate): array
     {
-        return Delivery::with(['client:id,legal_name', 'anonymousClient:id,legal_name,delivery_id', 'debt.payments'])
+        return Delivery::with(['client', 'anonymousClient', 'debt.payments'])
             ->where('user_id', $userId)
             ->where('date', '<=', $startDate)
             ->where(function ($query) use ($startDate, $endDate) {
@@ -255,21 +254,13 @@ class CashReportService
                         ];
                     })->values()->toArray();
 
-                $clientName = 'Sin cliente';
-                $isAnonymous = false;
-
-                if ($delivery->client && $delivery->client->legal_name) {
-                    $clientName = $delivery->client->legal_name;
-                } elseif ($delivery->anonymousClient && $delivery->anonymousClient->legal_name) {
-                    $clientName = $delivery->anonymousClient->legal_name;
-                    $isAnonymous = true;
-                }
-
                 return [
                     'number' => $delivery->number,
                     'date' => $delivery->date->format('d/m/Y'),
-                    'client' => $clientName,
-                    'is_anonymous_client' => $isAnonymous,
+                    'client' => $delivery->client_id
+                        ? $delivery->client->legal_name
+                        : $delivery->anonymousClient->legal_name,
+                    'is_anonymous_client' => !$delivery->client_id,
                     'total_amount' => (float)$delivery->amount,
                     'paid_amount' => (float)$paidAmount,
                     'pending_amount' => (float)$pendingAmount,

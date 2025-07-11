@@ -27,7 +27,6 @@ class Delivery extends Model
         "notes",
         "service_id",
         "client_id",
-        "anonymous_client_id",
         "courier_id",
         "user_id",
     ];

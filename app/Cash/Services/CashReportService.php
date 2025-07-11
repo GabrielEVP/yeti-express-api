@@ -11,9 +11,10 @@ use Illuminate\Support\Facades\Auth;
 class CashReportService
 {
     public function __construct(
-        private readonly DomPDFCash $pdfService,
+        private readonly DomPDFCash  $pdfService,
         private readonly CashService $cashService
-    ) {
+    )
+    {
         Carbon::setLocale('es');
         setlocale(LC_TIME, 'es_ES.UTF-8', 'es_ES', 'es');
     }
@@ -128,14 +129,13 @@ class CashReportService
         ];
 
         $currentDate = $startDateTime->copy();
-        $hasData = false; // Bandera para verificar si hay datos en el período
+        $hasData = false;
         $allDeliveries = [];
 
         while ($currentDate->lte($endDateTime)) {
             $dayStart = $currentDate->copy()->startOfDay()->toDateTimeString();
             $dayEnd = $currentDate->copy()->endOfDay()->toDateTimeString();
 
-            // Usar formato español completo para la fecha
             Carbon::setLocale('es');
             $dayLabel = $currentDate->isToday() ? 'Hoy' : $currentDate->locale('es')->isoFormat('dddd D [de] MMMM [de] YYYY');
 
@@ -147,7 +147,6 @@ class CashReportService
 
             $balance = $stats['total_collected'] - $expenses;
 
-            // Obtener los deliveries del día para mostrar el detalle de pagos
             $dailyDeliveries = $this->cashService->getCashRegisterDeliveries($userId, $dayStart, $dayEnd);
 
             if ($stats['total_delivered'] > 0 || $stats['total_collected'] > 0 || $expenses > 0) {
@@ -231,7 +230,7 @@ class CashReportService
 
     private function getPreviousDayPayments(int $userId, string $startDate, string $endDate): array
     {
-        return Delivery::with(['client', 'debt.payments'])
+        return Delivery::with(['client:id,legal_name', 'anonymousClient:id,legal_name,delivery_id', 'debt.payments'])
             ->where('user_id', $userId)
             ->where('date', '<=', $startDate)
             ->where(function ($query) use ($startDate, $endDate) {
@@ -256,10 +255,21 @@ class CashReportService
                         ];
                     })->values()->toArray();
 
+                $clientName = 'Sin cliente';
+                $isAnonymous = false;
+
+                if ($delivery->client && $delivery->client->legal_name) {
+                    $clientName = $delivery->client->legal_name;
+                } elseif ($delivery->anonymousClient && $delivery->anonymousClient->legal_name) {
+                    $clientName = $delivery->anonymousClient->legal_name;
+                    $isAnonymous = true;
+                }
+
                 return [
                     'number' => $delivery->number,
                     'date' => $delivery->date->format('d/m/Y'),
-                    'client' => $delivery->client ? $delivery->client->legal_name : 'Sin cliente',
+                    'client' => $clientName,
+                    'is_anonymous_client' => $isAnonymous,
                     'total_amount' => (float)$delivery->amount,
                     'paid_amount' => (float)$paidAmount,
                     'pending_amount' => (float)$pendingAmount,

@@ -22,7 +22,7 @@ class PDFCourierService implements IPDFCourierRepository
             ->with(['deliveries' => function ($query) use ($startDate, $endDate) {
                 $query->select('id', 'number', 'date', 'amount', 'status', 'cancellation_notes', 'courier_id', 'client_id')
                     ->whereBetween('date', [$startDate, $endDate])
-                    ->with(['client:id,legal_name']);
+                    ->with(['client:id,legal_name', 'anonymousClient:id,legal_name,delivery_id']);
             }])
             ->get()
             ->map(function ($courier) {
@@ -31,10 +31,22 @@ class PDFCourierService implements IPDFCourierRepository
                     'full_name' => trim($courier->first_name . ' ' . $courier->last_name),
                     'phone' => $courier->phone,
                     'deliveries' => $courier->deliveries->map(function ($delivery) {
+                        $clientName = '-';
+                        $isAnonymous = false;
+
+                        if ($delivery->client && $delivery->client->legal_name) {
+                            $clientName = $delivery->client->legal_name;
+                            $isAnonymous = false;
+                        } elseif ($delivery->anonymousClient && $delivery->anonymousClient->legal_name) {
+                            $clientName = $delivery->anonymousClient->legal_name;
+                            $isAnonymous = true;
+                        }
+
                         return [
                             'number' => $delivery->number,
                             'date' => $delivery->date->format('d/m/Y'),
-                            'client_name' => $delivery->client->legal_name ?? '-',
+                            'client_name' => $clientName,
+                            'is_anonymous_client' => $isAnonymous,
                             'amount' => (float)$delivery->amount,
                             'status' => $delivery->status,
                             'cancellation_notes' => $delivery->cancellation_notes,
@@ -62,14 +74,26 @@ class PDFCourierService implements IPDFCourierRepository
         $courier->load(['deliveries' => function ($query) use ($startDate, $endDate) {
             $query->select('id', 'number', 'date', 'amount', 'status', 'cancellation_notes', 'courier_id', 'client_id')
                 ->whereBetween('date', [$startDate, $endDate])
-                ->with(['client:id,legal_name']);
+                ->with(['client:id,legal_name', 'anonymousClient:id,legal_name,delivery_id']);
         }]);
 
         $deliveries = $courier->deliveries->map(function ($delivery) {
+            $clientName = '-';
+            $isAnonymous = false;
+
+            if ($delivery->client && $delivery->client->legal_name) {
+                $clientName = $delivery->client->legal_name;
+                $isAnonymous = false;
+            } elseif ($delivery->anonymousClient && $delivery->anonymousClient->legal_name) {
+                $clientName = $delivery->anonymousClient->legal_name;
+                $isAnonymous = true;
+            }
+
             return [
                 'number' => $delivery->number,
                 'date' => $delivery->date->format('d/m/Y'),
-                'client_name' => $delivery->client->legal_name ?? '-',
+                'client_name' => $clientName,
+                'is_anonymous_client' => $isAnonymous,
                 'amount' => (float)$delivery->amount,
                 'status' => $delivery->status,
                 'cancellation_notes' => $delivery->cancellation_notes,

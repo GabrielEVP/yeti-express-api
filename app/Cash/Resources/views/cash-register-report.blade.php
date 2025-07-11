@@ -100,7 +100,7 @@
                     @endphp
                     <tr>
                         <td>{{ $delivery['number'] }}</td>
-                        <td>{{ $delivery['client'] === 'N/A' ? 'Sin cliente' : $delivery['client'] }}</td>
+                        <td style="{{ isset($delivery['is_anonymous_client']) && $delivery['is_anonymous_client'] ? 'background-color: #FFFF00;' : '' }}">{{ $delivery['client'] }}</td>
                         <td>{{ $delivery['courier'] === 'N/A' ? 'Sin repartidor' : $delivery['courier'] }}</td>
                         <td>{{ $delivery['service'] }}</td>
                         <td class="text-right">
@@ -167,7 +167,7 @@
                 @foreach($data['deliveriesByStatus']['canceled'] as $delivery)
                     <tr>
                         <td>{{ $delivery['number'] }}</td>
-                        <td>{{ $delivery['client'] === 'N/A' ? 'Sin cliente' : $delivery['client'] }}</td>
+                        <td style="{{ isset($delivery['is_anonymous_client']) && $delivery['is_anonymous_client'] ? 'background-color: #FFFF00;' : '' }}">{{ $delivery['client'] }}</td>
                         <td>{{ $delivery['courier'] === 'N/A' ? 'Sin repartidor' : $delivery['courier'] }}</td>
                         <td class="text-right">
                             ${{ number_format($delivery['total_amount'] ?? $delivery['amount'] ?? 0, 2) }}</td>
@@ -199,7 +199,7 @@
                     <tr>
                         <td>{{ $payment['number'] }}</td>
                         <td>{{ $payment['date'] }}</td>
-                        <td>{{ $payment['client'] }}</td>
+                        <td style="{{ isset($payment['is_anonymous_client']) && $payment['is_anonymous_client'] ? 'background-color: #FFFF00;' : '' }}">{{ $payment['client'] }}</td>
                         <td class="text-right">${{ number_format($payment['total_amount'], 2) }}</td>
                         <td class="text-right text-paid">${{ number_format($payment['paid_amount'], 2) }}</td>
                         <td class="text-right @if($payment['pending_amount'] > 0) text-pending @endif">

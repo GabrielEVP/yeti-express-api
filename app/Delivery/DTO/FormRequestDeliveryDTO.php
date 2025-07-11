@@ -14,6 +14,11 @@ final class FormRequestDeliveryDTO implements \JsonSerializable
         public string  $receipt_full_name,
         public string  $receipt_phone,
         public string  $receipt_address,
+        public ?string $anonymous_client_legal_name = null,
+        public ?string $anonymous_client_type = null,
+        public ?string $anonymous_client_registration_number = null,
+        public ?string $anonymous_client_phone = null,
+        public ?string $anonymous_client_address = null
     )
     {
     }
@@ -30,12 +35,17 @@ final class FormRequestDeliveryDTO implements \JsonSerializable
             receipt_full_name: $data['receipt']['full_name'] ?? '',
             receipt_phone: $data['receipt']['phone'] ?? '',
             receipt_address: $data['receipt']['address'] ?? '',
+            anonymous_client_legal_name: $data['anonymous_client']['legal_name'] ?? null,
+            anonymous_client_type: $data['anonymous_client']['type'] ?? null,
+            anonymous_client_registration_number: $data['anonymous_client']['registration_number'] ?? null,
+            anonymous_client_phone: $data['anonymous_client']['phone'] ?? null,
+            anonymous_client_address: $data['anonymous_client']['address'] ?? null
         );
     }
 
     public function toArray(): array
     {
-        return [
+        $data = [
             'payment_type' => $this->payment_type,
             'notes' => $this->notes,
             'service_id' => $this->service_id,
@@ -48,6 +58,18 @@ final class FormRequestDeliveryDTO implements \JsonSerializable
                 'address' => $this->receipt_address,
             ],
         ];
+
+        if (empty($this->client_id) && $this->anonymous_client_legal_name) {
+            $data['anonymous_client'] = [
+                'legal_name' => $this->anonymous_client_legal_name,
+                'type' => $this->anonymous_client_type,
+                'registration_number' => $this->anonymous_client_registration_number,
+                'phone' => $this->anonymous_client_phone,
+                'address' => $this->anonymous_client_address,
+            ];
+        }
+
+        return $data;
     }
 
     public function jsonSerialize(): array

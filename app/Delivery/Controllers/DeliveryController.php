@@ -28,7 +28,14 @@ class DeliveryController extends Controller
 
     public function store(DeliveryRequest $request): JsonResponse
     {
-        $dto = FormRequestDeliveryDTO::fromArray($request->validated());
+        $validated = $request->validated();
+
+        // Ensure client_id is null, not 0 or empty string
+        if (isset($validated['client_id']) && (empty($validated['client_id']) || $validated['client_id'] === '0' || $validated['client_id'] === 0)) {
+            $validated['client_id'] = null;
+        }
+
+        $dto = FormRequestDeliveryDTO::fromArray($validated);
         $service = $this->service->create($dto->toArray());
 
         return response()->json($service, 201);

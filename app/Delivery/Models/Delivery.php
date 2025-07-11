@@ -54,7 +54,7 @@ class Delivery extends Model
         return $this->belongsTo(Client::class);
     }
 
-    public function anonymousClient(): BelongsTo
+    public function anonymousClient()
     {
         return $this->hasOne(DeliveryAnonymousClient::class);
     }

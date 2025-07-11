@@ -20,7 +20,6 @@ return new class extends Migration {
                 "personal_signature",
             ]);
             $table->string('registration_number', 50);
-            $table->string('address', 255);
             $table->string('phone', 20);
             $table->foreignId("delivery_id")->constrained("deliveries")->onDelete("cascade");
             $table->timestamps();

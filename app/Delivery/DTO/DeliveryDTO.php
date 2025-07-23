@@ -26,6 +26,7 @@ final class DeliveryDTO implements JsonSerializable
     public ?int $client_id;
     public int $courier_id;
     public ?string $client_legal_name;
+    public ?string $client_phone;
     public string $service_name;
     public string $courier_full_name;
     public ?string $debt_id;
@@ -40,7 +41,7 @@ final class DeliveryDTO implements JsonSerializable
         $this->status = $delivery->status;
         $this->payment_type = $delivery->payment_type;
         $this->payment_status = $delivery->payment_status;
-        $this->amount = (float)$delivery->amount;
+        $this->amount = (float) $delivery->amount;
         $this->pickup_address = $delivery->pickup_address;
         $this->cancellation_notes = $delivery->cancellation_notes ?? '';
         $this->notes = $delivery->notes ?? '';
@@ -56,6 +57,14 @@ final class DeliveryDTO implements JsonSerializable
             $this->client_legal_name = $delivery->anonymousClient->legal_name;
         } else {
             $this->client_legal_name = '';
+        }
+
+        if ($delivery->client && $delivery->client->phones->isNotEmpty()) {
+            $this->client_phone = $delivery->client->phones->first()->phone;
+        } elseif ($delivery->anonymousClient) {
+            $this->client_phone = $delivery->anonymousClient->phone;
+        } else {
+            $this->client_phone = null;
         }
 
         $this->service_name = $delivery->service->name;
@@ -100,6 +109,7 @@ final class DeliveryDTO implements JsonSerializable
             'client_id' => $this->client_id,
             'courier_id' => $this->courier_id,
             'client_legal_name' => $this->client_legal_name,
+            'client_phone' => $this->client_phone,
             'service_name' => $this->service_name,
             'courier_full_name' => $this->courier_full_name,
             'debt_id' => $this->debt_id,

@@ -45,10 +45,12 @@ class DeliveryService implements IDeliveryRepository
     {
         $delivery = $this->baseQuery()->with([
             'receipt',
-            'courier',
-            'client:id,legal_name',
-            'anonymousClient',
             'courier:id,first_name,last_name',
+            'client:id,id,legal_name',
+            'client.phones' => function ($query) {
+                $query->select('client_id', 'phone')->limit(1);
+            },
+            'anonymousClient',
             'service:id,name',
         ])->findOrFail($id);
 
@@ -85,7 +87,7 @@ class DeliveryService implements IDeliveryRepository
             'create_delivery',
             'deliveries',
             'deliveries',
-            (int)$delivery->id,
+            (int) $delivery->id,
             'Delivery created: ' . $delivery->number
         );
 
@@ -120,7 +122,7 @@ class DeliveryService implements IDeliveryRepository
             'update_delivery',
             'deliveries',
             'deliveries',
-            (int)$id,
+            (int) $id,
             'Delivery updated: ' . $delivery->number
         );
 
@@ -137,7 +139,7 @@ class DeliveryService implements IDeliveryRepository
             'delete_delivery',
             'deliveries',
             'deliveries',
-            (int)$id,
+            (int) $id,
             'Delivery deleted: ' . $number
         );
     }
@@ -226,7 +228,7 @@ class DeliveryService implements IDeliveryRepository
             'update_delivery_status',
             'deliveries',
             'deliveries',
-            (int)$id,
+            (int) $id,
             'Delivery status updated to ' . $status->value . ': ' . $delivery->number
         );
     }
@@ -242,7 +244,7 @@ class DeliveryService implements IDeliveryRepository
             'cancel_delivery',
             'deliveries',
             'deliveries',
-            (int)$id,
+            (int) $id,
             'Delivery cancelled: ' . $delivery->number
         );
     }

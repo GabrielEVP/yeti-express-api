@@ -15,6 +15,7 @@ class Service extends Model
         "name",
         "description",
         "amount",
+        "comision",
         "user_id",
     ];
 

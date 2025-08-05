@@ -14,6 +14,7 @@ class DeliveryRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
+            "date" => ["required", "date_format:Y-m-d"],
             "notes" => ["nullable", "string"],
             "service_id" => ["required", "exists:services,id"],
             "courier_id" => ["required", "exists:couriers,id"],

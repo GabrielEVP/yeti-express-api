@@ -30,7 +30,6 @@ class DeliveryController extends Controller
     {
         $validated = $request->validated();
 
-        // Ensure client_id is null, not 0 or empty string
         if (isset($validated['client_id']) && (empty($validated['client_id']) || $validated['client_id'] === '0' || $validated['client_id'] === 0)) {
             $validated['client_id'] = null;
         }

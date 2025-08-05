@@ -59,7 +59,6 @@ class DeliveryService implements IDeliveryRepository
 
     public function create(array $data): DeliveryDTO
     {
-        $data['date'] = now()->toDateString();
         $data['number'] = $this->generateNumberDelivery();
         $data['amount'] = $this->getServiceAmount($data['service_id']);
 

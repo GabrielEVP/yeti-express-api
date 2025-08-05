@@ -8,9 +8,9 @@ final class SimpleDeliveryDTO implements JsonSerializable
 {
     public int $id;
     public string $number;
-    public ?string $date;
-    public ?string $status;
-    public ?float $amount;
+    public string $date;
+    public string $status;
+    public float $amount;
 
     public string $client_name;
     public string $client_name_source;
@@ -19,11 +19,11 @@ final class SimpleDeliveryDTO implements JsonSerializable
 
     public function __construct(array $data)
     {
-        $this->id = (int)($data['id'] ?? 0);
+        $this->id = (int) ($data['id'] ?? 0);
         $this->number = $data['number'] ?? '';
-        $this->date = $data['date'] ?? null;
-        $this->status = $data['status'] ?? null;
-        $this->amount = isset($data['amount']) ? (float)$data['amount'] : null;
+        $this->date = $data['date']->toDateString();
+        $this->status = $data['status'] ?? '';
+        $this->amount = isset($data['amount']) ? (float) $data['amount'] : 0.0;
 
         $this->client_name = $data['client_name'] ?? '';
         $this->client_name_source = $data['client_name_source'] ?? 'none';

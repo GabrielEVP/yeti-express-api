@@ -45,8 +45,8 @@ final class DeliveryDTO implements JsonSerializable
         $this->pickup_address = $delivery->pickup_address;
         $this->cancellation_notes = $delivery->cancellation_notes ?? '';
         $this->notes = $delivery->notes ?? '';
-        $this->created_at = $delivery->created_at->toDateTimeString();
-        $this->updated_at = $delivery->updated_at->toDateTimeString();
+        $this->created_at = $delivery->created_at->toDateString();
+        $this->updated_at = $delivery->updated_at->toDateString();
         $this->service_id = $delivery->service_id;
         $this->client_id = $delivery->client_id !== 0 ? $delivery->client_id : null;
         $this->courier_id = $delivery->courier_id;

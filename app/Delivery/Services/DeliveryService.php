@@ -107,6 +107,10 @@ class DeliveryService implements IDeliveryRepository
             $data['payment_type'] = 'full';
         }
 
+        if (isset($data['service_id'])) {
+            $data['amount'] = $this->getServiceAmount($data['service_id']);
+        }
+
         $delivery->update($data);
 
         if (isset($data['anonymous_client'])) {

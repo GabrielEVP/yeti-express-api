@@ -21,13 +21,11 @@ final class SimpleDeliveryDTO implements JsonSerializable
     {
         $this->id = (int) ($data['id'] ?? 0);
         $this->number = $data['number'] ?? '';
-        $this->date = $data['date']->toDateString();
+        $this->date = isset($data['date']) ? date('Y-m-d', strtotime($data['date'])) : '';
         $this->status = $data['status'] ?? '';
         $this->amount = isset($data['amount']) ? (float) $data['amount'] : 0.0;
-
         $this->client_name = $data['client_name'] ?? '';
         $this->client_name_source = $data['client_name_source'] ?? 'none';
-
         $this->service_name = $data['service_name'] ?? '';
         $this->courier_full_name = $data['courier_full_name'] ?? '';
     }

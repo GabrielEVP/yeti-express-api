@@ -37,7 +37,7 @@ final class DeliveryDTO implements JsonSerializable
     {
         $this->id = $delivery->id;
         $this->number = $delivery->number;
-        $this->date = $delivery->date?->toDateString();
+        $this->date = $delivery->date?->format('Y-m-d');
         $this->status = $delivery->status;
         $this->payment_type = $delivery->payment_type;
         $this->payment_status = $delivery->payment_status;
@@ -45,8 +45,8 @@ final class DeliveryDTO implements JsonSerializable
         $this->pickup_address = $delivery->pickup_address;
         $this->cancellation_notes = $delivery->cancellation_notes ?? '';
         $this->notes = $delivery->notes ?? '';
-        $this->created_at = $delivery->created_at->toDateString();
-        $this->updated_at = $delivery->updated_at->toDateString();
+        $this->created_at = $delivery->created_at->format('Y-m-d');
+        $this->updated_at = $delivery->updated_at->format('Y-m-d');
         $this->service_id = $delivery->service_id;
         $this->client_id = $delivery->client_id !== 0 ? $delivery->client_id : null;
         $this->courier_id = $delivery->courier_id;

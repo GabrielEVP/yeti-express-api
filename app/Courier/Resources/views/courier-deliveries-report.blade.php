@@ -65,7 +65,7 @@
     <p><strong>En Tránsito:</strong> {{ $deliveries->where('status', 'in_transit')->count() }}</p>
     <p><strong>Completadas:</strong> {{ $deliveries->where('status', 'delivered')->count() }}</p>
     <p><strong>Canceladas:</strong> {{ $deliveries->where('status', 'cancelled')->count() }}</p>
-    <p><strong>Monto Total:</strong> ${{ number_format($deliveries->sum('amount'), 2, ',', '.') }}</p>
+    <p><strong>Monto Total:</strong> ${{ number_format($deliveries->where('status', 'delivered')->sum('amount'), 2, ',', '.') }}</p>
 </div>
 
 </body>

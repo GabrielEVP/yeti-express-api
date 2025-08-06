@@ -33,7 +33,8 @@
 
         $totalDeliveries += count($deliveries);
         foreach ($deliveries as $delivery) {
-            switch ($delivery['status']->value ?? $delivery['status']) {
+            $status = $delivery['status']->value ?? $delivery['status'];
+            switch ($status) {
                 case 'pending':
                     $totalPending++;
                     break;
@@ -42,13 +43,13 @@
                     break;
                 case 'delivered':
                     $totalDelivered++;
+                    $totalAmount += $delivery['amount']; 
                     break;
                 case 'cancelled':
                 default:
                     $totalCancelled++;
                     break;
             }
-            $totalAmount += $delivery['amount'];
         }
     }
 @endphp
@@ -75,7 +76,15 @@
             <p><strong>Teléfono:</strong> {{ $courier['phone'] }}</p>
             <p><strong>Total de Entregas:</strong> {{ count($courier['deliveries']) }}</p>
             <p><strong>Monto Total:</strong>
-                ${{ number_format(array_sum(array_column($courier['deliveries'], 'amount')), 2, ',', '.') }}</p>
+                @php
+                    $courierDeliveredAmount = 0;
+                    foreach($courier['deliveries'] as $delivery) {
+                        if(($delivery['status']->value ?? $delivery['status']) === 'delivered') {
+                            $courierDeliveredAmount += $delivery['amount'];
+                        }
+                    }
+                @endphp
+                ${{ number_format($courierDeliveredAmount, 2, ',', '.') }}</p>
         </div>
 
         @if(count($courier['deliveries']) > 0)

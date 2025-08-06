@@ -18,7 +18,7 @@ class DeliveryRequest extends FormRequest
             "notes" => ["nullable", "string"],
             "service_id" => ["required", "exists:services,id"],
             "courier_id" => ["required", "exists:couriers,id"],
-            "pickup_address" => ["required", "max:100"],
+            "pickup_address" => ["required", "max:200"],
             "receipt.full_name" => ["required", "string"],
             "receipt.phone" => ["required", "string", "max:20"],
             "receipt.address" => ["required", "string", "max:255"],

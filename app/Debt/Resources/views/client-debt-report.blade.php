@@ -34,6 +34,7 @@
             <tr>
                 <th>Entrega</th>
                 <th>Fecha</th>
+                <th>Destinatario</th>
                 <th>Monto</th>
                 <th>Pagos Realizados</th>
                 <th>Saldo Pendiente</th>
@@ -44,6 +45,7 @@
                 <tr>
                     <td>{{ $debt->delivery->number }}</td>
                     <td>{{ $debt->delivery->date->format('d/m/Y') }}</td>
+                    <td>{{ $debt->delivery->deliveryReceipt->full_name ?? 'N/A' }}</td>
                     <td>${{ number_format($debt->amount, 2) }}</td>
                     <td>
                         @forelse($debt->payments as $payment)
@@ -66,7 +68,6 @@
             @endforelse
         </tbody>
     </table>
-
     <div class="summary">
         <h3>Resumen</h3>
         <p><strong>Total de Deudas:</strong>

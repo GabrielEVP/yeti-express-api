@@ -33,7 +33,7 @@ class PDFDebtService implements IPDFDebtRepository
             ->with([
                 'debts' => function ($query) {
                     $query->whereIn('status', ['pending', 'partial_paid'])
-                        ->with(['payments', 'delivery.service', 'delivery.anonymousClient']);
+                        ->with(['payments', 'delivery.service', 'delivery.anonymousClient', 'delivery.deliveryReceipt']);
                 }
             ])
             ->get();
@@ -46,7 +46,7 @@ class PDFDebtService implements IPDFDebtRepository
         $client->load([
             'debts' => function ($query) {
                 $query->whereIn('status', ['pending', 'partial_paid'])
-                    ->with(['payments', 'delivery.service', 'delivery.anonymousClient']);
+                    ->with(['payments', 'delivery.service', 'delivery.anonymousClient', 'delivery.deliveryReceipt']);
             }
         ]);
 
@@ -68,7 +68,7 @@ class PDFDebtService implements IPDFDebtRepository
                             $deliveryQuery->whereDate('date', '>=', $dateRange['startDate'])
                                 ->whereDate('date', '<=', $dateRange['endDate']);
                         });
-                })->with(['payments', 'delivery.service', 'delivery.anonymousClient']);
+                })->with(['payments', 'delivery.service', 'delivery.anonymousClient', 'delivery.deliveryReceipt']);
             }
         ]);
         return $client;
@@ -97,7 +97,7 @@ class PDFDebtService implements IPDFDebtRepository
                             $deliveryQuery->whereDate('date', '>=', $dateRange['startDate'])
                                 ->whereDate('date', '<=', $dateRange['endDate']);
                         });
-                    })->with(['payments', 'delivery.service', 'delivery.anonymousClient']);
+                    })->with(['payments', 'delivery.service', 'delivery.anonymousClient', 'delivery.deliveryReceipt']);
                 }
             ])
             ->get();

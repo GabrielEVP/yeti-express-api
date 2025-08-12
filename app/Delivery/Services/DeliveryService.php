@@ -59,24 +59,21 @@ class DeliveryService implements IDeliveryRepository
 
     public function create(array $data): DeliveryDTO
     {
+        if (!isset($data['payment_type']) || empty($data['payment_type'])) {
+            $data['payment_type'] = 'full';
+        }
         $data['number'] = $this->generateNumberDelivery();
         $data['amount'] = $this->getServiceAmount($data['service_id']);
-
         if (isset($data['client_id']) && (empty($data['client_id']))) {
             $data['client_id'] = null;
         }
-
-
         $delivery = Auth::user()->deliveries()->create($data);
-
         if (isset($data['anonymous_client'])) {
             $delivery->anonymousClient()->create($data['anonymous_client']);
         }
-
         if (isset($data['receipt'])) {
             $delivery->receipt()->create($data['receipt']);
         }
-
         EmployeeEventService::log(
             'create_delivery',
             'deliveries',
@@ -84,32 +81,28 @@ class DeliveryService implements IDeliveryRepository
             (int) $delivery->id,
             'Delivery created: ' . $delivery->number
         );
-
         return new DeliveryDTO($delivery);
     }
 
     public function update(string $id, array $data): DeliveryDTO
     {
+        if (!isset($data['payment_type']) || empty($data['payment_type'])) {
+            $data['payment_type'] = 'full';
+        }
         $delivery = $this->baseQuery()->findOrFail($id);
-
         if (isset($data['client_id']) && (empty($data['client_id']) || $data['client_id'] == '0' || $data['client_id'] == 0)) {
             $data['client_id'] = null;
         }
-
         if (isset($data['service_id'])) {
             $data['amount'] = $this->getServiceAmount($data['service_id']);
         }
-
         $delivery->update($data);
-
         if (isset($data['anonymous_client'])) {
             $delivery->anonymousClient()->update($data['anonymous_client']);
         }
-
         if (isset($data['receipt'])) {
             $delivery->receipt()->update($data['receipt']);
         }
-
         EmployeeEventService::log(
             'update_delivery',
             'deliveries',
@@ -117,7 +110,6 @@ class DeliveryService implements IDeliveryRepository
             (int) $id,
             'Delivery updated: ' . $delivery->number
         );
-
         return new DeliveryDTO($delivery);
     }
 

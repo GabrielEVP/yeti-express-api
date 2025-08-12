@@ -96,12 +96,6 @@ class DeliveryService implements IDeliveryRepository
             $data['client_id'] = null;
         }
 
-        if (!empty($data['client_id'])) {
-            $data['payment_type'] = $this->getAllowCreditClient($data['client_id']);
-        } else {
-            $data['payment_type'] = 'full';
-        }
-
         if (isset($data['service_id'])) {
             $data['amount'] = $this->getServiceAmount($data['service_id']);
         }

@@ -44,6 +44,7 @@
                     <tr>
                         <th>Entrega</th>
                         <th>Fecha</th>
+                        <th>Destinatario</th>
                         <th>Servicio</th>
                         <th>Monto Total</th>
                         <th>Pagado</th>
@@ -59,6 +60,7 @@
                         <tr>
                             <td>{{ $debt->delivery->number }}</td>
                             <td>{{ $debt->delivery->date->format('d/m/Y') }}</td>
+                            <td>{{ $debt->delivery->receipt->full_name ?? 'N/A' }}</td>
                             <td>{{ $debt->delivery->service->name }}</td>
                             <td class="amount">${{ number_format($debt->amount, 2) }}</td>
                             <td class="amount">${{ number_format($paid, 2) }}</td>

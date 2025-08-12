@@ -45,7 +45,7 @@
                 <tr>
                     <td>{{ $debt->delivery->number }}</td>
                     <td>{{ $debt->delivery->date->format('d/m/Y') }}</td>
-                    <td>{{ $debt->delivery->deliveryReceipt->full_name ?? 'N/A' }}</td>
+                    <td>{{ $debt->delivery->receipt->full_name ?? 'N/A' }}</td>
                     <td>${{ number_format($debt->amount, 2) }}</td>
                     <td>
                         @forelse($debt->payments as $payment)

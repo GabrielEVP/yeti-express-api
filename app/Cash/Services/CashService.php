@@ -10,6 +10,7 @@ use App\Debt\Models\DebtPayment;
 use App\Delivery\Models\Delivery;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use App\CompanyBill\Helpers\PaymentMethodTranslator;
 
 class CashService
 {
@@ -25,7 +26,7 @@ class CashService
             [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
 
             $stats = $this->getStatsByPeriod($userId, $startDate, $endDate);
-            $companyBills = (float)Auth::user()->companyBills()
+            $companyBills = (float) Auth::user()->companyBills()
                 ->whereBetween('date', [$startDate, $endDate])
                 ->sum('amount');
 
@@ -121,7 +122,8 @@ class CashService
             $currentDate = Carbon::parse($startDate);
             while ($currentDate->lte(Carbon::parse($endDate))) {
                 $periodLabels[] = ucfirst($currentDate->locale('es')->dayName);
-                $periodData[] = $this->generatePeriodData($userId,
+                $periodData[] = $this->generatePeriodData(
+                    $userId,
                     $currentDate->copy()->startOfDay()->toDateTimeString(),
                     $currentDate->copy()->endOfDay()->toDateTimeString()
                 );
@@ -132,7 +134,8 @@ class CashService
             $weekNumber = 1;
             while ($currentDate->lte(Carbon::parse($endDate))) {
                 $periodLabels[] = "Semana {$weekNumber}";
-                $periodData[] = $this->generatePeriodData($userId,
+                $periodData[] = $this->generatePeriodData(
+                    $userId,
                     $currentDate->copy()->toDateTimeString(),
                     min($currentDate->copy()->addDays(6), Carbon::parse($endDate))->endOfDay()->toDateTimeString()
                 );
@@ -143,7 +146,8 @@ class CashService
             $currentDate = Carbon::parse($startDate);
             while ($currentDate->lte(Carbon::parse($endDate)) && $currentDate->year == Carbon::parse($startDate)->year) {
                 $periodLabels[] = ucfirst($currentDate->locale('es')->monthName);
-                $periodData[] = $this->generatePeriodData($userId,
+                $periodData[] = $this->generatePeriodData(
+                    $userId,
                     $currentDate->copy()->startOfMonth()->toDateTimeString(),
                     $currentDate->copy()->endOfMonth()->toDateTimeString()
                 );
@@ -157,7 +161,7 @@ class CashService
     private function generatePeriodData(int $userId, string $startDate, string $endDate): array
     {
         $stats = $this->getStatsByPeriod($userId, $startDate, $endDate);
-        $totalExpenses = (float)Auth::user()->companyBills()
+        $totalExpenses = (float) Auth::user()->companyBills()
             ->whereBetween('date', [$startDate, $endDate])
             ->sum('amount');
 
@@ -209,12 +213,12 @@ class CashService
             ->where('status', 'delivered')
             ->whereBetween('date', [$startFormatted, $endFormatted]);
 
-        $fullPayments = (float)$delivered->clone()
+        $fullPayments = (float) $delivered->clone()
             ->where('payment_type', 'full')
             ->where('payment_status', 'paid')
             ->sum('amount');
 
-        $partialPayments = (float)DebtPayment::join('debts', 'debt_payments.debt_id', '=', 'debts.id')
+        $partialPayments = (float) DebtPayment::join('debts', 'debt_payments.debt_id', '=', 'debts.id')
             ->join('deliveries', 'debts.delivery_id', '=', 'deliveries.id')
             ->where('deliveries.user_id', $userId)
             ->whereBetween('debt_payments.created_at', [$startFormatted, $endFormatted])
@@ -222,7 +226,7 @@ class CashService
 
         return [
             'total_delivered' => $delivered->count(),
-            'total_invoiced' => (float)$delivered->sum('amount'),
+            'total_invoiced' => (float) $delivered->sum('amount'),
             'total_collected' => $fullPayments + $partialPayments
         ];
     }
@@ -240,7 +244,7 @@ class CashService
             return $deliveries->groupBy(function ($delivery) use ($dayMapping) {
                 return $dayMapping[$delivery->date->toDateString()] ?? ucfirst($delivery->date->locale('es')->dayName);
             })->map(function ($group, $date) use ($type) {
-                $total = $type === 'delivered' ? $group->count() : (float)$group->sum('amount');
+                $total = $type === 'delivered' ? $group->count() : (float) $group->sum('amount');
                 return ['date' => $date, 'total' => $total];
             })->values()->toArray();
         }
@@ -248,7 +252,7 @@ class CashService
         return $deliveries->groupBy(function ($delivery) use ($period, $date) {
             return $this->dateFormatter->formatDateLabel(Carbon::parse($delivery->date), $period, Carbon::parse($date));
         })->map(function ($group, $date) use ($type) {
-            $total = $type === 'delivered' ? $group->count() : (float)$group->sum('amount');
+            $total = $type === 'delivered' ? $group->count() : (float) $group->sum('amount');
             return ['date' => $date, 'total' => $total];
         })->values()->toArray();
     }
@@ -294,9 +298,9 @@ class CashService
 
             return [
                 'date' => $dateKey,
-                'total_collected' => (float)$collected,
-                'total_expenses' => (float)$expenses,
-                'balance' => (float)($collected - $expenses)
+                'total_collected' => (float) $collected,
+                'total_expenses' => (float) $expenses,
+                'balance' => (float) ($collected - $expenses)
             ];
         })->values()->toArray();
     }
@@ -358,7 +362,7 @@ class CashService
             $pendingAmount = 0;
             $paymentDetails[] = [
                 'date' => $delivery->updated_at->format('Y-m-d'),
-                'amount' => (float)$delivery->amount,
+                'amount' => (float) $delivery->amount,
                 'payment_method' => 'Efectivo',
                 'notes' => 'Pago completo'
             ];
@@ -368,8 +372,8 @@ class CashService
             $paymentDetails = $delivery->debt->payments->map(function ($payment) {
                 return [
                     'date' => ($payment->date ?? $payment->created_at)->format('Y-m-d'),
-                    'amount' => (float)$payment->amount,
-                    'payment_method' => $payment->method ?? 'Efectivo',
+                    'amount' => (float) $payment->amount,
+                    'payment_method' => PaymentMethodTranslator::toSpanish($payment->method ?? 'Efectivo'),
                     'notes' => $payment->notes ?? ''
                 ];
             })->toArray();
@@ -384,9 +388,9 @@ class CashService
             'is_anonymous_client' => !$delivery->client_id,
             'courier' => $delivery->courier ? $delivery->courier->first_name . ' ' . $delivery->courier->last_name : 'Sin repartidor',
             'service' => $delivery->service->name ?? 'Sin servicio',
-            'total_amount' => (float)$delivery->amount,
-            'paid_amount' => (float)$paidAmount,
-            'pending_amount' => (float)$pendingAmount,
+            'total_amount' => (float) $delivery->amount,
+            'paid_amount' => (float) $paidAmount,
+            'pending_amount' => (float) $pendingAmount,
             'status' => $delivery->status,
             'payment_status' => $delivery->payment_status,
             'payment_type' => $delivery->payment_type,
@@ -438,9 +442,9 @@ class CashService
                     'courier' => $courier ? $courier->first_name . ' ' . $courier->last_name : 'Sin repartidor',
                     'total_deliveries' => $group->count(),
                     'delivered_count' => $delivered->count(),
-                    'delivered_amount' => (float)$delivered->sum('amount'),
+                    'delivered_amount' => (float) $delivered->sum('amount'),
                     'canceled_count' => $canceled->count(),
-                    'canceled_amount' => (float)$canceled->sum('amount'),
+                    'canceled_amount' => (float) $canceled->sum('amount'),
                     'deliveries' => [
                         'delivered' => $delivered->map(fn($d) => $this->processDeliveryData($d))->values()->toArray(),
                         'canceled' => $canceled->map(fn($d) => $this->processDeliveryData($d))->values()->toArray()
@@ -473,7 +477,7 @@ class CashService
                 return [
                     'client' => $client->legal_name ?? 'Cliente desconocido',
                     'total_deliveries' => $group->count(),
-                    'total_debt' => (float)$totalDebt,
+                    'total_debt' => (float) $totalDebt,
                     'deliveries' => $group->map(fn($d) => $this->processDeliveryData($d))->toArray()
                 ];
             })->values()->toArray();
@@ -491,13 +495,13 @@ class CashService
             return [
                 'delivery_number' => $delivery->number,
                 'delivery_date' => $delivery->date->format('Y-m-d'),
-                'delivery_amount' => (float)$delivery->amount,
+                'delivery_amount' => (float) $delivery->amount,
                 'payment_status' => $delivery->payment_status,
                 'payments' => $delivery->debt && $delivery->debt->payments
                     ? $delivery->debt->payments->map(function ($payment) {
                         return [
                             'date' => $payment->date->format('Y-m-d'),
-                            'amount' => (float)$payment->amount,
+                            'amount' => (float) $payment->amount,
                             'method' => $payment->payment_method,
                             'notes' => $payment->notes,
                         ];

@@ -31,7 +31,6 @@ class DebtReportController extends Controller
 
     public function getClientDebtReport(string $id, Request $request): Response
     {
-        // Support both snake_case (preferred) and camelCase query params
         $dateRange = [
             'startDate' => $request->input('start_date', $request->input('startDate')),
             'endDate' => $request->input('end_date', $request->input('endDate')),
@@ -52,7 +51,6 @@ class DebtReportController extends Controller
 
     public function getAllClientsDebtReport(Request $request): Response
     {
-        // Support both snake_case (preferred) and camelCase query params
         $dateRange = [
             'startDate' => $request->input('start_date', $request->input('startDate')),
             'endDate' => $request->input('end_date', $request->input('endDate')),
@@ -67,5 +65,15 @@ class DebtReportController extends Controller
         );
 
         return $pdf->stream("all-clients-debt-report.pdf");
+    }
+
+    public function getClientUnpaidDebtsReport(string $id, Request $request): Response
+    {
+        $client = Client::findOrFail($id);
+        $clientWithDebts = $this->pdfDebtService->getSpecificClientWithUnpaidDebts($client);
+
+        $pdf = $this->pdfService->generateClientUnpaidDebtsReport($clientWithDebts);
+
+        return $pdf->stream("client-unpaid-debts-report-{$client->id}.pdf");
     }
 }

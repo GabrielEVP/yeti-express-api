@@ -41,6 +41,18 @@ class PDFDebtService implements IPDFDebtRepository
         return $clients;
     }
 
+    public function getSpecificClientWithUnpaidDebts(Client $client): Client
+    {
+        $client->load([
+            'debts' => function ($query) {
+                $query->whereIn('status', ['pending', 'partial_paid'])
+                    ->with(['payments', 'delivery.service', 'delivery.anonymousClient']);
+            }
+        ]);
+
+        return $client;
+    }
+
     public function getClientDebtsWithFilters(Client $client, array $dateRange): Client
     {
         $dateRange = $this->parseDateRange($dateRange);

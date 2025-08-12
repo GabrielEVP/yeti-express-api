@@ -43,4 +43,16 @@ class DomPDFDebt
 
         return $pdf;
     }
+
+    public function generateClientUnpaidDebtsReport($client): \Barryvdh\DomPDF\PDF
+    {
+        $pdf = Pdf::loadView('debt::client-unpaid-debts-report', [
+            'client' => $client,
+            'generatedAt' => now()
+        ]);
+
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf;
+    }
 }

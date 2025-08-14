@@ -45,6 +45,7 @@
                         <th>Entrega</th>
                         <th>Fecha</th>
                         <th>Destinatario</th>
+                        <th>Dirección</th>
                         <th>Servicio</th>
                         <th>Monto Total</th>
                         <th>Pagado</th>
@@ -61,6 +62,7 @@
                             <td>{{ $debt->delivery->number }}</td>
                             <td>{{ $debt->delivery->date->format('d/m/Y') }}</td>
                             <td>{{ $debt->delivery->receipt->full_name ?? 'N/A' }}</td>
+                            <td>{{ $debt->delivery->receipt->address ?? 'N/A' }}</td>
                             <td>{{ $debt->delivery->service->name }}</td>
                             <td class="amount">${{ number_format($debt->amount, 2) }}</td>
                             <td class="amount">${{ number_format($paid, 2) }}</td>
@@ -69,7 +71,7 @@
 
                         @if($debt->payments->isNotEmpty())
                             <tr>
-                                <td colspan="7">
+                                <td colspan="8">
                                     <div class="payments-section">
                                         <strong>Pagos realizados:</strong>
                                         <table>

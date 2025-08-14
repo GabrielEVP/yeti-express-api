@@ -35,7 +35,8 @@
                 <th>Entrega</th>
                 <th>Fecha</th>
                 <th>Destinatario</th>
-                <th>Monto</th>
+                <th>Dirección</th>
+                <th></th>Monto</th>
                 <th>Pagos Realizados</th>
                 <th>Saldo Pendiente</th>
             </tr>
@@ -46,6 +47,7 @@
                     <td>{{ $debt->delivery->number }}</td>
                     <td>{{ $debt->delivery->date->format('d/m/Y') }}</td>
                     <td>{{ $debt->delivery->receipt->full_name ?? 'N/A' }}</td>
+                    <td>{{ $debt->delivery->receipt->address ?? 'N/A' }}</td>
                     <td>${{ number_format($debt->amount, 2) }}</td>
                     <td>
                         @forelse($debt->payments as $payment)
@@ -63,7 +65,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" style="text-align: center;">No hay deudas pendientes en el período seleccionado</td>
+                    <td colspan="7" style="text-align: center;">No hay deudas pendientes en el período seleccionado</td>
                 </tr>
             @endforelse
         </tbody>

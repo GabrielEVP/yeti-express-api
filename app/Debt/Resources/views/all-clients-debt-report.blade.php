@@ -65,9 +65,8 @@
                                 <th>Destinatario</th>
                                 <th>Dirección</th>
                                 <th>Monto</th>
-                                <th>Estado</th>
-                                <th>Pagos</th>
-                                <th>Pendiente</th>
+                                <th>Pagos Realizados</th>
+                                <th>Saldo Pendiente</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -82,10 +81,6 @@
                                     <td>{{ $debt->delivery->receipt->full_name ?? 'N/A' }}</td>
                                     <td>{{ $debt->delivery->receipt->address ?? 'N/A' }}</td>
                                     <td>${{ number_format($debt->amount, 2) }}</td>
-                                    <td
-                                        class="status-{{ str_replace('_', '-', $debt->status instanceof \App\Debt\Models\Status ? $debt->status->value : $debt->status) }}">
-                                        {{ \App\Debt\Helpers\StatusTranslator::toSpanish($debt->status instanceof \App\Debt\Models\Status ? $debt->status : \App\Debt\Models\Status::from($debt->status)) }}
-                                    </td>
                                     <td>
                                         @forelse($debt->payments as $payment)
                                             <div>

@@ -46,10 +46,7 @@
                         <th>Fecha</th>
                         <th>Destinatario</th>
                         <th>Dirección</th>
-                        <th>Servicio</th>
                         <th>Monto Total</th>
-                        <th>Pagado</th>
-                        <th>Pendiente</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -63,38 +60,8 @@
                             <td>{{ $debt->delivery->date->format('d/m/Y') }}</td>
                             <td>{{ $debt->delivery->receipt->full_name ?? 'N/A' }}</td>
                             <td>{{ $debt->delivery->receipt->address ?? 'N/A' }}</td>
-                            <td>{{ $debt->delivery->service->name }}</td>
                             <td class="amount">${{ number_format($debt->amount, 2) }}</td>
-                            <td class="amount">${{ number_format($paid, 2) }}</td>
-                            <td class="amount">${{ number_format($pending, 2) }}</td>
                         </tr>
-
-                        @if($debt->payments->isNotEmpty())
-                            <tr>
-                                <td colspan="8">
-                                    <div class="payments-section">
-                                        <strong>Pagos realizados:</strong>
-                                        <table>
-                                            <tr>
-                                                <th>Fecha</th>
-                                                <th>Método</th>
-                                                <th>Monto</th>
-                                                <th>Notas</th>
-                                            </tr>
-                                            @foreach($debt->payments as $payment)
-                                                <tr>
-                                                    <td>{{ $payment->date ? $payment->date->format('d/m/Y') : $payment->created_at->format('d/m/Y') }}
-                                                    </td>
-                                                    <td>{{ \App\Debt\Helpers\MethodTranslator::toSpanish($payment->method) }}</td>
-                                                    <td class="amount">${{ number_format($payment->amount, 2) }}</td>
-                                                    <td>{{ $payment->notes ?? '-' }}</td>
-                                                </tr>
-                                            @endforeach
-                                        </table>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endif
                     @endforeach
                 </tbody>
             </table>

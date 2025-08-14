@@ -36,7 +36,7 @@
                 <th>Fecha</th>
                 <th>Destinatario</th>
                 <th>Dirección</th>
-                <th></th>Monto</th>
+                <th>Monto</th>
                 <th>Pagos Realizados</th>
                 <th>Saldo Pendiente</th>
             </tr>

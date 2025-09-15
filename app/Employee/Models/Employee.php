@@ -64,4 +64,24 @@ class Employee extends Authenticatable
     {
         return $this->user->services();
     }
+
+    public function companyBills()
+    {
+        return $this->user->companyBills();
+    }
+
+    public function debts()
+    {
+        return $this->user->debts();
+    }
+
+    public function debtPayments()
+    {
+        return $this->user->debtPayments();
+    }
+
+    public function employees()
+    {
+        return $this->user->employees();
+    }
 }

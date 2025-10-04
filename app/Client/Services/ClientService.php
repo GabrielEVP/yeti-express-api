@@ -8,6 +8,7 @@ use App\Client\DTO\FilterRequestClientPaginatedDTO;
 use App\Client\DTO\SimpleClientDTO;
 use App\Client\Models\Client;
 use App\Client\Repositories\IClientRepository;
+use App\Shared\Services\AuthHelper;
 use App\Shared\Services\EmployeeEventService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,7 @@ class ClientService implements IClientRepository
     private function baseQuery()
     {
         return Client::query()
-            ->where('user_id', Auth::userId());
+            ->where('user_id', AuthHelper::getUserId());
     }
 
     protected array $validSortColumns = [
@@ -52,7 +53,7 @@ class ClientService implements IClientRepository
 
     public function create(array $data): ClientDTO
     {
-        $data['user_id'] = Auth::userId();
+        $data['user_id'] = AuthHelper::getUserId();
         $client = Client::create($data);
 
         foreach ($data['addresses'] ?? [] as $address) {
@@ -146,7 +147,7 @@ class ClientService implements IClientRepository
             ->selectRaw('
                 NOT EXISTS (SELECT 1 FROM deliveries WHERE deliveries.client_id = clients.id) as can_delete
             ')
-            ->where('user_id', Auth::userId())
+            ->where('user_id', AuthHelper::getUserId())
             ->when($filterRequestClientDTO->search !== '', function ($q) use ($filterRequestClientDTO) {
                 $q->where(function ($query) use ($filterRequestClientDTO) {
                     $query->where('legal_name', 'LIKE', "%{$filterRequestClientDTO->search}%")

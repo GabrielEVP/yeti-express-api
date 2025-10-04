@@ -30,7 +30,7 @@ class DebtPaymentService implements IDebtPaymentRepository
             'date' => now(),
             'amount' => $debt->amount,
             'method' => $request->method,
-            'user_id' => Auth::id(),
+            'user_id' => AuthHelper::getUserId(),
         ]);
 
         $this->updateDebtStatus($debt);
@@ -54,7 +54,7 @@ class DebtPaymentService implements IDebtPaymentRepository
             'date' => now(),
             'amount' => $request->amount,
             'method' => $request->method,
-            'user_id' => Auth::id(),
+            'user_id' => AuthHelper::getUserId(),
         ]);
 
         $this->updateDebtStatus($debt);
@@ -82,7 +82,7 @@ class DebtPaymentService implements IDebtPaymentRepository
                 'date' => now(),
                 'amount' => $debt->amount,
                 'method' => $request->method,
-                'user_id' => Auth::id(),
+                'user_id' => AuthHelper::getUserId(),
             ]);
 
             $totalAmount += $debt->amount;
@@ -126,7 +126,7 @@ class DebtPaymentService implements IDebtPaymentRepository
                 'date' => now(),
                 'amount' => $paymentAmount,
                 'method' => $request->method,
-                'user_id' => Auth::id(),
+                'user_id' => AuthHelper::getUserId(),
             ]);
 
             $this->updateDebtStatus($debt);

@@ -5,6 +5,7 @@ namespace App\Cash\Controllers;
 use App\Cash\DTO\FilterPeriodRequestDTO;
 use App\Cash\Services\CashService;
 use App\Core\Controllers\Controller;
+use App\Shared\Services\AuthHelper;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ class CashController extends Controller
     public function getDashboardStats(Request $request): JsonResponse
     {
         $filterDTO = FilterPeriodRequestDTO::fromRequest($request);
-        $userId = Auth::id();
+        $userId = AuthHelper::getUserId();
 
         $stats = $this->cashService->getDashboardStats($userId, $filterDTO->period, $filterDTO->date);
 

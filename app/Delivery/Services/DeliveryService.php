@@ -263,7 +263,7 @@ class DeliveryService implements IDeliveryRepository
             'status' => 'pending',
             'client_id' => $delivery->client_id,
             'delivery_id' => $delivery->id,
-            'user_id' => Auth::id(),
+            'user_id' => AuthHelper::getUserId(),
         ]);
     }
 }

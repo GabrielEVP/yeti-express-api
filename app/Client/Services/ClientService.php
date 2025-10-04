@@ -20,7 +20,7 @@ class ClientService implements IClientRepository
     private function baseQuery()
     {
         return Client::query()
-            ->where('user_id', Auth::id());
+            ->where('user_id', Auth::userId());
     }
 
     protected array $validSortColumns = [
@@ -52,7 +52,8 @@ class ClientService implements IClientRepository
 
     public function create(array $data): ClientDTO
     {
-        $client = Auth::user()->clients()->create($data);
+        $data['user_id'] = Auth::userId();
+        $client = Client::create($data);
 
         foreach ($data['addresses'] ?? [] as $address) {
             $client->addresses()->create($address);
@@ -145,7 +146,7 @@ class ClientService implements IClientRepository
             ->selectRaw('
                 NOT EXISTS (SELECT 1 FROM deliveries WHERE deliveries.client_id = clients.id) as can_delete
             ')
-            ->where('user_id', Auth::id())
+            ->where('user_id', Auth::userId())
             ->when($filterRequestClientDTO->search !== '', function ($q) use ($filterRequestClientDTO) {
                 $q->where(function ($query) use ($filterRequestClientDTO) {
                     $query->where('legal_name', 'LIKE', "%{$filterRequestClientDTO->search}%")

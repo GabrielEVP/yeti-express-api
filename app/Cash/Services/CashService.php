@@ -54,7 +54,7 @@ class CashService
     public function getCashRegisterReportData(string $period, string $date): CashRegisterReportDTO
     {
         [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
-        $userId = Auth::id();
+        $userId = AuthHelper::getUserId();
 
         [$periodLabels, $periodData] = $this->generatePeriodLabelsAndData($userId, $period, $startDate, $endDate);
 

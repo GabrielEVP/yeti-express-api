@@ -36,7 +36,7 @@ class CashReportService
             $endDate = Carbon::today()->format('Y-m-d');
         }
 
-        $userId = Auth::id();
+        $userId = AuthHelper::getUserId();
 
         $startDateTime = $this->parseDate($startDate);
         $endDateTime = $this->parseDate($endDate);
@@ -111,7 +111,7 @@ class CashReportService
             $endDate = Carbon::today()->format('Y-m-d');
         }
 
-        $userId = Auth::id();
+        $userId = AuthHelper::getUserId();
 
         $startDateTime = $this->parseDate($startDate);
         $endDateTime = $this->parseDate($endDate);

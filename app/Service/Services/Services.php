@@ -8,6 +8,7 @@ use App\Service\DTO\ServiceDTO;
 use App\Service\DTO\SimpleServiceDTO;
 use App\Service\Models\Service;
 use App\Service\Repositories\IServiceRepository;
+use App\Shared\Services\AuthHelper;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,7 +17,7 @@ class Services implements IServiceRepository
     private function baseQuery()
     {
         return Service::query()
-            ->where('user_id', Auth::id());
+            ->where('user_id', AuthHelper::getUserId());
     }
 
     public function all(): Collection

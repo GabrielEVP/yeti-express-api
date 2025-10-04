@@ -10,6 +10,7 @@ use App\Delivery\Models\PaymentType;
 use App\Delivery\Models\Status;
 use App\Delivery\Repositories\IDeliveryRepository;
 use App\Service\Models\Service;
+use App\Shared\Services\AuthHelper;
 use App\Shared\Services\EmployeeEventService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -22,7 +23,7 @@ class DeliveryService implements IDeliveryRepository
     private function baseQuery()
     {
         return Delivery::query()
-            ->where('deliveries.user_id', Auth::id());
+            ->where('deliveries.user_id', AuthHelper::getUserId());
     }
 
     protected array $validSortColumns = [
@@ -67,7 +68,8 @@ class DeliveryService implements IDeliveryRepository
         if (isset($data['client_id']) && (empty($data['client_id']))) {
             $data['client_id'] = null;
         }
-        $delivery = Auth::user()->deliveries()->create($data);
+        $data['user_id'] = AuthHelper::getUserId();
+        $delivery = Delivery::create($data);
         if (isset($data['anonymous_client'])) {
             $delivery->anonymousClient()->create($data['anonymous_client']);
         }

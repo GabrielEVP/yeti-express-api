@@ -8,6 +8,7 @@ use App\Cash\Utils\FormatDate;
 use App\CompanyBIll\Models\CompanyBill;
 use App\Debt\Models\DebtPayment;
 use App\Delivery\Models\Delivery;
+use App\Shared\Services\AuthHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use App\CompanyBill\Helpers\PaymentMethodTranslator;
@@ -26,7 +27,7 @@ class CashService
             [$startDate, $endDate] = $this->dateFormatter->getPeriodDates($period, $date);
 
             $stats = $this->getStatsByPeriod($userId, $startDate, $endDate);
-            $companyBills = (float) Auth::user()->companyBills()
+            $companyBills = (float) AuthHelper::getActualUser()->companyBills()
                 ->whereBetween('date', [$startDate, $endDate])
                 ->sum('amount');
 
@@ -161,7 +162,7 @@ class CashService
     private function generatePeriodData(int $userId, string $startDate, string $endDate): array
     {
         $stats = $this->getStatsByPeriod($userId, $startDate, $endDate);
-        $totalExpenses = (float) Auth::user()->companyBills()
+        $totalExpenses = (float) AuthHelper::getActualUser()->companyBills()
             ->whereBetween('date', [$startDate, $endDate])
             ->sum('amount');
 

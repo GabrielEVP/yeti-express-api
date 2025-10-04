@@ -8,6 +8,7 @@ use App\Courier\DTO\CourierDTO;
 use App\Courier\DTO\SimpleCourierDTO;
 use App\Courier\Models\Courier;
 use App\Courier\Repositories\ICourierRepository;
+use App\Shared\Services\AuthHelper;
 use App\Shared\Services\EmployeeEventService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +20,7 @@ class CourierService implements ICourierRepository
     private function baseQuery()
     {
         return Courier::query()
-            ->where('user_id', Auth::id());
+            ->where('user_id', AuthHelper::getUserId());
     }
 
     public function all(): Collection
@@ -41,7 +42,8 @@ class CourierService implements ICourierRepository
 
     public function create(array $data): CourierDTO
     {
-        $courier = Auth::user()->couriers()->create($data);
+        $data['user_id'] = AuthHelper::getUserId();
+        $courier = Courier::create($data);
 
         EmployeeEventService::log(
             'create_courier',

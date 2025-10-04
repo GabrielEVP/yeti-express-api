@@ -10,6 +10,7 @@ use App\Debt\DTO\FormRequestPayAllDTO;
 use App\Debt\DTO\FormRequestPayPartialDTO;
 use App\Debt\Models\Debt;
 use App\Debt\Repositories\IDebtPaymentRepository;
+use App\Shared\Services\AuthHelper;
 use App\Shared\Services\EmployeeEventService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -18,12 +19,12 @@ class DebtPaymentService implements IDebtPaymentRepository
 {
     public function getAll(): Collection
     {
-        return Auth::user()->debtPayments()->get();
+        return AuthHelper::getActualUser()->debtPayments()->get();
     }
 
     public function storeFullPayment(FormRequestFullPaymentDTO $request): DebtPaymentDTO
     {
-        $debt = Auth::user()->debts()->findOrFail($request->debt_id);
+        $debt = AuthHelper::getActualUser()->debts()->findOrFail($request->debt_id);
 
         $payment = $debt->payments()->create([
             'date' => now(),
@@ -47,7 +48,7 @@ class DebtPaymentService implements IDebtPaymentRepository
 
     public function storePartialPayment(FormRequestPartialPaymentDTO $request): DebtPaymentDTO
     {
-        $debt = Auth::user()->debts()->findOrFail($request->debt_id);
+        $debt = AuthHelper::getActualUser()->debts()->findOrFail($request->debt_id);
 
         $payment = $debt->payments()->create([
             'date' => now(),

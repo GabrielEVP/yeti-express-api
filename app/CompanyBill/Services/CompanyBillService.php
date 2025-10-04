@@ -7,6 +7,7 @@ use App\CompanyBill\Models\CompanyBill;
 use App\CompanyBill\Repositories\ICompanyBillRepository;
 use App\Core\DTO\FilterRequestPaginatedDTO;
 use App\Core\DTO\PaginatedDTO;
+use App\Shared\Services\AuthHelper;
 use App\Shared\Services\EmployeeEventService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,7 @@ class CompanyBillService implements ICompanyBillRepository
     private function baseQuery()
     {
         return CompanyBill::query()
-            ->where('user_id', Auth::id());
+            ->where('user_id', AuthHelper::getUserId());
     }
 
     public function all(): Collection

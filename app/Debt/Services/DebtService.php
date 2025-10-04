@@ -11,6 +11,7 @@ use App\Debt\DTO\UnpaidDebtsAmountDTO;
 use App\Debt\Models\Debt;
 use App\Debt\Repositories\IDebtRepository;
 use App\Delivery\Models\Delivery;
+use App\Shared\Services\AuthHelper;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +22,7 @@ class DebtService implements IDebtRepository
     private function baseQuery()
     {
         return Debt::query()
-            ->where('user_id', Auth::id());
+            ->where('user_id', AuthHelper::getUserId());
     }
 
     public function getAllUnPaidDebtsAmount(): UnpaidDebtsAmountDTO
@@ -42,7 +43,7 @@ class DebtService implements IDebtRepository
 
     public function getClientsWithDebts(): Collection
     {
-        $clients = Auth::user()->clients()
+        $clients = AuthHelper::getActualUser()->clients()
             ->select('id', 'legal_name', 'registration_number')
             ->whereHas('debts')
             ->get();
@@ -85,7 +86,7 @@ class DebtService implements IDebtRepository
             ->count('id');
 
         $totalPending = Debt::where('client_id', $clientId)
-            ->where('user_id', Auth::id())
+            ->where('user_id', AuthHelper::getUserId())
             ->whereIn('status', ['pending', 'partial_paid'])
             ->leftJoin(
                 DB::raw('(SELECT debt_id, SUM(amount) as total_paid FROM debt_payments GROUP BY debt_id) as debt_payments_sum'),

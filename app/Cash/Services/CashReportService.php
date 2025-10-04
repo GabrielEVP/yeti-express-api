@@ -5,6 +5,7 @@ namespace App\Cash\Services;
 use App\Cash\DomPDF\DomPDFCash;
 use App\CompanyBill\Helpers\PaymentMethodTranslator;
 use App\Delivery\Models\Delivery;
+use App\Shared\Services\AuthHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -140,7 +141,7 @@ class CashReportService
 
             $stats = $this->cashService->getStatsByPeriod($userId, $dayStart, $dayEnd);
 
-            $expenses = (float)Auth::user()->companyBills()
+            $expenses = (float)AuthHelper::getActualUser()->companyBills()
                 ->whereBetween('date', [$dayStart, $dayEnd])
                 ->sum('amount');
 
@@ -188,7 +189,7 @@ class CashReportService
     {
         $stats = $this->cashService->getStatsByPeriod($userId, $startDate, $endDate);
 
-        $totalExpenses = (float)Auth::user()->companyBills()
+        $totalExpenses = (float)AuthHelper::getActualUser()->companyBills()
             ->whereBetween('date', [$startDate, $endDate])
             ->sum('amount');
 

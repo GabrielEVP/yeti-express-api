@@ -8,6 +8,7 @@ use App\Employee\DTO\EmployeeDTO;
 use App\Employee\DTO\SimpleEmployeeDTO;
 use App\Employee\Models\Employee;
 use App\Employee\Repositories\IEmployeeRepository;
+use App\Shared\Services\AuthHelper;
 use App\Shared\Services\EmployeeEventService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -19,7 +20,7 @@ class EmployeeService implements IEmployeeRepository
     private function baseQuery()
     {
         return Employee::query()
-            ->where('user_id', Auth::id());
+            ->where('user_id', AuthHelper::getUserId());
     }
 
 
@@ -36,7 +37,8 @@ class EmployeeService implements IEmployeeRepository
     public function create(array $data): EmployeeDTO
     {
         $data['password'] = Hash::make($data['password']);
-        $employee = Auth::user()->employees()->create($data);
+        $data['user_id'] = AuthHelper::getUserId();
+        $employee = Employee::create($data);
 
         return EmployeeDTO::fromModel($employee);
     }

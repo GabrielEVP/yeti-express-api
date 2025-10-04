@@ -166,7 +166,6 @@ return [
         \App\Employee\Providers\EmployeeServiceProvider::class,
         \App\CompanyBill\Providers\CompanyBillServiceProvider::class,
         \App\Cash\Providers\CashServiceProviders::class,
-        \App\Shared\Providers\AuthExtensionServiceProvider::class,
     ],
 
     'aliases' => [

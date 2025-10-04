@@ -5,6 +5,7 @@ namespace App\Courier\Services;
 use App\Courier\DTO\ReportPDFAllCourierDTO;
 use App\Courier\DTO\ReportPDFCourierDTO;
 use App\Courier\Repositories\IPDFCourierRepository;
+use App\Shared\Services\AuthHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,7 +18,7 @@ class PDFCourierService implements IPDFCourierRepository
             $request->get('end_date')
         );
 
-        $couriers = Auth::user()->couriers()
+        $couriers = AuthHelper::getActualUser()->couriers()
             ->select('id', 'first_name', 'last_name', 'phone')
             ->with(['deliveries' => function ($query) use ($startDate, $endDate) {
                 $query->select('id', 'number', 'date', 'amount', 'status', 'cancellation_notes', 'courier_id', 'client_id')
@@ -67,7 +68,7 @@ class PDFCourierService implements IPDFCourierRepository
             $request->get('end_date')
         );
 
-        $courier = Auth::user()->couriers()
+        $courier = AuthHelper::getActualUser()->couriers()
             ->select('id', 'first_name', 'last_name', 'phone')
             ->findOrFail($id);
 

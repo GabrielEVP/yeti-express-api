@@ -5,6 +5,7 @@ namespace App\Employee\Services;
 use App\Employee\DTO\EmployeeEventFilterDTO;
 use App\Employee\DTO\EmployeeEventReportDTO;
 use App\Employee\Models\EmployeeEvent;
+use App\Shared\Services\AuthHelper;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,7 +16,7 @@ class EmployeeEventReportService
         $query = EmployeeEvent::query()
             ->with(['employee'])
             ->join('employees', 'employee_events.employee_id', '=', 'employees.id')
-            ->where('employees.user_id', Auth::id())
+            ->where('employees.user_id', AuthHelper::getUserId())
             ->select('employee_events.*');
 
         if ($filters->employeeId) {

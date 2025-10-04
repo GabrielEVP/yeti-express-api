@@ -2,6 +2,7 @@
 
 namespace App\Shared\Services;
 
+use App\Auth\Models\User;
 use App\Employee\Models\Employee;
 use Illuminate\Support\Facades\Auth;
 
@@ -21,5 +22,21 @@ class AuthHelper
         }
         
         return $user ? $user->id : null;
+    }
+
+    /**
+     * Get the actual User model (not Employee) for relationship access
+     * 
+     * @return User|null
+     */
+    public static function getActualUser(): ?User
+    {
+        $authUser = Auth::user();
+        
+        if ($authUser instanceof Employee) {
+            return $authUser->user;
+        }
+        
+        return $authUser;
     }
 }

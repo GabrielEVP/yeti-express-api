@@ -58,7 +58,7 @@ class CourierController extends Controller
             $request->input('sortBy', 'first_name'),
             $request->input('sortDirection', 'asc'),
             $request->integer('page', 1),
-            $request->integer('perPage', 15)
+            $request->integer('perPage', 20)
         );
 
         $couriers = $this->service->filter($filterDTO);

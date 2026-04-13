@@ -168,8 +168,7 @@ class DeliveryService implements IDeliveryRepository
             })
             ->when(
                 $filterRequestDeliveryDTO->status !== null,
-                fn($q) => $q->where('deliveries.status', $filterRequestDeliveryDTO->status),
-                fn($q) => $q->whereIn('deliveries.status', ['pending', 'in_transit'])
+                fn($q) => $q->where('deliveries.status', $filterRequestDeliveryDTO->status)
             )
             ->when($filterRequestDeliveryDTO->service_id !== null, fn($q) => $q->where('deliveries.service_id', $filterRequestDeliveryDTO->service_id))
             ->when($filterRequestDeliveryDTO->payment_status !== null, fn($q) => $q->where('deliveries.payment_status', $filterRequestDeliveryDTO->payment_status))

@@ -55,10 +55,13 @@
 </head>
 
 <body>
-<div class="header">
-    <h2>Ticket de Entrega</h2>
-    <p>Número: {{ $delivery->number }}</p>
-    <p>Fecha: {{ $delivery->created_at }}</p>
+<div class="header" style="display: flex; align-items: center;">
+     <img src="{{ asset('logo-yeti.jpeg') }}" alt="Yeti Express Logo" style="height: 60px; margin-right: 15px;">
+     <div>
+         <h2>Ticket de Entrega</h2>
+         <p>Número: {{ $delivery->number }}</p>
+         <p>Fecha: {{ $delivery->created_at }}</p>
+     </div>
 </div>
 
 <div class="divider"></div>

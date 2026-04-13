@@ -10,7 +10,11 @@
 </head>
 
 <body>
+    @php $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents(public_path('Logo-Yeti.jpeg'))); @endphp
     <div class="header">
+        <div style="text-align: left; margin-bottom: 10px;">
+            <img src="{{ $logoBase64 }}" alt="Yeti Express Logo" style="height: 140px;">
+        </div>
         <h1>Reporte de Deudas del Cliente</h1>
         <p>Incluye deudas pendientes y parcialmente pagadas</p>
         <p>Fecha de generación: {{ now()->format('d/m/Y H:i:s') }}</p>

@@ -10,6 +10,8 @@ class SimpleCourierDTO implements JsonSerializable
     public string $first_name;
     public ?string $last_name;
     public ?string $phone;
+    public bool $active;
+    public bool $can_delete;
 
     public function __construct(array $data)
     {
@@ -17,6 +19,8 @@ class SimpleCourierDTO implements JsonSerializable
         $this->first_name = $data['first_name'];
         $this->last_name = $data['last_name'];
         $this->phone = $data['phone'];
+        $this->active = (bool) ($data['active'] ?? true);
+        $this->can_delete = (bool) ($data['can_delete'] ?? false);
     }
 
     public function jsonSerialize(): array
@@ -26,6 +30,8 @@ class SimpleCourierDTO implements JsonSerializable
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
             'phone' => $this->phone,
+            'active' => $this->active,
+            'can_delete' => $this->can_delete,
         ];
     }
 

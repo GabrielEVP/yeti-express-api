@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 
 class CourierService implements ICourierRepository
 {
-    private const SELECT_SIMPLE_FIELDS = ['id', 'first_name', 'last_name', 'phone'];
+    private const SELECT_SIMPLE_FIELDS = ['id', 'first_name', 'last_name', 'phone', 'active'];
 
     private function baseQuery()
     {
@@ -30,6 +30,7 @@ class CourierService implements ICourierRepository
             ->selectRaw('
                 NOT EXISTS (SELECT 1 FROM deliveries WHERE deliveries.courier_id = id) as can_delete
             ')
+            ->where('active', true)
             ->get()
             ->map(fn($row) => SimpleCourierDTO::mapFromArray($row));
     }
@@ -72,6 +73,22 @@ class CourierService implements ICourierRepository
         return new CourierDTO($courier);
     }
 
+    public function toggleActive(string $id): SimpleCourierDTO
+    {
+        $courier = $this->baseQuery()->findOrFail($id);
+        $courier->update(['active' => !$courier->active]);
+
+        EmployeeEventService::log(
+            'toggle_courier_active',
+            'couriers',
+            'couriers',
+            (int)$id,
+            'Courier ' . ($courier->active ? 'activated' : 'deactivated') . ': ' . $courier->first_name . ' ' . $courier->last_name
+        );
+
+        return SimpleCourierDTO::mapFromArray($courier);
+    }
+
     public function delete(string $id): void
     {
         $courier = Courier::findOrFail($id);
@@ -92,13 +109,16 @@ class CourierService implements ICourierRepository
         );
     }
 
-    public function filter(FilterRequestPaginatedDTO $filters): PaginatedDTO
+    public function filter(FilterRequestPaginatedDTO $filters, string $status = 'active'): PaginatedDTO
     {
         $query = $this->baseQuery()
             ->select(self::SELECT_SIMPLE_FIELDS)
             ->selectRaw('
                 NOT EXISTS (SELECT 1 FROM deliveries WHERE deliveries.courier_id = id) as can_delete
             ')
+            ->when($status !== 'all', function ($q) use ($status) {
+                $q->where('active', $status === 'active');
+            })
             ->when($filters->search !== '', function ($q) use ($filters) {
                 $q->where(function ($query) use ($filters) {
                     $query->where('first_name', 'LIKE', "%{$filters->search}%")

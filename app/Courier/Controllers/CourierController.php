@@ -51,6 +51,12 @@ class CourierController extends Controller
         return response()->json(null, 204);
     }
 
+    public function toggleActive(string $id): JsonResponse
+    {
+        $courier = $this->service->toggleActive($id);
+        return response()->json($courier, 200);
+    }
+
     public function filter(Request $request): JsonResponse
     {
         $filterDTO = new FilterRequestPaginatedDTO(
@@ -61,7 +67,12 @@ class CourierController extends Controller
             $request->integer('perPage', 20)
         );
 
-        $couriers = $this->service->filter($filterDTO);
+        $status = $request->input('status', 'active');
+        if (!in_array($status, ['active', 'inactive', 'all'])) {
+            $status = 'active';
+        }
+
+        $couriers = $this->service->filter($filterDTO, $status);
 
         return response()->json($couriers);
     }

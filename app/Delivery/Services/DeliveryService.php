@@ -3,7 +3,10 @@
 namespace App\Delivery\Services;
 
 use App\Client\Models\Client;
-use App\Delivery\DTO\{DeliveryDTO, FilterDeliveryPaginatedDTO, FilterRequestDeliveryPaginatedDTO, SimpleDeliveryDTO};
+use App\Delivery\DTO\DeliveryDTO;
+use App\Delivery\DTO\FilterDeliveryPaginatedDTO;
+use App\Delivery\DTO\FilterRequestDeliveryPaginatedDTO;
+use App\Delivery\DTO\SimpleDeliveryDTO;
 use App\Delivery\Models\Delivery;
 use App\Delivery\Models\PaymentStatus;
 use App\Delivery\Models\PaymentType;
@@ -13,7 +16,6 @@ use App\Service\Models\Service;
 use App\Shared\Services\AuthHelper;
 use App\Shared\Services\EmployeeEventService;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
 
 class DeliveryService implements IDeliveryRepository
@@ -27,11 +29,11 @@ class DeliveryService implements IDeliveryRepository
     }
 
     protected array $validSortColumns = [
-        "id",
-        "number",
-        "date",
-        "amount",
-        "status",
+        'id',
+        'number',
+        'date',
+        'amount',
+        'status',
     ];
 
     public function all(): Collection
@@ -39,7 +41,7 @@ class DeliveryService implements IDeliveryRepository
         return $this->baseQuery()
             ->select(self::SELECT_SIMPLE_FIELDS)
             ->get()
-            ->map(fn($row) => new SimpleDeliveryDTO(json_decode(json_encode($row), true)));
+            ->map(fn ($row) => new SimpleDeliveryDTO(json_decode(json_encode($row), true)));
     }
 
     public function find(string $id): DeliveryDTO
@@ -60,7 +62,7 @@ class DeliveryService implements IDeliveryRepository
 
     public function create(array $data): DeliveryDTO
     {
-        if (!isset($data['payment_type']) || empty($data['payment_type'])) {
+        if (! isset($data['payment_type']) || empty($data['payment_type'])) {
             $data['payment_type'] = 'full';
         }
         $data['number'] = $this->generateNumberDelivery();
@@ -81,14 +83,15 @@ class DeliveryService implements IDeliveryRepository
             'deliveries',
             'deliveries',
             (int) $delivery->id,
-            'Delivery created: ' . $delivery->number
+            'Delivery created: '.$delivery->number
         );
+
         return new DeliveryDTO($delivery);
     }
 
     public function update(string $id, array $data): DeliveryDTO
     {
-        if (!isset($data['payment_type']) || empty($data['payment_type'])) {
+        if (! isset($data['payment_type']) || empty($data['payment_type'])) {
             $data['payment_type'] = 'full';
         }
         $delivery = $this->baseQuery()->findOrFail($id);
@@ -110,8 +113,9 @@ class DeliveryService implements IDeliveryRepository
             'deliveries',
             'deliveries',
             (int) $id,
-            'Delivery updated: ' . $delivery->number
+            'Delivery updated: '.$delivery->number
         );
+
         return new DeliveryDTO($delivery);
     }
 
@@ -126,7 +130,7 @@ class DeliveryService implements IDeliveryRepository
             'deliveries',
             'deliveries',
             (int) $id,
-            'Delivery deleted: ' . $number
+            'Delivery deleted: '.$number
         );
     }
 
@@ -135,7 +139,7 @@ class DeliveryService implements IDeliveryRepository
         $sort = $filterRequestDeliveryDTO->sortBy;
         $order = $filterRequestDeliveryDTO->sortDirection;
 
-        if (!in_array($sort, $this->validSortColumns) || !in_array($order, ['asc', 'desc'])) {
+        if (! in_array($sort, $this->validSortColumns) || ! in_array($order, ['asc', 'desc'])) {
             throw new InvalidArgumentException('Invalid sort parameters');
         }
 
@@ -168,11 +172,11 @@ class DeliveryService implements IDeliveryRepository
             })
             ->when(
                 $filterRequestDeliveryDTO->status !== null,
-                fn($q) => $q->where('deliveries.status', $filterRequestDeliveryDTO->status)
+                fn ($q) => $q->whereIn('deliveries.status', (array) $filterRequestDeliveryDTO->status)
             )
-            ->when($filterRequestDeliveryDTO->service_id !== null, fn($q) => $q->where('deliveries.service_id', $filterRequestDeliveryDTO->service_id))
-            ->when($filterRequestDeliveryDTO->payment_status !== null, fn($q) => $q->where('deliveries.payment_status', $filterRequestDeliveryDTO->payment_status))
-            ->orderBy('deliveries.' . $sort, $order);
+            ->when($filterRequestDeliveryDTO->service_id !== null, fn ($q) => $q->where('deliveries.service_id', $filterRequestDeliveryDTO->service_id))
+            ->when($filterRequestDeliveryDTO->payment_status !== null, fn ($q) => $q->where('deliveries.payment_status', $filterRequestDeliveryDTO->payment_status))
+            ->orderBy('deliveries.'.$sort, $order);
 
         $paginator = $query->paginate(
             $filterRequestDeliveryDTO->perPage ?? 15,
@@ -214,7 +218,7 @@ class DeliveryService implements IDeliveryRepository
             'deliveries',
             'deliveries',
             (int) $id,
-            'Delivery status updated to ' . $status->value . ': ' . $delivery->number
+            'Delivery status updated to '.$status->value.': '.$delivery->number
         );
     }
 
@@ -230,18 +234,19 @@ class DeliveryService implements IDeliveryRepository
             'deliveries',
             'deliveries',
             (int) $id,
-            'Delivery cancelled: ' . $delivery->number
+            'Delivery cancelled: '.$delivery->number
         );
     }
 
     private function generateNumberDelivery(): string
     {
-        return 'DEV-' . str_pad((Delivery::max('id') ?? 0) + 1, 5, '0', STR_PAD_LEFT);
+        return 'DEV-'.str_pad((Delivery::max('id') ?? 0) + 1, 5, '0', STR_PAD_LEFT);
     }
 
     private function getServiceAmount(string $serviceId): float
     {
         $service = Service::findOrFail($serviceId);
+
         return $service->amount;
     }
 
@@ -252,6 +257,7 @@ class DeliveryService implements IDeliveryRepository
         }
 
         $client = Client::findOrFail($clientId);
+
         return $client->allow_credit ? PaymentType::PARTIAL->value : PaymentType::FULL->value;
     }
 

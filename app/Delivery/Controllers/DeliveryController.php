@@ -68,7 +68,7 @@ class DeliveryController extends Controller
             search: $request->string('search')->toString(),
             sortBy: $request->input('sortBy', 'number'),
             sortDirection: $request->input('sortDirection', 'asc'),
-            status: $filters['status'] ?? Status::PENDING->value,
+            status: $filters['status'] ?? [Status::PENDING->value, Status::IN_TRANSIT->value],
             service_id: $filters['serviceId'] ?? null,
             payment_status: $filters['paymentStatus'] ?? null,
             start_date: $filters['startDate'] ?? null,

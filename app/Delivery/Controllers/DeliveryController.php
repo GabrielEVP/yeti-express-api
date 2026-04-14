@@ -49,12 +49,14 @@ class DeliveryController extends Controller
     {
         $dto = FormRequestDeliveryDTO::fromArray($request->validated());
         $service = $this->service->update($id, $dto->toArray());
+
         return response()->json($service, 200);
     }
 
     public function destroy(string $id): JsonResponse
     {
         $this->service->delete($id);
+
         return response()->json(null, 204);
     }
 
@@ -66,7 +68,7 @@ class DeliveryController extends Controller
             search: $request->string('search')->toString(),
             sortBy: $request->input('sortBy', 'number'),
             sortDirection: $request->input('sortDirection', 'asc'),
-            status: $filters['status'] ?? null,
+            status: $filters['status'] ?? Status::PENDING->value,
             service_id: $filters['serviceId'] ?? null,
             payment_status: $filters['paymentStatus'] ?? null,
             start_date: $filters['startDate'] ?? null,
@@ -74,7 +76,6 @@ class DeliveryController extends Controller
             page: $request->integer('page', 1),
             perPage: $request->integer('perPage', 15)
         );
-
 
         $clients = $this->service->filter($filterDTO);
 
@@ -85,6 +86,7 @@ class DeliveryController extends Controller
     {
         $status = Status::from($request->input('status'));
         $this->service->updateStatus($id, $status);
+
         return response()->json(null, 204);
 
     }
@@ -92,6 +94,7 @@ class DeliveryController extends Controller
     public function cancelDelivery(string $id, Request $request): JsonResponse
     {
         $this->service->cancelDelivery($id, $request->input('cancellation_notes'));
+
         return response()->json(null, 204);
     }
 }
